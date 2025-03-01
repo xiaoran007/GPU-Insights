@@ -27,10 +27,17 @@ Note: In general, Multi-GPU test case using batch size 2048 `-bs 2048` for FP16 
 
 Most of the results are obtained by adjusting the batch size to get the maximum video memory usage.
 
+#### Apple
+
+|    Device    |     Platform      | FP32 | FP32BS | FP16 | FP16BS |   Note   |
+| :----------: | :---------------: | :--: | :----: | :--: | :----: | :------: |
+| Apple M4 GPU | macOS<br />15.3.1 | 1723 |  128   | 1591 |  128   | 10 Cores |
+| Apple M1 GPU | macOS<br />15.3.1 | 948  |  128   | 843  |  128   | 8 Cores  |
+
+#### Nvidia
+
 |                 Device                 |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |                     Note                     |
-|:--------------------------------------:|:--------------------------:|:-----:|:------:|:------:|:------:|:--------------------------------------------:|
-|              Apple M4 GPU              |     macOS<br />15.3.1      | 1723  |  128   |  1591  |  128   |                   10 Cores                   |
-|              Apple M1 GPU              |     macOS<br />15.3.1      |  948  |  128   |  843   |  128   |                   8 Cores                    |
+| :------------------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :------------------------------------------: |
 |      NVIDIA GeForce RTX 3090 24GB      |    Windows<br />566.14     | 16311 |  256   | 28197  |  256   |                      /                       |
 |         NVIDIA RTX A5000 24GB          |     Linux<br />535.183     | 15090 |  512   | 27155  |  1024  |                      /                       |
 |    NVIDIA RTX A5000 24GB    2 GPUs     |     Linux<br />535.183     | 26962 |  1024  | 49930  |  3072  |                    NVLink                    |
@@ -41,6 +48,9 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 |       NVIDIA vGPU-32GB    2 GPUs       | Linux (Docker)<br />560.35 | 30275 |  2048  | 52756  |  4096  |      Two NVIDIA GeForce RTX 4080 SUPER       |
 |       NVIDIA vGPU-32GB    4 GPUs       | Linux (Docker)<br />560.35 | 56178 |  4096  | 101268 |  8192  |      Two NVIDIA GeForce RTX 4080 SUPER       |
 |      NVIDIA TITAN X (Pascal) 12GB      |    Windows<br />566.14     | 5792  |  256   |  7230  |  256   | FP16 Not Officially Supported By Pascal Arch |
-|  Intel(R) Arc(TM) A770 Graphics 16GB   |     Linux<br />i915 xe     | 5121  |  256   |  8049  |  256   |             GradScaler Not Work              |
 
+#### Intel
 
+|               Device                |      Platform      | FP32 | FP32BS | FP16 | FP16BS |        Note         |
+| :---------------------------------: | :----------------: | :--: | :----: | :--: | :----: | :-----------------: |
+| Intel(R) Arc(TM) A770 Graphics 16GB | Linux<br />i915 xe | 5121 |  256   | 8049 |  256   | GradScaler Not Work |
