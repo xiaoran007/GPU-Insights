@@ -38,6 +38,7 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 |                 Device                 |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |                     Note                     |
 | :------------------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :------------------------------------------: |
+|      NVIDIA GeForce RTX 4090 24GB      |     Linux<br />560.35      | 24046 |  512   | 43733  |  1024  |                      /                       |
 |    NVIDIA GeForce RTX 2080 Ti 22GB     |     Linux<br />550.120     | 8754  |  256   | 19007  |  1024  |      Unofficial Video Memory Expansion       |
 |      NVIDIA GeForce RTX 3090 24GB      |    Windows<br />566.14     | 16311 |  256   | 28197  |  256   |                      /                       |
 |         NVIDIA RTX A5000 24GB          |     Linux<br />535.183     | 15090 |  512   | 27155  |  1024  |                      /                       |
