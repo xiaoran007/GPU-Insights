@@ -27,6 +27,12 @@ Note: In general, Multi-GPU test case using batch size 2048 `-bs 2048` for FP16 
 
 Most of the results are obtained by adjusting the batch size to get the maximum video memory usage.
 
+#### Huawei
+
+|   Device    |         Platform         | FP32  | FP32BS | FP16  | FP16BS |              Note               |
+| :---------: | :----------------------: | :---: | :----: | :---: | :----: | :-----------------------------: |
+| Ascend910B2 | Linux (Docker)<br />5.15 | 18283 |  1024  | 55517 |  1024  | FP16 GradScaler seems overflow. |
+
 #### Apple
 
 |    Device    |     Platform      | FP32 | FP32BS | FP16 | FP16BS |   Note   |
