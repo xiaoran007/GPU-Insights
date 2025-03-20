@@ -4,7 +4,19 @@ import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
 import time
-from torch.amp import autocast, GradScaler
+try:
+    from torch.amp import autocast, GradScaler
+    version_flag = True
+except ImportError:
+    print("torch.amp is not available, assume using torch_npu.npu.amp instead.")
+    try:
+        from torch_npu.npu.amp import autocast, GradScaler
+        npu_flag = True
+    except ImportError:
+        print("torch_npu.npu.amp is not available, assume using torch.cuda.amp instead.")
+        from torch.cuda.amp import autocast, GradScaler
+        npu_flag = False
+    version_flag = False
 
 
 class ResNet50Bench(object):
@@ -21,12 +33,14 @@ class ResNet50Bench(object):
 
     def start(self):
         if self.gpu_devices is None:
-            print("GPU is not available, only CPU will be benched.")
-            print("DEBUG mode, skipping CPU bench.")
+            # print("GPU is not available, only CPU will be benched.")
+            # print("DEBUG mode, skipping CPU bench.")
+            print("GPU is not available")
             # self._bench(self.cpu_device)
         else:
-            print("GPU is available, both GPU and CPU will be benched.")
-            print("DEBUG mode, skipping CPU bench.")
+            # print("GPU is available, both GPU and CPU will be benched.")
+            # print("DEBUG mode, skipping CPU bench.")
+            print("DEBUG mode.")
             self._bench(self.gpu_devices)
             # self._bench(self.cpu_device)
 
@@ -39,11 +53,18 @@ class ResNet50Bench(object):
 
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(model.parameters(), lr=self.lr)
-        if main_device.type in ["xpu", "mps"]:
+        if main_device.type in ["xpu", "mps", "npu"]:
             GS_dev = "cuda"
         else:
             GS_dev = main_device.type
-        scaler = GradScaler(device=GS_dev, enabled=self.use_fp16)
+        if main_device.type in ["npu"]:
+            AC_dev = "cuda"
+        else:
+            AC_dev = main_device.type
+        if version_flag:
+            scaler = GradScaler(device=GS_dev, enabled=self.use_fp16)
+        else:
+            scaler = GradScaler(enabled=self.use_fp16)
 
         total_step = len(self.train_loader)
         pre_load_start = time.time()
@@ -51,6 +72,7 @@ class ResNet50Bench(object):
         pre_load_end = time.time()
         print(f"Pre-load completed on {main_device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
 
+        print("Timer started.")
         start_time = time.time()
         for epoch in range(self.epochs):
             iters = len(self.train_loader)
@@ -59,9 +81,14 @@ class ResNet50Bench(object):
                 # images = images.to(device)
                 # labels = labels.to(device)
 
-                with autocast(device_type=main_device.type, dtype=torch.float16, enabled=self.use_fp16):
-                    outputs = model(images)
-                    loss = criterion(outputs, labels)
+                if version_flag:
+                    with autocast(device_type=AC_dev, dtype=torch.float16, enabled=self.use_fp16):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                else:
+                    with autocast(dtype=torch.float16, enabled=self.use_fp16):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
 
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
@@ -169,6 +196,7 @@ class ResNet(nn.Module):
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x
+
 
 def ResNet50():
     return ResNet(Bottleneck, [3, 4, 6, 3])
