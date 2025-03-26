@@ -33,6 +33,8 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 | :---------: | :----------------------: | :---: | :----: | :---: | :----: | :-----------------------------: |
 | Ascend910B2 | Linux (Docker)<br />5.15 | 18283 |  1024  | 55517 |  1024  | FP16 GradScaler seems overflow. |
 
+
+
 #### Apple
 
 |    Device    |     Platform      | FP32 | FP32BS | FP16 | FP16BS |   Note   |
@@ -40,22 +42,71 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 | Apple M4 GPU | macOS<br />15.3.1 | 1723 |  128   | 1591 |  128   | 10 Cores |
 | Apple M1 GPU | macOS<br />15.3.1 | 948  |  128   | 843  |  128   | 8 Cores  |
 
-#### Nvidia
 
-|                 Device                 |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |                     Note                     |
-| :------------------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :------------------------------------------: |
-|      NVIDIA GeForce RTX 4090 24GB      |     Linux<br />560.35      | 24046 |  512   | 43733  |  1024  |                      /                       |
-|    NVIDIA GeForce RTX 2080 Ti 22GB     |     Linux<br />550.120     | 8754  |  256   | 19007  |  1024  |      Unofficial Video Memory Expansion       |
-|      NVIDIA GeForce RTX 3090 24GB      |    Windows<br />566.14     | 16311 |  256   | 28197  |  256   |                      /                       |
-|         NVIDIA RTX A5000 24GB          |     Linux<br />535.183     | 15090 |  512   | 27155  |  1024  |                      /                       |
-|    NVIDIA RTX A5000 24GB    2 GPUs     |     Linux<br />535.183     | 26962 |  1024  | 49930  |  3072  |                    NVLink                    |
-|      NVIDIA GeForce RTX 3080 20GB      | Linux (Docker)<br />560.35 | 13320 |  256   | 24205  |  256   |      Unofficial Video Memory Expansion       |
-| NVIDIA GeForce RTX 3080 20GB    2 GPUs | Linux (Docker)<br />560.35 | 23261 |  1024  | 40250  |  2048  |      Unofficial Video Memory Expansion       |
-|         Tesla V100S-PCIE 32GB          | Linux (Docker)<br />550.90 | 11577 |  256   | 27963  |  256   |                      /                       |
-|            NVIDIA vGPU-32GB            | Linux (Docker)<br />560.35 | 16050 |  1024  | 28155  |  2048  |      Two NVIDIA GeForce RTX 4080 SUPER       |
-|       NVIDIA vGPU-32GB    2 GPUs       | Linux (Docker)<br />560.35 | 30275 |  2048  | 52756  |  4096  |      Two NVIDIA GeForce RTX 4080 SUPER       |
-|       NVIDIA vGPU-32GB    4 GPUs       | Linux (Docker)<br />560.35 | 56178 |  4096  | 101268 |  8192  |      Two NVIDIA GeForce RTX 4080 SUPER       |
-|      NVIDIA TITAN X (Pascal) 12GB      |    Windows<br />566.14     | 5792  |  256   |  7230  |  256   | FP16 Not Officially Supported By Pascal Arch |
+
+#### Nvidia Ada
+
+|            Device            |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |               Note                |
+| :--------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :-------------------------------: |
+| NVIDIA GeForce RTX 4090 24GB |     Linux<br />560.35      | 24046 |  512   | 43733  |  1024  |                 /                 |
+|       NVIDIA vGPU-32GB       | Linux (Docker)<br />560.35 | 16050 |  1024  | 28155  |  2048  | Two NVIDIA GeForce RTX 4080 SUPER |
+|  NVIDIA vGPU-32GB    2 GPUs  | Linux (Docker)<br />560.35 | 30275 |  2048  | 52756  |  4096  | Two NVIDIA GeForce RTX 4080 SUPER |
+|  NVIDIA vGPU-32GB    4 GPUs  | Linux (Docker)<br />560.35 | 56178 |  4096  | 101268 |  8192  | Two NVIDIA GeForce RTX 4080 SUPER |
+
+
+
+#### Nvidia Ampere
+
+|                 Device                 |          Platform          | FP32  | FP32BS | FP16  | FP16BS |               Note                |
+| :------------------------------------: | :------------------------: | :---: | :----: | :---: | :----: | :-------------------------------: |
+|      NVIDIA GeForce RTX 3090 24GB      |    Windows<br />566.14     | 16311 |  256   | 28197 |  256   |                 /                 |
+|         NVIDIA RTX A5000 24GB          |     Linux<br />535.183     | 15090 |  512   | 27155 |  1024  |                 /                 |
+|    NVIDIA RTX A5000 24GB    2 GPUs     |     Linux<br />535.183     | 26962 |  1024  | 49930 |  3072  |              NVLink               |
+|      NVIDIA GeForce RTX 3080 20GB      | Linux (Docker)<br />560.35 | 13320 |  256   | 24205 |  256   | Unofficial Video Memory Expansion |
+| NVIDIA GeForce RTX 3080 20GB    2 GPUs | Linux (Docker)<br />560.35 | 23261 |  1024  | 40250 |  2048  | Unofficial Video Memory Expansion |
+
+
+
+#### Nvidia Turing
+
+|             Device              |      Platform      | FP32 | FP32BS | FP16  | FP16BS |               Note                |
+| :-----------------------------: | :----------------: | :--: | :----: | :---: | :----: | :-------------------------------: |
+| NVIDIA GeForce RTX 2080 Ti 22GB | Linux<br />550.120 | 8754 |  256   | 19007 |  1024  | Unofficial Video Memory Expansion |
+
+
+
+#### Nvidia Volta
+
+|        Device         |          Platform          | FP32  | FP32BS | FP16  | FP16BS | Note |
+| :-------------------: | :------------------------: | :---: | :----: | :---: | :----: | :--: |
+| Tesla V100S-PCIE 32GB | Linux (Docker)<br />550.90 | 11577 |  256   | 27963 |  256   |  /   |
+
+
+
+#### Nvidia Pascal
+
+|            Device            |          Platform           | FP32 | FP32BS | FP16 | FP16BS |                     Note                     |
+| :--------------------------: | :-------------------------: | :--: | :----: | :--: | :----: | :------------------------------------------: |
+| NVIDIA TITAN X (Pascal) 12GB |     Windows<br />566.14     | 5792 |  256   | 7230 |  256   | FP16 Not Officially Supported By Pascal Arch |
+|     NVIDIA TITAN Xp 12GB     | Linux (Docker)<br />550.120 | 6792 |  256   | 7641 |  256   | FP16 Not Officially Supported By Pascal Arch |
+
+
+
+#### Nvidia Maxwell
+
+| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note |
+| :----: | :------: | :--: | :----: | :--: | :----: | :--: |
+|        |          |      |        |      |        |      |
+
+
+
+#### Nvidia Kepler
+
+| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note |
+| :----: | :------: | :--: | :----: | :--: | :----: | :--: |
+|        |          |      |        |      |        |      |
+
+
 
 #### Intel
 
