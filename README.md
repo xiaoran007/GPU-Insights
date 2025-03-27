@@ -47,6 +47,14 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 
 
+#### Nvidia Hopper
+
+|        Device        |          Platform          | FP32  | FP32BS | FP16  | FP16BS | Note | Date      |
+| :------------------: | :------------------------: | :---: | :----: | :---: | :----: | :--: | --------- |
+| NVIDIA H20<br />96GB | Linux (Docker)<br />565.57 | 37360 |  256   | 55222 |  256   |  /   | 2025.3.27 |
+
+
+
 #### Nvidia Ada
 
 |              Device               |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |               Note                | Date      |
