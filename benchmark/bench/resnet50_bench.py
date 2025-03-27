@@ -201,6 +201,14 @@ class ResNet(nn.Module):
 def ResNet50():
     return ResNet(Bottleneck, [3, 4, 6, 3])
 
-# Example usage:
-# model = ResNet50()
-# print(model)
+
+if __name__ == "__main__":
+    from torchinfo import summary
+
+    model = ResNet50()
+    print(model)
+
+    print("\n----------\n")
+
+    batch_size = 1024
+    summary(model, input_size=(batch_size, 3, 32, 32))

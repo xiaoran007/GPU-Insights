@@ -11,6 +11,9 @@ python main.py -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP16 -gpu 0
 
 This performance test evaluates the performance of the hardware device in a training scenario, and the output is a score. Score reflects the unit time to complete a given training task (ResNet50). Thus, a higher score means higher computational performance. Note that the score is affected by both the video memory bandwidth and the PCIe bus bandwidth.
 
+### Model Params
+23.5 M
+
 ### Test command
 
 FP32: `python main.py -m -s 512 -e 3 -mt resnet50 -bs 256 -dt FP32`
