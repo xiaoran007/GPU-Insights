@@ -17,7 +17,7 @@ def main():
     parser.add_argument("-mt", "--model", type=str, required=False, default="cnn",
                         help="Set the model type.")
     parser.add_argument("-dt", "--data_type", type=str, required=False, default="FP32",
-                        help="Set the data type (FP32 or FP16).")
+                        help="Set the data type (FP32, FP16 or BF16).")
     parser.add_argument("-bs", "--batch", type=int, required=False, default=0,
                         help="Set the batch size.")
     parser.add_argument("-cudnn", "--cudnn_benchmark", action="store_true", default=False,
@@ -40,6 +40,8 @@ def main():
         data_type = "FP16"
     elif args.data_type in ["FP32", "fp32"]:
         data_type = "FP32"
+    elif args.data_type in ["BF16", "bf16"]:
+        data_type = "BF16"
 
     if args.auto:
         print("Auto benchmark is not available.")

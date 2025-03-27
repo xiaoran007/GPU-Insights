@@ -20,7 +20,7 @@ except ImportError:
 
 
 class ResNet50Bench(object):
-    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False):
+    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False, use_bf16=False):
         self.gpu_devices = gpu_device
         self.cpu_device = cpu_device
         self.epochs = epochs
@@ -28,6 +28,16 @@ class ResNet50Bench(object):
         self.lr = lr
         self.data_size = data_size
         self.use_fp16 = use_fp16
+        self.use_bf16 = use_bf16
+
+        if use_bf16:
+            if torch.cuda.is_bf16_supported(including_emulation=False):
+                self.use_bf16 = True
+            else:
+                print("BF16 is not supported, using FP16 instead.")
+                self.use_bf16 = False
+                self.use_fp16 = True
+
         self.train_dataset = FakeDataset(size=data_size, image_size=image_size, num_classes=num_classes)
         self.train_loader = torch.utils.data.DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
 
@@ -61,10 +71,15 @@ class ResNet50Bench(object):
             AC_dev = "cuda"
         else:
             AC_dev = main_device.type
-        if version_flag:
-            scaler = GradScaler(device=GS_dev, enabled=self.use_fp16)
+
+        if self.use_bf16:
+            # BF16 is not need GradScaler
+            pass
         else:
-            scaler = GradScaler(enabled=self.use_fp16)
+            if version_flag:
+                scaler = GradScaler(device=GS_dev, enabled=self.use_fp16)
+            else:
+                scaler = GradScaler(enabled=self.use_fp16)
 
         total_step = len(self.train_loader)
         pre_load_start = time.time()
@@ -80,19 +95,30 @@ class ResNet50Bench(object):
             for i, (images, labels) in enumerate(data_preloaded):
                 # images = images.to(device)
                 # labels = labels.to(device)
-
-                if version_flag:
-                    with autocast(device_type=AC_dev, dtype=torch.float16, enabled=self.use_fp16):
-                        outputs = model(images)
-                        loss = criterion(outputs, labels)
+                if self.use_bf16:
+                    if version_flag:
+                        with autocast(device_type=AC_dev, dtype=torch.bfloat16, enabled=True):
+                            outputs = model(images)
+                            loss = criterion(outputs, labels)
+                    else:
+                        with autocast(dtype=torch.bfloat16, enabled=True):
+                            outputs = model(images)
+                            loss = criterion(outputs, labels)
+                    loss.backward()
+                    optimizer.step()
                 else:
-                    with autocast(dtype=torch.float16, enabled=self.use_fp16):
-                        outputs = model(images)
-                        loss = criterion(outputs, labels)
+                    if version_flag:
+                        with autocast(device_type=AC_dev, dtype=torch.float16, enabled=self.use_fp16):
+                            outputs = model(images)
+                            loss = criterion(outputs, labels)
+                    else:
+                        with autocast(dtype=torch.float16, enabled=self.use_fp16):
+                            outputs = model(images)
+                            loss = criterion(outputs, labels)
+                    scaler.scale(loss).backward()
+                    scaler.step(optimizer)
+                    scaler.update()
 
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
                 optimizer.zero_grad()
 
                 pbar.update(1)
@@ -210,5 +236,5 @@ if __name__ == "__main__":
 
     print("\n----------\n")
 
-    batch_size = 1024
-    summary(model, input_size=(batch_size, 3, 32, 32))
+    t_batch_size = 1024
+    summary(model, input_size=(t_batch_size, 3, 32, 32))

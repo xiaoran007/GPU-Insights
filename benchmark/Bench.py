@@ -78,10 +78,15 @@ class Bench(object):
                 batch_size = 4
             if data_type == "FP16":
                 use_fp16 = True
+                use_bf16 = False
+            elif data_type == "BF16":
+                use_fp16 = False
+                use_bf16 = True
             else:
                 use_fp16 = False
+                use_bf16 = False
             return ResNet50Bench(gpu_device=self.gpu_device, cpu_device=self.cpu_device, data_size=data_size,
-                                 batch_size=batch_size, epochs=epochs, use_fp16=use_fp16)
+                                 batch_size=batch_size, epochs=epochs, use_fp16=use_fp16, use_bf16=use_bf16)
 
 
 
