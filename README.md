@@ -32,87 +32,87 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 #### Huawei
 
-|   Device    |         Platform         | FP32  | FP32BS | FP16  | FP16BS |              Note               |
-| :---------: | :----------------------: | :---: | :----: | :---: | :----: | :-----------------------------: |
-| Ascend910B2 | Linux (Docker)<br />5.15 | 18283 |  1024  | 55517 |  1024  | FP16 GradScaler seems overflow. |
+|   Device    |         Platform         | FP32  | FP32BS | FP16  | FP16BS |              Note               | **Date**  |
+| :---------: | :----------------------: | :---: | :----: | :---: | :----: | :-----------------------------: | --------- |
+| Ascend910B2 | Linux (Docker)<br />5.15 | 18283 |  1024  | 55517 |  1024  | FP16 GradScaler seems overflow. | 2025.3.20 |
 
 
 
 #### Apple
 
-|    Device    |     Platform      | FP32 | FP32BS | FP16 | FP16BS |   Note   |
-| :----------: | :---------------: | :--: | :----: | :--: | :----: | :------: |
-| Apple M4 GPU | macOS<br />15.3.1 | 1723 |  128   | 1591 |  128   | 10 Cores |
-| Apple M1 GPU | macOS<br />15.3.1 | 948  |  128   | 843  |  128   | 8 Cores  |
+|    Device    |     Platform      | FP32 | FP32BS | FP16 | FP16BS |   Note   | Date      |
+| :----------: | :---------------: | :--: | :----: | :--: | :----: | :------: | --------- |
+| Apple M4 GPU | macOS<br />15.3.1 | 1723 |  128   | 1591 |  128   | 10 Cores | 2025.3.20 |
+| Apple M1 GPU | macOS<br />15.3.1 | 948  |  128   | 843  |  128   | 8 Cores  | 2025.3.20 |
 
 
 
 #### Nvidia Ada
 
-|            Device            |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |               Note                |
-| :--------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :-------------------------------: |
-| NVIDIA GeForce RTX 4090 24GB |     Linux<br />560.35      | 24046 |  512   | 43733  |  1024  |                 /                 |
-|       NVIDIA vGPU-32GB       | Linux (Docker)<br />560.35 | 16050 |  1024  | 28155  |  2048  | Two NVIDIA GeForce RTX 4080 SUPER |
-|  NVIDIA vGPU-32GB    2 GPUs  | Linux (Docker)<br />560.35 | 30275 |  2048  | 52756  |  4096  | Two NVIDIA GeForce RTX 4080 SUPER |
-|  NVIDIA vGPU-32GB    4 GPUs  | Linux (Docker)<br />560.35 | 56178 |  4096  | 101268 |  8192  | Two NVIDIA GeForce RTX 4080 SUPER |
+|              Device               |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |               Note                | Date      |
+| :-------------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :-------------------------------: | --------- |
+| NVIDIA GeForce RTX 4090<br />24GB |     Linux<br />560.35      | 24046 |  512   | 43733  |  1024  |                 /                 | 2025.3.20 |
+|       NVIDIA vGPU<br />32GB       | Linux (Docker)<br />560.35 | 17308 |  1024  | 33238  |  256   | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.27 |
+|  NVIDIA vGPU<br />32GB    2 GPUs  | Linux (Docker)<br />560.35 | 30275 |  2048  | 52756  |  4096  | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.20 |
+|  NVIDIA vGPU<br />32GB    4 GPUs  | Linux (Docker)<br />560.35 | 56178 |  4096  | 101268 |  8192  | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.20 |
 
 
 
 #### Nvidia Ampere
 
-|                 Device                 |          Platform          | FP32  | FP32BS | FP16  | FP16BS |               Note                |
-| :------------------------------------: | :------------------------: | :---: | :----: | :---: | :----: | :-------------------------------: |
-|      NVIDIA GeForce RTX 3090 24GB      |    Windows<br />566.14     | 16311 |  256   | 28197 |  256   |                 /                 |
-|         NVIDIA RTX A5000 24GB          |     Linux<br />535.183     | 15090 |  512   | 27155 |  1024  |                 /                 |
-|    NVIDIA RTX A5000 24GB    2 GPUs     |     Linux<br />535.183     | 26962 |  1024  | 49930 |  3072  |              NVLink               |
-|      NVIDIA GeForce RTX 3080 20GB      | Linux (Docker)<br />560.35 | 13320 |  256   | 24205 |  256   | Unofficial Video Memory Expansion |
-| NVIDIA GeForce RTX 3080 20GB    2 GPUs | Linux (Docker)<br />560.35 | 23261 |  1024  | 40250 |  2048  | Unofficial Video Memory Expansion |
+|                   Device                    |          Platform          | FP32  | FP32BS | FP16  | FP16BS |               Note                | Date      |
+| :-----------------------------------------: | :------------------------: | :---: | :----: | :---: | :----: | :-------------------------------: | --------- |
+|      NVIDIA GeForce RTX 3090<br />24GB      |    Windows<br />566.14     | 16311 |  256   | 28197 |  256   |                 /                 | 2025.3.10 |
+|         NVIDIA RTX A5000<br />24GB          |     Linux<br />535.183     | 15090 |  512   | 27155 |  1024  |                 /                 | 2025.3.20 |
+|    NVIDIA RTX A5000<br />24GB    2 GPUs     |     Linux<br />535.183     | 26962 |  1024  | 49930 |  3072  |              NVLink               | 2025.3.20 |
+|      NVIDIA GeForce RTX 3080<br />20GB      | Linux (Docker)<br />560.35 | 13320 |  256   | 24205 |  256   | Unofficial Video Memory Expansion | 2025.3.20 |
+| NVIDIA GeForce RTX 3080<br />20GB    2 GPUs | Linux (Docker)<br />560.35 | 23261 |  1024  | 40250 |  2048  | Unofficial Video Memory Expansion | 2025.3.20 |
 
 
 
 #### Nvidia Turing
 
-|             Device              |      Platform      | FP32 | FP32BS | FP16  | FP16BS |               Note                |
-| :-----------------------------: | :----------------: | :--: | :----: | :---: | :----: | :-------------------------------: |
-| NVIDIA GeForce RTX 2080 Ti 22GB | Linux<br />550.120 | 8754 |  256   | 19007 |  1024  | Unofficial Video Memory Expansion |
+|                Device                |      Platform      | FP32 | FP32BS | FP16  | FP16BS |               Note                | Date      |
+| :----------------------------------: | :----------------: | :--: | :----: | :---: | :----: | :-------------------------------: | --------- |
+| NVIDIA GeForce RTX 2080 Ti<br />22GB | Linux<br />550.120 | 8754 |  256   | 19007 |  1024  | Unofficial Video Memory Expansion | 2025.3.20 |
 
 
 
 #### Nvidia Volta
 
-|        Device         |          Platform          | FP32  | FP32BS | FP16  | FP16BS | Note |
-| :-------------------: | :------------------------: | :---: | :----: | :---: | :----: | :--: |
-| Tesla V100S-PCIE 32GB | Linux (Docker)<br />550.90 | 11577 |  256   | 27963 |  256   |  /   |
+|           Device           |          Platform          | FP32  | FP32BS | FP16  | FP16BS | Note | Date      |
+| :------------------------: | :------------------------: | :---: | :----: | :---: | :----: | :--: | --------- |
+| Tesla V100S-PCIE<br />32GB | Linux (Docker)<br />550.90 | 11577 |  256   | 27963 |  256   |  /   | 2025.3.20 |
 
 
 
 #### Nvidia Pascal
 
-|            Device            |          Platform           | FP32 | FP32BS | FP16 | FP16BS |                     Note                     |
-| :--------------------------: | :-------------------------: | :--: | :----: | :--: | :----: | :------------------------------------------: |
-| NVIDIA TITAN X (Pascal) 12GB |     Windows<br />566.14     | 5792 |  256   | 7230 |  256   | FP16 Not Officially Supported By Pascal Arch |
-|     NVIDIA TITAN Xp 12GB     | Linux (Docker)<br />550.120 | 6792 |  256   | 7641 |  256   | FP16 Not Officially Supported By Pascal Arch |
+|              Device               |          Platform           | FP32 | FP32BS | FP16 | FP16BS |                     Note                     | Date      |
+| :-------------------------------: | :-------------------------: | :--: | :----: | :--: | :----: | :------------------------------------------: | --------- |
+| NVIDIA TITAN X (Pascal)<br />12GB |     Windows<br />566.14     | 5792 |  256   | 7230 |  256   | FP16 Not Officially Supported By Pascal Arch | 2025.3.20 |
+|     NVIDIA TITAN Xp<br />12GB     | Linux (Docker)<br />550.120 | 6792 |  256   | 7641 |  256   | FP16 Not Officially Supported By Pascal Arch | 2025.3.26 |
 
 
 
 #### Nvidia Maxwell
 
-| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note |
-| :----: | :------: | :--: | :----: | :--: | :----: | :--: |
-|        |          |      |        |      |        |      |
+| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note | Date |
+| :----: | :------: | :--: | :----: | :--: | :----: | :--: | ---- |
+|        |          |      |        |      |        |      |      |
 
 
 
 #### Nvidia Kepler
 
-| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note |
-| :----: | :------: | :--: | :----: | :--: | :----: | :--: |
-|        |          |      |        |      |        |      |
+| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note | Date |
+| :----: | :------: | :--: | :----: | :--: | :----: | :--: | ---- |
+|        |          |      |        |      |        |      |      |
 
 
 
 #### Intel
 
-|               Device                |      Platform      | FP32 | FP32BS | FP16 | FP16BS |        Note         |
-| :---------------------------------: | :----------------: | :--: | :----: | :--: | :----: | :-----------------: |
-| Intel(R) Arc(TM) A770 Graphics 16GB | Linux<br />i915 xe | 5121 |  256   | 8049 |  256   | GradScaler Not Work |
+|                  Device                  |      Platform      | FP32 | FP32BS | FP16 | FP16BS |        Note         | Date      |
+| :--------------------------------------: | :----------------: | :--: | :----: | :--: | :----: | :-----------------: | --------- |
+| Intel(R) Arc(TM) A770 Graphics<br />16GB | Linux<br />i915 xe | 5121 |  256   | 8049 |  256   | GradScaler Not Work | 2025.3.20 |
