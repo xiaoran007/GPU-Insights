@@ -70,6 +70,7 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 |                   Device                    |          Platform          | FP32  | FP32BS | FP16  | FP16BS |               Note                | Date      |
 | :-----------------------------------------: | :------------------------: | :---: | :----: | :---: | :----: | :-------------------------------: | --------- |
+|         NVIDIA A100-PCIE<br />40GB          |     Linux<br />550.90      | 27478 |  256   | 43802 |  256   |                 /                 | 2025.3.31 |
 |      NVIDIA GeForce RTX 3090<br />24GB      |    Windows<br />566.14     | 16311 |  256   | 28197 |  256   |                 /                 | 2025.3.10 |
 |         NVIDIA RTX A5000<br />24GB          |     Linux<br />535.183     | 15090 |  512   | 27155 |  1024  |                 /                 | 2025.3.20 |
 |    NVIDIA RTX A5000<br />24GB    2 GPUs     |     Linux<br />535.183     | 26962 |  1024  | 49930 |  3072  |              NVLink               | 2025.3.20 |
