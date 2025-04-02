@@ -84,6 +84,7 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 |                Device                |      Platform      | FP32 | FP32BS | FP16  | FP16BS |               Note                | Date      |
 | :----------------------------------: | :----------------: | :--: | :----: | :---: | :----: | :-------------------------------: | --------- |
 | NVIDIA GeForce RTX 2080 Ti<br />22GB | Linux<br />550.120 | 8754 |  256   | 19007 |  1024  | Unofficial Video Memory Expansion | 2025.3.20 |
+| NVIDIA GeForce RTX 2080 Ti<br />11GB | Linux<br />550.120 | 8681 |  256   | 19475 |  256   |                 /                 | 2025.4.02 |
 
 
 
