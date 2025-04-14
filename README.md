@@ -30,6 +30,14 @@ Note: In general, Multi-GPU test case using batch size 2048 `-bs 2048` for FP16 
 
 Most of the results are obtained by adjusting the batch size to get the maximum video memory usage.
 
+#### AMD
+
+|             Device             |    Platform     | FP32 | FP32BS | FP16 | FP16BS |    Note    | **Date**  |
+| :----------------------------: | :-------------: | :--: | :----: | :--: | :----: | :--------: | --------- |
+| Radeon Instinct MI50<br />32GB | Linux<br />5.15 | 2017 |  256   | 2951 |  256   | ROCm 6.2.4 | 2025.4.14 |
+
+
+
 #### Huawei
 
 |   Device    |         Platform         | FP32  | FP32BS | FP16  | FP16BS |              Note               | **Date**  |
