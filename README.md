@@ -55,6 +55,14 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 
 
+#### Nvidia Blackwell
+
+|              Device               |          Platform           | FP32  | FP32BS | FP16  | FP16BS |      Note       | Date      |
+| :-------------------------------: | :-------------------------: | :---: | :----: | :---: | :----: | :-------------: | --------- |
+| NVIDIA GeForce RTX 5090<br />32GB | Linux (Docker)<br />570.124 | 37232 |  512   | 63230 |  512   | Preview PyTorch | 2025.4.19 |
+
+
+
 #### Nvidia Hopper
 
 |        Device        |          Platform          | FP32  | FP32BS | FP16  | FP16BS | Note | Date      |
