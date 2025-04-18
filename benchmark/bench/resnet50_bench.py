@@ -122,7 +122,7 @@ class ResNet50Bench(object):
                 optimizer.zero_grad()
 
                 pbar.update(1)
-                pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.item():.4f}")
+                pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.detach().item():.4f}")
 
             pbar.close()
         end_time = time.time()
