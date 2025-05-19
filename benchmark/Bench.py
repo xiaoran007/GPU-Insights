@@ -6,8 +6,9 @@ from macos_hw_detector import get_gpu_info
 
 
 class Bench(object):
-    def __init__(self, method="cnn", auto=True, huawei=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0]):
+    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0]):
         self.huawei = huawei
+        self.mthreads = mthreads
         torch.backends.cudnn.benchmark = cudnn_benchmark
         self.gpu_device = self._get_gpu_device(gpu_ids)
         self.cpu_device = self._get_cpu_device()
@@ -25,6 +26,14 @@ class Bench(object):
                 devices.append(torch.device("npu"))
             else:
                 print("NPU is not available.")
+                devices.append(None)
+        elif self.mthreads:
+            import torch_musa
+            if torch.musa.is_available():
+                print(f"Found MUSA device: {torch.musa.get_device_name()}")
+                devices.append(torch.device("musa"))
+            else:
+                print("MUSA is not available.")
                 devices.append(None)
         else:
             if torch.cuda.is_available():
@@ -87,6 +96,8 @@ class Bench(object):
                 use_bf16 = False
             return ResNet50Bench(gpu_device=self.gpu_device, cpu_device=self.cpu_device, data_size=data_size,
                                  batch_size=batch_size, epochs=epochs, use_fp16=use_fp16, use_bf16=use_bf16)
+        else:
+            raise NotImplementedError
 
 
 
