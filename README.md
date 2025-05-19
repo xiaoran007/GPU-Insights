@@ -30,6 +30,14 @@ Note: In general, Multi-GPU test case using batch size 2048 `-bs 2048` for FP16 
 
 Most of the results are obtained by adjusting the batch size to get the maximum video memory usage.
 
+#### Mthreads
+
+|          Device          |    Platform     | FP32 | FP32BS | FP16 | FP16BS |    Note    | **Date**  |
+| :----------------------: | :-------------: | :--: | :----: | :--: | :----: | :--------: | --------- |
+| Mthreads S4000<br />48GB | Linux<br />5.15 | 9078 |  256   |  /   |  256   | MUSA 3.1.0 | 2025.5.19 |
+
+
+
 #### AMD
 
 |             Device             |    Platform     | FP32 | FP32BS | FP16 | FP16BS |    Note    | **Date**  |

@@ -7,7 +7,8 @@ def main():
 
     parser.add_argument("-m", "--manual", action="store_true", default=False,
                         help="Enable manual benchmark.")
-    parser.add_argument("-H", "--huawei", action="store_true", default=False, help="Enable Huawei benchmark.")
+    parser.add_argument("-H", "--huawei", action="store_true", default=False, help="Enable Huawei NPU benchmark.")
+    parser.add_argument("-M", "--mthreads", action="store_true", default=False, help="Enable mthreads GPU benchmark.")
     parser.add_argument("-a", "--auto", action="store_true", default=False,
                         help="Enable auto benchmark.")
     parser.add_argument("-s", "--size", type=int, required=False, default=1024,
@@ -48,7 +49,7 @@ def main():
         # b = Bench(auto=True)
         # b.start()
     elif args.manual:
-        b = Bench(auto=False, huawei=args.huawei, size=args.size, epochs=args.epochs, method=model, batch_size=args.batch,
+        b = Bench(auto=False, huawei=args.huawei, mthreads=args.mthreads, size=args.size, epochs=args.epochs, method=model, batch_size=args.batch,
                   cudnn_benchmark=args.cudnn_benchmark, data_type=data_type, gpu_ids=gpu_ids)
         b.start()
 
