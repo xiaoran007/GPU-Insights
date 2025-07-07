@@ -127,7 +127,7 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 | NVIDIA TITAN X (Pascal)<br />12GB |     Windows<br />566.14     | 5792 |  256   | 7230 |  256   | FP16 Not Officially Supported By Pascal Arch | 2025.3.20 |
 |     NVIDIA TITAN Xp<br />12GB     | Linux (Docker)<br />550.120 | 6792 |  256   | 7641 |  256   | FP16 Not Officially Supported By Pascal Arch | 2025.3.26 |
 |     NVIDIA P104-100<br />8GB      |     Windows<br />536.23     | 4114 |  256   | 4766 |  256   |               PCIE 3.0 x4 180W               | 2025.4.05 |
-|     NVIDIA P104-100<br />8GB      |     Windows<br />576.88     | 3745 |  256   | 4278 |  256   |               PCIE 3.0 x4 120W               | 2025.4.05 |
+|     NVIDIA P104-100<br />8GB      |     Windows<br />576.88     | 3745 |  256   | 4278 |  256   |               PCIE 3.0 x4 120W               | 2025.7.07 |
 
 
 
@@ -135,7 +135,7 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 | Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note | Date |
 | :----: | :------: | :--: | :----: | :--: | :----: | :--: | ---- |
-|        |          |      |        |      |        |      |      |
+|   /    |    /     |  /   |   /    |  /   |   /    |  /   | /    |
 
 
 
@@ -143,7 +143,7 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 | Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note | Date |
 | :----: | :------: | :--: | :----: | :--: | :----: | :--: | ---- |
-|        |          |      |        |      |        |      |      |
+|   /    |    /     |  /   |   /    |  /   |   /    |  /   | /    |
 
 
 
