@@ -65,9 +65,10 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 #### Nvidia Blackwell
 
-|              Device               |          Platform           | FP32  | FP32BS | FP16  | FP16BS |      Note       | Date      |
-| :-------------------------------: | :-------------------------: | :---: | :----: | :---: | :----: | :-------------: | --------- |
-| NVIDIA GeForce RTX 5090<br />32GB | Linux (Docker)<br />570.124 | 37232 |  512   | 63230 |  512   | Preview PyTorch | 2025.4.19 |
+|                           Device                            |          Platform           | FP32  | FP32BS | FP16  | FP16BS |      Note       | Date      |
+| :---------------------------------------------------------: | :-------------------------: | :---: | :----: | :---: | :----: | :-------------: | --------- |
+|              NVIDIA GeForce RTX 5090<br />32GB              | Linux (Docker)<br />570.124 | 37232 |  512   | 63230 |  512   | Preview PyTorch | 2025.4.19 |
+| NVIDIA RTX PRO 6000 Blackwell Workstation Edition<br />96GB | Linux (Docker)<br />570.124 | 43201 |  256   | 78837 |  256   | Preview PyTorch | 2025.7.28 |
 
 
 
