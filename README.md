@@ -85,6 +85,7 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 |              Device               |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |               Note                | Date      |
 | :-------------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :-------------------------------: | --------- |
 | NVIDIA GeForce RTX 4090<br />24GB |     Linux<br />560.35      | 24046 |  512   | 43733  |  1024  |                 /                 | 2025.3.20 |
+|       NVIDIA vGPU<br />48GB       | Linux (Docker)<br />575.64 | 24300 |  256   | 48337  |  256   |    Two NVIDIA GeForce RTX 4090    | 2025.9.04 |
 |       NVIDIA vGPU<br />32GB       | Linux (Docker)<br />560.35 | 17308 |  1024  | 33238  |  256   | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.27 |
 |  NVIDIA vGPU<br />32GB    2 GPUs  | Linux (Docker)<br />560.35 | 30275 |  2048  | 52756  |  4096  | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.20 |
 |  NVIDIA vGPU<br />32GB    4 GPUs  | Linux (Docker)<br />560.35 | 56178 |  4096  | 101268 |  8192  | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.20 |
