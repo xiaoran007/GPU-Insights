@@ -40,7 +40,7 @@
       "vendor": "huawei",
       "architecture": "Ascend910B2",
       "device": "Ascend910B2",
-      "memory": "",
+      "memory": "64GB",
       "platform": "Linux (Docker) 5.15",
       "fp32": 18283,
       "fp32bs": 1024,
@@ -163,7 +163,7 @@
       "fp32bs": 2048,
       "fp16": 52756,
       "fp16bs": 4096,
-      "note": "Two NVIDIA GeForce RTX 4080 SUPER",
+      "note": "2 * Two NVIDIA GeForce RTX 4080 SUPER",
       "date": "2025.3.20"
     },
     {
@@ -176,7 +176,7 @@
       "fp32bs": 4096,
       "fp16": 101268,
       "fp16bs": 8192,
-      "note": "Two NVIDIA GeForce RTX 4080 SUPER",
+      "note": "4 * Two NVIDIA GeForce RTX 4080 SUPER",
       "date": "2025.3.20"
     },
     {
