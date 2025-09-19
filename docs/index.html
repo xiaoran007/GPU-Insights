@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Insights - Performance Benchmarks</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8fafc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+            margin-bottom: 40px;
+            border-radius: 10px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .benchmark-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        select, input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .vendor-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: #f0f0f0;
+            color: #666;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-button:hover {
+            background: #e0e0e0;
+        }
+        
+        .tab-button.active:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .device-name {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .score-fp32 {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .score-fp16 {
+            color: #007bff;
+            font-weight: 600;
+        }
+        
+        .batch-size {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .note {
+            font-style: italic;
+            color: #6c757d;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .vendor-section {
+            display: none;
+        }
+        
+        .vendor-section.active {
+            display: block;
+        }
+        
+        .search-bar {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .chart-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .chart-section h2 {
+            margin-bottom: 20px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .chart-tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: #f0f0f0;
+            color: #666;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .chart-tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chart-tab-button:hover {
+            background: #e0e0e0;
+        }
+
+        .chart-tab-button.active:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .chart-container {
+            height: 400px;
+            position: relative;
+        }
+
+        .chart-container canvas {
+            max-height: 400px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .vendor-tabs {
+                flex-direction: column;
+            }
+            
+            .tab-button {
+                border-radius: 5px;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>GPU Insights</h1>
+            <p>Comprehensive GPU Performance Benchmarks</p>
+        </div>
+        
+        <div class="info-card">
+            <h2>About This Benchmark</h2>
+            <p>This performance test evaluates GPU hardware performance in a training scenario using ResNet50. The output score reflects the time to complete a given training task - <strong>higher scores indicate better computational performance</strong>.</p>
+            
+            <div class="benchmark-info">
+                <h3>Test Configuration</h3>
+                <ul>
+                    <li><strong>Model:</strong> ResNet50 (23.5M parameters)</li>
+                    <li><strong>Default Command:</strong> <code>python main.py -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32/FP16 -gpu 0</code></li>
+                    <li><strong>Score Impact:</strong> Affected by video memory bandwidth and PCIe bus bandwidth</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDevices">0</div>
+                <div class="stat-label">Total Devices Tested</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="topFP32">0</div>
+                <div class="stat-label">Top FP32 Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="topFP16">0</div>
+                <div class="stat-label">Top FP16 Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="vendorCount">0</div>
+                <div class="stat-label">GPU Vendors</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h2>Performance Visualization</h2>
+            <div class="chart-tabs">
+                <button class="chart-tab-button active" data-chart="performance">Top Performance</button>
+                <button class="chart-tab-button" data-chart="vendor">Vendor Analysis</button>
+                <button class="chart-tab-button" data-chart="architecture">Architecture Comparison</button>
+                <button class="chart-tab-button" data-chart="scatter">FP32 vs FP16</button>
+            </div>
+            
+            <div id="performanceChart" class="chart-container">
+                <canvas id="performanceCanvas"></canvas>
+            </div>
+            
+            <div id="vendorChart" class="chart-container" style="display: none;">
+                <canvas id="vendorCanvas"></canvas>
+            </div>
+            
+            <div id="architectureChart" class="chart-container" style="display: none;">
+                <canvas id="architectureCanvas"></canvas>
+            </div>
+            
+            <div id="scatterChart" class="chart-container" style="display: none;">
+                <canvas id="scatterCanvas"></canvas>
+            </div>
+        </div>
+        
+        <input type="text" id="searchBar" class="search-bar" placeholder="Search devices, platforms, or notes...">
+        
+        <div class="vendor-tabs">
+            <button class="tab-button active" data-vendor="all">All Vendors</button>
+            <button class="tab-button" data-vendor="nvidia">NVIDIA</button>
+            <button class="tab-button" data-vendor="amd">AMD</button>
+            <button class="tab-button" data-vendor="apple">Apple</button>
+            <button class="tab-button" data-vendor="intel">Intel</button>
+            <button class="tab-button" data-vendor="huawei">Huawei</button>
+            <button class="tab-button" data-vendor="mthreads">Mthreads</button>
+        </div>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="architectureFilter">Architecture</label>
+                <select id="architectureFilter">
+                    <option value="">All Architectures</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="platformFilter">Platform</label>
+                <select id="platformFilter">
+                    <option value="">All Platforms</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sortBy">Sort By</label>
+                <select id="sortBy">
+                    <option value="fp32-desc">FP32 Score (High to Low)</option>
+                    <option value="fp32-asc">FP32 Score (Low to High)</option>
+                    <option value="fp16-desc">FP16 Score (High to Low)</option>
+                    <option value="fp16-asc">FP16 Score (Low to High)</option>
+                    <option value="device">Device Name</option>
+                    <option value="date">Test Date</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table id="benchmarkTable">
+                <thead>
+                    <tr>
+                        <th>Device</th>
+                        <th>Platform</th>
+                        <th>FP32 Score</th>
+                        <th>FP32 Batch Size</th>
+                        <th>FP16 Score</th>
+                        <th>FP16 Batch Size</th>
+                        <th>Notes</th>
+                        <th>Test Date</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <div id="noResults" class="no-results" style="display: none;">
+                No devices found matching your criteria.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GPU benchmark data
+        const benchmarkData = [
+            // Mthreads
+            { vendor: 'mthreads', architecture: 'S4000', device: 'Mthreads S4000', memory: '48GB', platform: 'Linux 5.15', fp32: 9078, fp32bs: 256, fp16: null, fp16bs: 256, note: 'MUSA 3.1.0', date: '2025.5.19' },
+            
+            // AMD
+            { vendor: 'amd', architecture: 'MI50', device: 'Radeon Instinct MI50', memory: '32GB', platform: 'Linux 5.15', fp32: 2017, fp32bs: 256, fp16: 2951, fp16bs: 256, note: 'ROCm 6.2.4', date: '2025.4.14' },
+            
+            // Huawei
+            { vendor: 'huawei', architecture: 'Ascend910B2', device: 'Ascend910B2', memory: '', platform: 'Linux (Docker) 5.15', fp32: 18283, fp32bs: 1024, fp16: 55517, fp16bs: 1024, note: 'FP16 GradScaler seems overflow.', date: '2025.3.20' },
+            
+            // Apple
+            { vendor: 'apple', architecture: 'M4', device: 'Apple M4 GPU', memory: '', platform: 'macOS 15.3.1', fp32: 1723, fp32bs: 128, fp16: 1591, fp16bs: 128, note: '10 Cores', date: '2025.3.20' },
+            { vendor: 'apple', architecture: 'M1', device: 'Apple M1 GPU', memory: '', platform: 'macOS 15.3.1', fp32: 948, fp32bs: 128, fp16: 843, fp16bs: 128, note: '8 Cores', date: '2025.3.20' },
+            
+            // NVIDIA Blackwell
+            { vendor: 'nvidia', architecture: 'Blackwell', device: 'NVIDIA GeForce RTX 5090', memory: '32GB', platform: 'Linux (Docker) 570.124', fp32: 37232, fp32bs: 512, fp16: 63230, fp16bs: 512, note: 'Preview PyTorch', date: '2025.4.19' },
+            { vendor: 'nvidia', architecture: 'Blackwell', device: 'NVIDIA RTX PRO 6000 Blackwell Workstation Edition', memory: '96GB', platform: 'Linux (Docker) 570.124', fp32: 43201, fp32bs: 256, fp16: 78837, fp16bs: 256, note: 'Preview PyTorch', date: '2025.7.28' },
+            
+            // NVIDIA Hopper
+            { vendor: 'nvidia', architecture: 'Hopper', device: 'NVIDIA H20', memory: '96GB', platform: 'Linux (Docker) 565.57', fp32: 37360, fp32bs: 256, fp16: 55222, fp16bs: 256, note: '', date: '2025.3.27' },
+            
+            // NVIDIA Ada
+            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA GeForce RTX 4090', memory: '24GB', platform: 'Linux 560.35', fp32: 24046, fp32bs: 512, fp16: 43733, fp16bs: 1024, note: '', date: '2025.3.20' },
+            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4090)', memory: '48GB', platform: 'Linux (Docker) 575.64', fp32: 24300, fp32bs: 256, fp16: 48337, fp16bs: 256, note: 'Two NVIDIA GeForce RTX 4090', date: '2025.9.04' },
+            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4080 SUPER)', memory: '32GB', platform: 'Linux (Docker) 560.35', fp32: 17308, fp32bs: 1024, fp16: 33238, fp16bs: 256, note: 'Two NVIDIA GeForce RTX 4080 SUPER', date: '2025.3.27' },
+            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4080 SUPER) - 2 GPUs', memory: '32GB', platform: 'Linux (Docker) 560.35', fp32: 30275, fp32bs: 2048, fp16: 52756, fp16bs: 4096, note: 'Two NVIDIA GeForce RTX 4080 SUPER', date: '2025.3.20' },
+            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4080 SUPER) - 4 GPUs', memory: '32GB', platform: 'Linux (Docker) 560.35', fp32: 56178, fp32bs: 4096, fp16: 101268, fp16bs: 8192, note: 'Two NVIDIA GeForce RTX 4080 SUPER', date: '2025.3.20' },
+            
+            // NVIDIA Ampere
+            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA A100-PCIE', memory: '40GB', platform: 'Linux 550.90', fp32: 27478, fp32bs: 256, fp16: 43802, fp16bs: 256, note: '', date: '2025.3.31' },
+            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA GeForce RTX 3090', memory: '24GB', platform: 'Windows 566.14', fp32: 16311, fp32bs: 256, fp16: 28197, fp16bs: 256, note: '', date: '2025.3.10' },
+            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA RTX A5000', memory: '24GB', platform: 'Linux 535.183', fp32: 15090, fp32bs: 512, fp16: 27155, fp16bs: 1024, note: '', date: '2025.3.20' },
+            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA RTX A5000 - 2 GPUs', memory: '24GB', platform: 'Linux 535.183', fp32: 26962, fp32bs: 1024, fp16: 49930, fp16bs: 3072, note: 'NVLink', date: '2025.3.20' },
+            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA GeForce RTX 3080', memory: '20GB', platform: 'Linux (Docker) 560.35', fp32: 13320, fp32bs: 256, fp16: 24205, fp16bs: 256, note: 'Unofficial Video Memory Expansion', date: '2025.3.20' },
+            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA GeForce RTX 3080 - 2 GPUs', memory: '20GB', platform: 'Linux (Docker) 560.35', fp32: 23261, fp32bs: 1024, fp16: 40250, fp16bs: 2048, note: 'Unofficial Video Memory Expansion', date: '2025.3.20' },
+            
+            // NVIDIA Turing
+            { vendor: 'nvidia', architecture: 'Turing', device: 'NVIDIA GeForce RTX 2080 Ti', memory: '22GB', platform: 'Linux 550.120', fp32: 8754, fp32bs: 256, fp16: 19007, fp16bs: 1024, note: 'Unofficial Video Memory Expansion', date: '2025.3.20' },
+            { vendor: 'nvidia', architecture: 'Turing', device: 'NVIDIA GeForce RTX 2080 Ti', memory: '11GB', platform: 'Linux 550.120', fp32: 8681, fp32bs: 256, fp16: 19475, fp16bs: 256, note: '', date: '2025.4.02' },
+            
+            // NVIDIA Volta
+            { vendor: 'nvidia', architecture: 'Volta', device: 'Tesla V100S-PCIE', memory: '32GB', platform: 'Linux (Docker) 550.90', fp32: 11577, fp32bs: 256, fp16: 27963, fp16bs: 256, note: '', date: '2025.3.20' },
+            
+            // NVIDIA Pascal
+            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA TITAN X (Pascal)', memory: '12GB', platform: 'Windows 566.14', fp32: 5792, fp32bs: 256, fp16: 7230, fp16bs: 256, note: 'FP16 Not Officially Supported By Pascal Arch', date: '2025.3.20' },
+            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA TITAN Xp', memory: '12GB', platform: 'Linux (Docker) 550.120', fp32: 6792, fp32bs: 256, fp16: 7641, fp16bs: 256, note: 'FP16 Not Officially Supported By Pascal Arch', date: '2025.3.26' },
+            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA P104-100 (180W)', memory: '8GB', platform: 'Windows 536.23', fp32: 4114, fp32bs: 256, fp16: 4766, fp16bs: 256, note: 'PCIE 3.0 x4 180W', date: '2025.4.05' },
+            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA P104-100 (120W)', memory: '8GB', platform: 'Windows 576.88', fp32: 3745, fp32bs: 256, fp16: 4278, fp16bs: 256, note: 'PCIE 3.0 x4 120W', date: '2025.7.07' },
+            
+            // Intel
+            { vendor: 'intel', architecture: 'Arc', device: 'Intel Arc A770 Graphics', memory: '16GB', platform: 'Linux i915 xe', fp32: 5121, fp32bs: 256, fp16: 8049, fp16bs: 256, note: 'GradScaler Not Work', date: '2025.3.20' }
+        ];
+
+        let filteredData = [...benchmarkData];
+        let currentVendor = 'all';
+        let charts = {};
+
+        function initializeFilters() {
+            const architectures = [...new Set(benchmarkData.map(item => item.architecture))].sort();
+            const platforms = [...new Set(benchmarkData.map(item => item.platform))].sort();
+            
+            const archFilter = document.getElementById('architectureFilter');
+            const platformFilter = document.getElementById('platformFilter');
+            
+            architectures.forEach(arch => {
+                const option = document.createElement('option');
+                option.value = arch;
+                option.textContent = arch;
+                archFilter.appendChild(option);
+            });
+            
+            platforms.forEach(platform => {
+                const option = document.createElement('option');
+                option.value = platform;
+                option.textContent = platform;
+                platformFilter.appendChild(option);
+            });
+        }
+
+        function updateStats() {
+            const totalDevices = filteredData.length;
+            const fp32Scores = filteredData.filter(item => item.fp32).map(item => item.fp32);
+            const fp16Scores = filteredData.filter(item => item.fp16).map(item => item.fp16);
+            const vendors = [...new Set(benchmarkData.map(item => item.vendor))].length;
+            
+            document.getElementById('totalDevices').textContent = totalDevices;
+            document.getElementById('topFP32').textContent = fp32Scores.length > 0 ? Math.max(...fp32Scores).toLocaleString() : '0';
+            document.getElementById('topFP16').textContent = fp16Scores.length > 0 ? Math.max(...fp16Scores).toLocaleString() : '0';
+            document.getElementById('vendorCount').textContent = vendors;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const noResults = document.getElementById('noResults');
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            
+            tbody.innerHTML = filteredData.map(item => `
+                <tr>
+                    <td class="device-name">${item.device}${item.memory ? `<br><small>${item.memory}</small>` : ''}</td>
+                    <td>${item.platform}</td>
+                    <td class="score-fp32">${item.fp32 ? item.fp32.toLocaleString() : 'N/A'}</td>
+                    <td><span class="batch-size">${item.fp32bs || 'N/A'}</span></td>
+                    <td class="score-fp16">${item.fp16 ? item.fp16.toLocaleString() : 'N/A'}</td>
+                    <td><span class="batch-size">${item.fp16bs || 'N/A'}</span></td>
+                    <td class="note">${item.note || 'N/A'}</td>
+                    <td>${item.date}</td>
+                </tr>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+            const architectureFilter = document.getElementById('architectureFilter').value;
+            const platformFilter = document.getElementById('platformFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+            
+            filteredData = benchmarkData.filter(item => {
+                const matchesVendor = currentVendor === 'all' || item.vendor === currentVendor;
+                const matchesSearch = !searchTerm || 
+                    item.device.toLowerCase().includes(searchTerm) ||
+                    item.platform.toLowerCase().includes(searchTerm) ||
+                    item.note.toLowerCase().includes(searchTerm) ||
+                    item.architecture.toLowerCase().includes(searchTerm);
+                const matchesArchitecture = !architectureFilter || item.architecture === architectureFilter;
+                const matchesPlatform = !platformFilter || item.platform === platformFilter;
+                
+                return matchesVendor && matchesSearch && matchesArchitecture && matchesPlatform;
+            });
+            
+            // Sort data
+            switch (sortBy) {
+                case 'fp32-desc':
+                    filteredData.sort((a, b) => (b.fp32 || 0) - (a.fp32 || 0));
+                    break;
+                case 'fp32-asc':
+                    filteredData.sort((a, b) => (a.fp32 || 0) - (b.fp32 || 0));
+                    break;
+                case 'fp16-desc':
+                    filteredData.sort((a, b) => (b.fp16 || 0) - (a.fp16 || 0));
+                    break;
+                case 'fp16-asc':
+                    filteredData.sort((a, b) => (a.fp16 || 0) - (b.fp16 || 0));
+                    break;
+                case 'device':
+                    filteredData.sort((a, b) => a.device.localeCompare(b.device));
+                    break;
+                case 'date':
+                    filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    break;
+            }
+            
+            renderTable();
+            updateStats();
+            updateCharts();
+        }
+
+        function createPerformanceChart() {
+            const ctx = document.getElementById('performanceCanvas').getContext('2d');
+            
+            // Get top 15 devices by FP32 performance
+            const topDevices = [...benchmarkData]
+                .filter(item => item.fp32)
+                .sort((a, b) => b.fp32 - a.fp32)
+                .slice(0, 15);
+
+            const deviceNames = topDevices.map(item => item.device.split(' ').slice(0, 3).join(' '));
+            const fp32Scores = topDevices.map(item => item.fp32);
+            const fp16Scores = topDevices.map(item => item.fp16 || 0);
+
+            if (charts.performance) {
+                charts.performance.destroy();
+            }
+
+            charts.performance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: deviceNames,
+                    datasets: [{
+                        label: 'FP32 Score',
+                        data: fp32Scores,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'FP16 Score',
+                        data: fp16Scores,
+                        backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Top 15 GPU Performance Comparison'
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Performance Score'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createVendorChart() {
+            const ctx = document.getElementById('vendorCanvas').getContext('2d');
+            
+            const vendorStats = {};
+            benchmarkData.forEach(item => {
+                if (!vendorStats[item.vendor]) {
+                    vendorStats[item.vendor] = { 
+                        count: 0, 
+                        avgFP32: 0, 
+                        avgFP16: 0, 
+                        maxFP32: 0,
+                        maxFP16: 0,
+                        totalFP32: 0, 
+                        totalFP16: 0, 
+                        fp32Count: 0, 
+                        fp16Count: 0 
+                    };
+                }
+                vendorStats[item.vendor].count++;
+                if (item.fp32) {
+                    vendorStats[item.vendor].totalFP32 += item.fp32;
+                    vendorStats[item.vendor].fp32Count++;
+                    vendorStats[item.vendor].maxFP32 = Math.max(vendorStats[item.vendor].maxFP32, item.fp32);
+                }
+                if (item.fp16) {
+                    vendorStats[item.vendor].totalFP16 += item.fp16;
+                    vendorStats[item.vendor].fp16Count++;
+                    vendorStats[item.vendor].maxFP16 = Math.max(vendorStats[item.vendor].maxFP16, item.fp16);
+                }
+            });
+
+            Object.keys(vendorStats).forEach(vendor => {
+                const stats = vendorStats[vendor];
+                stats.avgFP32 = stats.fp32Count > 0 ? stats.totalFP32 / stats.fp32Count : 0;
+                stats.avgFP16 = stats.fp16Count > 0 ? stats.totalFP16 / stats.fp16Count : 0;
+            });
+
+            const vendors = Object.keys(vendorStats).map(v => v.charAt(0).toUpperCase() + v.slice(1));
+            const avgFP32 = Object.values(vendorStats).map(s => Math.round(s.avgFP32));
+            const avgFP16 = Object.values(vendorStats).map(s => Math.round(s.avgFP16));
+            const maxFP32 = Object.values(vendorStats).map(s => s.maxFP32);
+            const maxFP16 = Object.values(vendorStats).map(s => s.maxFP16);
+
+            if (charts.vendor) {
+                charts.vendor.destroy();
+            }
+
+            charts.vendor = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: vendors,
+                    datasets: [{
+                        label: 'Average FP32',
+                        data: avgFP32,
+                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Average FP16',
+                        data: avgFP16,
+                        backgroundColor: 'rgba(118, 75, 162, 0.6)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Peak FP32',
+                        data: maxFP32,
+                        backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Peak FP16',
+                        data: maxFP16,
+                        backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'GPU Vendor Performance Analysis (Average vs Peak)'
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'GPU Vendors'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Performance Score'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createArchitectureChart() {
+            const ctx = document.getElementById('architectureCanvas').getContext('2d');
+            
+            const archStats = {};
+            benchmarkData.forEach(item => {
+                if (!archStats[item.architecture]) {
+                    archStats[item.architecture] = { 
+                        devices: [], 
+                        maxFP32: 0, 
+                        maxFP16: 0, 
+                        avgFP32: 0, 
+                        avgFP16: 0,
+                        totalFP32: 0,
+                        totalFP16: 0,
+                        fp32Count: 0,
+                        fp16Count: 0,
+                        deviceCount: 0
+                    };
+                }
+                archStats[item.architecture].devices.push(item);
+                archStats[item.architecture].deviceCount++;
+                
+                if (item.fp32) {
+                    archStats[item.architecture].maxFP32 = Math.max(archStats[item.architecture].maxFP32, item.fp32);
+                    archStats[item.architecture].totalFP32 += item.fp32;
+                    archStats[item.architecture].fp32Count++;
+                }
+                if (item.fp16) {
+                    archStats[item.architecture].maxFP16 = Math.max(archStats[item.architecture].maxFP16, item.fp16);
+                    archStats[item.architecture].totalFP16 += item.fp16;
+                    archStats[item.architecture].fp16Count++;
+                }
+            });
+
+            // Calculate averages
+            Object.keys(archStats).forEach(arch => {
+                const stats = archStats[arch];
+                stats.avgFP32 = stats.fp32Count > 0 ? stats.totalFP32 / stats.fp32Count : 0;
+                stats.avgFP16 = stats.fp16Count > 0 ? stats.totalFP16 / stats.fp16Count : 0;
+            });
+
+            // Sort by max FP32 performance
+            const sortedArchs = Object.entries(archStats)
+                .sort(([,a], [,b]) => b.maxFP32 - a.maxFP32)
+                .slice(0, 10); // Top 10 architectures
+
+            const architectures = sortedArchs.map(([arch]) => arch);
+            const maxFP32 = sortedArchs.map(([,stats]) => stats.maxFP32);
+            const maxFP16 = sortedArchs.map(([,stats]) => stats.maxFP16);
+            const avgFP32 = sortedArchs.map(([,stats]) => Math.round(stats.avgFP32));
+            const deviceCounts = sortedArchs.map(([,stats]) => stats.deviceCount);
+
+            if (charts.architecture) {
+                charts.architecture.destroy();
+            }
+
+            charts.architecture = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: architectures,
+                    datasets: [{
+                        label: 'Peak FP32',
+                        data: maxFP32,
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Peak FP16',
+                        data: maxFP16,
+                        backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Avg FP32',
+                        data: avgFP32,
+                        backgroundColor: 'rgba(40, 167, 69, 0.5)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'GPU Architecture Performance Comparison (Top 10)'
+                        },
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                footer: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
+                                    return `Devices tested: ${deviceCounts[index]}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'GPU Architecture'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Performance Score'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createScatterChart() {
+            const ctx = document.getElementById('scatterCanvas').getContext('2d');
+            
+            // Filter data that has both FP32 and FP16 scores
+            const scatterData = benchmarkData.filter(item => item.fp32 && item.fp16);
+            
+            // Group by vendor for different colors
+            const vendorColors = {
+                'nvidia': 'rgba(76, 175, 80, 0.7)',
+                'amd': 'rgba(244, 67, 54, 0.7)',
+                'intel': 'rgba(33, 150, 243, 0.7)',
+                'apple': 'rgba(156, 39, 176, 0.7)',
+                'huawei': 'rgba(255, 152, 0, 0.7)',
+                'mthreads': 'rgba(121, 85, 72, 0.7)'
+            };
+
+            const datasets = Object.keys(vendorColors).map(vendor => {
+                const vendorData = scatterData
+                    .filter(item => item.vendor === vendor)
+                    .map(item => ({
+                        x: item.fp32,
+                        y: item.fp16,
+                        device: item.device,
+                        architecture: item.architecture
+                    }));
+
+                return {
+                    label: vendor.charAt(0).toUpperCase() + vendor.slice(1),
+                    data: vendorData,
+                    backgroundColor: vendorColors[vendor],
+                    borderColor: vendorColors[vendor].replace('0.7', '1'),
+                    borderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                };
+            }).filter(dataset => dataset.data.length > 0);
+
+            if (charts.scatter) {
+                charts.scatter.destroy();
+            }
+
+            charts.scatter = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'FP32 vs FP16 Performance Correlation by Vendor'
+                        },
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const point = tooltipItems[0];
+                                    return point.raw.device;
+                                },
+                                label: function(tooltipItem) {
+                                    const point = tooltipItem.raw;
+                                    return [
+                                        `Architecture: ${point.architecture}`,
+                                        `FP32: ${point.x.toLocaleString()}`,
+                                        `FP16: ${point.y.toLocaleString()}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'FP32 Performance Score'
+                            },
+                            beginAtZero: true
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'FP16 Performance Score'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'point'
+                    }
+                }
+            });
+        }
+
+        function updateCharts() {
+            createPerformanceChart();
+            createVendorChart();
+            createArchitectureChart();
+            createScatterChart();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFilters();
+            applyFilters();
+            
+            // Tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentVendor = this.dataset.vendor;
+                    applyFilters();
+                });
+            });
+            
+            // Filters
+            document.getElementById('searchBar').addEventListener('input', applyFilters);
+            document.getElementById('architectureFilter').addEventListener('change', applyFilters);
+            document.getElementById('platformFilter').addEventListener('change', applyFilters);
+            document.getElementById('sortBy').addEventListener('change', applyFilters);
+
+            // Chart tabs
+            document.querySelectorAll('.chart-tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.chart-tab-button').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const chartType = this.dataset.chart;
+                    document.querySelectorAll('.chart-container').forEach(container => {
+                        container.style.display = 'none';
+                    });
+                    document.getElementById(chartType + 'Chart').style.display = 'block';
+                });
+            });
+
+            // Initialize charts
+            updateCharts();
+        });
+    </script>
+</body>
+</html>
