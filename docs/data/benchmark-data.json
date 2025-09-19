@@ -51,9 +51,9 @@
     },
     {
       "vendor": "apple",
-      "architecture": "M4",
+      "architecture": "Apple Silicon 4 Gen",
       "device": "Apple M4 GPU",
-      "memory": "",
+      "memory": "16GB",
       "platform": "macOS 15.3.1",
       "fp32": 1723,
       "fp32bs": 128,
@@ -64,9 +64,9 @@
     },
     {
       "vendor": "apple",
-      "architecture": "M1",
+      "architecture": "Apple Silicon 1 Gen",
       "device": "Apple M1 GPU",
-      "memory": "",
+      "memory": "16GB",
       "platform": "macOS 15.3.1",
       "fp32": 948,
       "fp32bs": 128,
@@ -360,6 +360,19 @@
       "fp16bs": 256,
       "note": "GradScaler Not Work",
       "date": "2025.3.20"
+    },
+    {
+      "vendor": "apple",
+      "architecture": "Apple Silicon 4 Gen",
+      "device": "Apple M4 GPU",
+      "memory": "16GB",
+      "platform": "macOS 15.6.1",
+      "fp32": 1742.0,
+      "fp32bs": 128,
+      "fp16": 1607.0,
+      "fp16bs": 128,
+      "note": "10 Cores",
+      "date": "2025.9.19"
     }
   ]
 }
