@@ -284,6 +284,35 @@
         .chart-container canvas {
             max-height: 400px;
         }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .error-message h3 {
+            margin-bottom: 10px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #667eea;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         
         @media (max-width: 768px) {
             .header h1 {
@@ -440,63 +469,68 @@
     </div>
 
     <script>
-        // GPU benchmark data
-        const benchmarkData = [
-            // Mthreads
-            { vendor: 'mthreads', architecture: 'S4000', device: 'Mthreads S4000', memory: '48GB', platform: 'Linux 5.15', fp32: 9078, fp32bs: 256, fp16: null, fp16bs: 256, note: 'MUSA 3.1.0', date: '2025.5.19' },
-            
-            // AMD
-            { vendor: 'amd', architecture: 'MI50', device: 'Radeon Instinct MI50', memory: '32GB', platform: 'Linux 5.15', fp32: 2017, fp32bs: 256, fp16: 2951, fp16bs: 256, note: 'ROCm 6.2.4', date: '2025.4.14' },
-            
-            // Huawei
-            { vendor: 'huawei', architecture: 'Ascend910B2', device: 'Ascend910B2', memory: '', platform: 'Linux (Docker) 5.15', fp32: 18283, fp32bs: 1024, fp16: 55517, fp16bs: 1024, note: 'FP16 GradScaler seems overflow.', date: '2025.3.20' },
-            
-            // Apple
-            { vendor: 'apple', architecture: 'M4', device: 'Apple M4 GPU', memory: '', platform: 'macOS 15.3.1', fp32: 1723, fp32bs: 128, fp16: 1591, fp16bs: 128, note: '10 Cores', date: '2025.3.20' },
-            { vendor: 'apple', architecture: 'M1', device: 'Apple M1 GPU', memory: '', platform: 'macOS 15.3.1', fp32: 948, fp32bs: 128, fp16: 843, fp16bs: 128, note: '8 Cores', date: '2025.3.20' },
-            
-            // NVIDIA Blackwell
-            { vendor: 'nvidia', architecture: 'Blackwell', device: 'NVIDIA GeForce RTX 5090', memory: '32GB', platform: 'Linux (Docker) 570.124', fp32: 37232, fp32bs: 512, fp16: 63230, fp16bs: 512, note: 'Preview PyTorch', date: '2025.4.19' },
-            { vendor: 'nvidia', architecture: 'Blackwell', device: 'NVIDIA RTX PRO 6000 Blackwell Workstation Edition', memory: '96GB', platform: 'Linux (Docker) 570.124', fp32: 43201, fp32bs: 256, fp16: 78837, fp16bs: 256, note: 'Preview PyTorch', date: '2025.7.28' },
-            
-            // NVIDIA Hopper
-            { vendor: 'nvidia', architecture: 'Hopper', device: 'NVIDIA H20', memory: '96GB', platform: 'Linux (Docker) 565.57', fp32: 37360, fp32bs: 256, fp16: 55222, fp16bs: 256, note: '', date: '2025.3.27' },
-            
-            // NVIDIA Ada
-            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA GeForce RTX 4090', memory: '24GB', platform: 'Linux 560.35', fp32: 24046, fp32bs: 512, fp16: 43733, fp16bs: 1024, note: '', date: '2025.3.20' },
-            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4090)', memory: '48GB', platform: 'Linux (Docker) 575.64', fp32: 24300, fp32bs: 256, fp16: 48337, fp16bs: 256, note: 'Two NVIDIA GeForce RTX 4090', date: '2025.9.04' },
-            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4080 SUPER)', memory: '32GB', platform: 'Linux (Docker) 560.35', fp32: 17308, fp32bs: 1024, fp16: 33238, fp16bs: 256, note: 'Two NVIDIA GeForce RTX 4080 SUPER', date: '2025.3.27' },
-            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4080 SUPER) - 2 GPUs', memory: '32GB', platform: 'Linux (Docker) 560.35', fp32: 30275, fp32bs: 2048, fp16: 52756, fp16bs: 4096, note: 'Two NVIDIA GeForce RTX 4080 SUPER', date: '2025.3.20' },
-            { vendor: 'nvidia', architecture: 'Ada', device: 'NVIDIA vGPU (2x RTX 4080 SUPER) - 4 GPUs', memory: '32GB', platform: 'Linux (Docker) 560.35', fp32: 56178, fp32bs: 4096, fp16: 101268, fp16bs: 8192, note: 'Two NVIDIA GeForce RTX 4080 SUPER', date: '2025.3.20' },
-            
-            // NVIDIA Ampere
-            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA A100-PCIE', memory: '40GB', platform: 'Linux 550.90', fp32: 27478, fp32bs: 256, fp16: 43802, fp16bs: 256, note: '', date: '2025.3.31' },
-            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA GeForce RTX 3090', memory: '24GB', platform: 'Windows 566.14', fp32: 16311, fp32bs: 256, fp16: 28197, fp16bs: 256, note: '', date: '2025.3.10' },
-            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA RTX A5000', memory: '24GB', platform: 'Linux 535.183', fp32: 15090, fp32bs: 512, fp16: 27155, fp16bs: 1024, note: '', date: '2025.3.20' },
-            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA RTX A5000 - 2 GPUs', memory: '24GB', platform: 'Linux 535.183', fp32: 26962, fp32bs: 1024, fp16: 49930, fp16bs: 3072, note: 'NVLink', date: '2025.3.20' },
-            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA GeForce RTX 3080', memory: '20GB', platform: 'Linux (Docker) 560.35', fp32: 13320, fp32bs: 256, fp16: 24205, fp16bs: 256, note: 'Unofficial Video Memory Expansion', date: '2025.3.20' },
-            { vendor: 'nvidia', architecture: 'Ampere', device: 'NVIDIA GeForce RTX 3080 - 2 GPUs', memory: '20GB', platform: 'Linux (Docker) 560.35', fp32: 23261, fp32bs: 1024, fp16: 40250, fp16bs: 2048, note: 'Unofficial Video Memory Expansion', date: '2025.3.20' },
-            
-            // NVIDIA Turing
-            { vendor: 'nvidia', architecture: 'Turing', device: 'NVIDIA GeForce RTX 2080 Ti', memory: '22GB', platform: 'Linux 550.120', fp32: 8754, fp32bs: 256, fp16: 19007, fp16bs: 1024, note: 'Unofficial Video Memory Expansion', date: '2025.3.20' },
-            { vendor: 'nvidia', architecture: 'Turing', device: 'NVIDIA GeForce RTX 2080 Ti', memory: '11GB', platform: 'Linux 550.120', fp32: 8681, fp32bs: 256, fp16: 19475, fp16bs: 256, note: '', date: '2025.4.02' },
-            
-            // NVIDIA Volta
-            { vendor: 'nvidia', architecture: 'Volta', device: 'Tesla V100S-PCIE', memory: '32GB', platform: 'Linux (Docker) 550.90', fp32: 11577, fp32bs: 256, fp16: 27963, fp16bs: 256, note: '', date: '2025.3.20' },
-            
-            // NVIDIA Pascal
-            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA TITAN X (Pascal)', memory: '12GB', platform: 'Windows 566.14', fp32: 5792, fp32bs: 256, fp16: 7230, fp16bs: 256, note: 'FP16 Not Officially Supported By Pascal Arch', date: '2025.3.20' },
-            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA TITAN Xp', memory: '12GB', platform: 'Linux (Docker) 550.120', fp32: 6792, fp32bs: 256, fp16: 7641, fp16bs: 256, note: 'FP16 Not Officially Supported By Pascal Arch', date: '2025.3.26' },
-            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA P104-100 (180W)', memory: '8GB', platform: 'Windows 536.23', fp32: 4114, fp32bs: 256, fp16: 4766, fp16bs: 256, note: 'PCIE 3.0 x4 180W', date: '2025.4.05' },
-            { vendor: 'nvidia', architecture: 'Pascal', device: 'NVIDIA P104-100 (120W)', memory: '8GB', platform: 'Windows 576.88', fp32: 3745, fp32bs: 256, fp16: 4278, fp16bs: 256, note: 'PCIE 3.0 x4 120W', date: '2025.7.07' },
-            
-            // Intel
-            { vendor: 'intel', architecture: 'Arc', device: 'Intel Arc A770 Graphics', memory: '16GB', platform: 'Linux i915 xe', fp32: 5121, fp32bs: 256, fp16: 8049, fp16bs: 256, note: 'GradScaler Not Work', date: '2025.3.20' }
-        ];
+        // Global variables
+        let benchmarkData = [];
+        let benchmarkMetadata = {};
 
-        let filteredData = [...benchmarkData];
+        let filteredData = [];
         let currentVendor = 'all';
         let charts = {};
+
+        // Load benchmark data from JSON
+        async function loadBenchmarkData() {
+            try {
+                const response = await fetch('./data/benchmark-data.json');
+                const data = await response.json();
+                benchmarkData = data.benchmarks;
+                benchmarkMetadata = data.metadata;
+                filteredData = [...benchmarkData];
+                
+                // Update page with metadata
+                updatePageMetadata();
+                
+                return true;
+            } catch (error) {
+                console.error('Failed to load benchmark data:', error);
+                
+                // Show error message to user
+                const container = document.querySelector('.container');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.innerHTML = `
+                    <h3>⚠️ Failed to Load Data</h3>
+                    <p>Could not load benchmark data. Please check your internet connection and try refreshing the page.</p>
+                    <p><small>Error: ${error.message}</small></p>
+                `;
+                container.insertBefore(errorDiv, container.firstChild);
+                
+                return false;
+            }
+        }
+
+        function updatePageMetadata() {
+            if (benchmarkMetadata) {
+                // Update last updated info if metadata exists
+                const header = document.querySelector('.header p');
+                if (header && benchmarkMetadata.lastUpdated) {
+                    header.innerHTML += `<br><small>Last updated: ${benchmarkMetadata.lastUpdated}</small>`;
+                }
+                
+                // Update benchmark info if available
+                const benchmarkInfo = document.querySelector('.benchmark-info');
+                if (benchmarkInfo && benchmarkMetadata.testConfiguration) {
+                    const config = benchmarkMetadata.testConfiguration;
+                    const configList = benchmarkInfo.querySelector('ul');
+                    if (configList) {
+                        configList.innerHTML = `
+                            <li><strong>Model:</strong> ${config.model} (${config.parameters} parameters)</li>
+                            <li><strong>Default Command:</strong> <code>${config.defaultCommand}</code></li>
+                            <li><strong>Score Impact:</strong> Affected by video memory bandwidth and PCIe bus bandwidth</li>
+                        `;
+                    }
+                }
+            }
+        }
 
         function initializeFilters() {
             const architectures = [...new Set(benchmarkData.map(item => item.architecture))].sort();
@@ -1007,9 +1041,20 @@
         }
 
         // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeFilters();
-            applyFilters();
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Show loading message
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px;">Loading benchmark data...</td></tr>';
+            
+            // Load data first
+            const dataLoaded = await loadBenchmarkData();
+            
+            if (dataLoaded) {
+                initializeFilters();
+                applyFilters();
+            }
+            
+            // Initialize event listeners regardless of data load status
             
             // Tab buttons
             document.querySelectorAll('.tab-button').forEach(button => {
