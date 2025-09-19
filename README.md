@@ -1,6 +1,8 @@
 # GPU-Insights
 GPU Insights, repository for all kinds of code related to GPUs
 
+For better visual experience, visit [this](https://xiaoran007.github.io/GPU-Insights/) website.
+
 ## Default benchmark
 ```shell
 python main.py -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32 -gpu 0
