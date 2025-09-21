@@ -12,7 +12,7 @@
   "benchmarks": [
     {
       "vendor": "mthreads",
-      "architecture": "S4000",
+      "architecture": "MUSA-Chunxiao",
       "device": "Mthreads S4000",
       "memory": "48GB",
       "platform": "Linux 5.15",
@@ -25,7 +25,7 @@
     },
     {
       "vendor": "amd",
-      "architecture": "MI50",
+      "architecture": "AMD GCN 5.1",
       "device": "Radeon Instinct MI50",
       "memory": "32GB",
       "platform": "Linux 5.15",
@@ -350,7 +350,7 @@
     },
     {
       "vendor": "intel",
-      "architecture": "Arc",
+      "architecture": "Intel Alchemist",
       "device": "Intel Arc A770 Graphics",
       "memory": "16GB",
       "platform": "Linux i915 xe",
