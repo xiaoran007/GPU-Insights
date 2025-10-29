@@ -76,6 +76,19 @@
       "date": "2025.3.20"
     },
     {
+      "vendor": "apple",
+      "architecture": "Apple Silicon 1 Gen",
+      "device": "Apple M1 Max GPU",
+      "memory": "16GB",
+      "platform": "macOS 26.0.1",
+      "fp32": 3652,
+      "fp32bs": 256,
+      "fp16": 3652,
+      "fp16bs": 256,
+      "note": "32 Cores",
+      "date": "2025.10.29"
+    },
+    {
       "vendor": "nvidia",
       "architecture": "Blackwell",
       "device": "NVIDIA GeForce RTX 5090",
