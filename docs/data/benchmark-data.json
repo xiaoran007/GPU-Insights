@@ -79,7 +79,7 @@
       "vendor": "apple",
       "architecture": "Apple Silicon 1 Gen",
       "device": "Apple M1 Max GPU",
-      "memory": "16GB",
+      "memory": "64GB",
       "platform": "macOS 26.0.1",
       "fp32": 3652,
       "fp32bs": 256,
