@@ -24,6 +24,19 @@
       "date": "2025.5.19"
     },
     {
+      "vendor": "mthreads",
+      "architecture": "MUSA-Chunxiao",
+      "device": "Mthreads S4000",
+      "memory": "48GB",
+      "platform": "Linux 5.15",
+      "fp32": 8984,
+      "fp32bs": 256,
+      "fp16": 8979,
+      "fp16bs": 256,
+      "note": "MUSA 3.1.0",
+      "date": "2025.11.5"
+    },
+    {
       "vendor": "amd",
       "architecture": "AMD GCN 5.1",
       "device": "Radeon Instinct MI50",
