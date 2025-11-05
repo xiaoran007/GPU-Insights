@@ -38,6 +38,27 @@ class CNNBench(object):
         pre_load_end = time.time()
         print(f"Pre-load completed on {device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
 
+        # Warmup: run a few iterations to stabilize GPU state (eliminate cold start effects)
+        print("Warming up...")
+        warmup_batches = min(5, len(data_preloaded))
+        for i in range(warmup_batches):
+            images, labels = data_preloaded[i]
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        
+        # Synchronize before starting the timer to ensure all previous operations are completed
+        if device.type == 'cuda':
+            torch.cuda.synchronize(device)
+        elif device.type == 'xpu':
+            torch.xpu.synchronize(device)
+        elif device.type == 'npu':
+            torch.npu.synchronize(device)
+        elif device.type == 'mps':
+            torch.mps.synchronize()
+        
         start_time = time.time()
         for epoch in range(self.epochs):
             iters = len(self.train_loader)
@@ -57,6 +78,17 @@ class CNNBench(object):
                 pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.item():.4f}")
 
             pbar.close()
+        
+        # Synchronize after training to ensure all GPU operations are completed before stopping the timer
+        if device.type == 'cuda':
+            torch.cuda.synchronize(device)
+        elif device.type == 'xpu':
+            torch.xpu.synchronize(device)
+        elif device.type == 'npu':
+            torch.npu.synchronize(device)
+        elif device.type == 'mps':
+            torch.mps.synchronize()
+        
         end_time = time.time()
         time_usage = end_time - start_time
         basic_score = self.data_size / time_usage

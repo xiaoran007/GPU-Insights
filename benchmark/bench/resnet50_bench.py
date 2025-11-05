@@ -20,7 +20,7 @@ except ImportError:
 
 
 class ResNet50Bench(object):
-    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False, use_bf16=False):
+    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False, use_bf16=False, monitor_performance=False):
         self.gpu_devices = gpu_device
         self.cpu_device = cpu_device
         self.epochs = epochs
@@ -29,6 +29,7 @@ class ResNet50Bench(object):
         self.data_size = data_size
         self.use_fp16 = use_fp16
         self.use_bf16 = use_bf16
+        self.monitor_performance = monitor_performance  # Optional: monitor batch-level performance
 
         if use_bf16:
             if torch.cuda.is_bf16_supported(including_emulation=False):
@@ -87,12 +88,68 @@ class ResNet50Bench(object):
         pre_load_end = time.time()
         print(f"Pre-load completed on {main_device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
 
+        # Warmup: run a few iterations to stabilize GPU state (eliminate cold start effects)
+        print("Warming up...")
+        warmup_batches = min(5, len(data_preloaded))
+        for i in range(warmup_batches):
+            images, labels = data_preloaded[i]
+            if self.use_bf16:
+                if version_flag:
+                    with autocast(device_type=AC_dev, dtype=torch.bfloat16, enabled=True):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                else:
+                    with autocast(dtype=torch.bfloat16, enabled=True):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+            else:
+                if version_flag:
+                    with autocast(device_type=AC_dev, dtype=torch.float16, enabled=self.use_fp16):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                else:
+                    with autocast(dtype=torch.float16, enabled=self.use_fp16):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            optimizer.zero_grad()
+        
+        # Synchronize before starting the timer to ensure all previous operations are completed
+        if main_device.type == 'cuda':
+            torch.cuda.synchronize(main_device)
+        elif main_device.type == 'xpu':
+            torch.xpu.synchronize(main_device)
+        elif main_device.type == 'npu':
+            torch.npu.synchronize(main_device)
+        elif main_device.type == 'mps':
+            torch.mps.synchronize()
+        
         print("Timer started.")
+        
         start_time = time.time()
+        batch_times = []  # Store batch times for optional performance monitoring
+        sample_interval = max(1, len(data_preloaded) // 10)  # Sample ~10 batches per epoch
+        
         for epoch in range(self.epochs):
             iters = len(self.train_loader)
             pbar = tqdm(total=iters, desc=f"Epoch: {epoch+1}/{self.epochs}", unit="it")
             for i, (images, labels) in enumerate(data_preloaded):
+                # Optional: monitor performance for sampled batches (only if enabled)
+                if self.monitor_performance and i % sample_interval == 0:
+                    if main_device.type == 'cuda':
+                        torch.cuda.synchronize(main_device)
+                    elif main_device.type == 'xpu':
+                        torch.xpu.synchronize(main_device)
+                    elif main_device.type == 'npu':
+                        torch.npu.synchronize(main_device)
+                    elif main_device.type == 'mps':
+                        torch.mps.synchronize()
+                    batch_start = time.time()
+                
                 # images = images.to(device)
                 # labels = labels.to(device)
                 if self.use_bf16:
@@ -120,16 +177,50 @@ class ResNet50Bench(object):
                     scaler.update()
 
                 optimizer.zero_grad()
+                
+                # Optional: record batch time for sampled batches
+                if self.monitor_performance and i % sample_interval == 0:
+                    if main_device.type == 'cuda':
+                        torch.cuda.synchronize(main_device)
+                    elif main_device.type == 'xpu':
+                        torch.xpu.synchronize(main_device)
+                    elif main_device.type == 'npu':
+                        torch.npu.synchronize(main_device)
+                    elif main_device.type == 'mps':
+                        torch.mps.synchronize()
+                    batch_end = time.time()
+                    batch_times.append(batch_end - batch_start)
 
                 pbar.update(1)
                 pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.detach().item():.4f}")
 
             pbar.close()
+        
+        # Synchronize after training to ensure all GPU operations are completed before stopping the timer
+        if main_device.type == 'cuda':
+            torch.cuda.synchronize(main_device)
+        elif main_device.type == 'xpu':
+            torch.xpu.synchronize(main_device)
+        elif main_device.type == 'npu':
+            torch.npu.synchronize(main_device)
+        elif main_device.type == 'mps':
+            torch.mps.synchronize()
+        
         end_time = time.time()
         time_usage = end_time - start_time
         basic_score = self.data_size / time_usage
         final_score = basic_score * (self.epochs / 10) * 100
         print(f"Training completed on {main_device}. Time taken: {time_usage:.2f} seconds. Score: {final_score:.0f}")
+        
+        # Optional: print performance statistics if monitoring is enabled
+        if self.monitor_performance and batch_times:
+            import numpy as np
+            batch_times = np.array(batch_times)
+            print(f"\nPerformance Statistics (sampled {len(batch_times)} batches):")
+            print(f"  Mean batch time: {batch_times.mean():.4f}s")
+            print(f"  Std deviation: {batch_times.std():.4f}s")
+            print(f"  Min/Max: {batch_times.min():.4f}s / {batch_times.max():.4f}s")
+            print(f"  Coefficient of Variation: {(batch_times.std() / batch_times.mean() * 100):.2f}%")
 
 
 class FakeDataset(torch.utils.data.Dataset):
