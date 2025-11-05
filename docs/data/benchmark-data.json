@@ -221,6 +221,19 @@
     {
       "vendor": "nvidia",
       "architecture": "Ampere",
+      "device": "NVIDIA GeForce RTX 3090",
+      "memory": "24GB",
+      "platform": "Linux (Docker) 581.29",
+      "fp32": 16476,
+      "fp32bs": 256,
+      "fp16": 28764,
+      "fp16bs": 256,
+      "note": "wsl2",
+      "date": "2025.11.5"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ampere",
       "device": "NVIDIA RTX A5000",
       "memory": "24GB",
       "platform": "Linux 535.183",
