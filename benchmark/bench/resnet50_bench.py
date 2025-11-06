@@ -52,6 +52,7 @@ class ResNet50Bench(object):
             shuffle=True, 
             num_workers=8, 
             pin_memory=True,
+            drop_last=True,
             persistent_workers=True if TORCH_2_PLUS else False,
             prefetch_factor=2 if TORCH_2_PLUS else 2
         )
@@ -77,6 +78,7 @@ class ResNet50Bench(object):
             model = nn.DataParallel(model, device_ids=[device.index for device in devices])
         
         # PyTorch 2.x: Compile model for better performance (if supported)
+        # Note: torch.compile requires C/C++ compiler (gcc/clang on Linux/macOS, MSVC on Windows)
         if TORCH_2_PLUS and hasattr(torch, 'compile'):
             try:
                 # Use reduce-overhead mode for training workloads
@@ -84,7 +86,15 @@ class ResNet50Bench(object):
                 model = torch.compile(model, mode='reduce-overhead')
                 print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
             except Exception as e:
-                print(f"⚠ torch.compile not supported on {main_device.type}: {e}")
+                error_msg = str(e)
+                if "C compiler" in error_msg or "CC environment" in error_msg:
+                    print(f"⚠ torch.compile disabled: C/C++ compiler not found")
+                    print(f"  Install: macOS: xcode-select --install | Linux: sudo apt install build-essential")
+                elif "triton" in error_msg.lower():
+                    print(f"⚠ torch.compile disabled: Triton compiler issue")
+                else:
+                    print(f"⚠ torch.compile not supported on {main_device.type}: {error_msg[:100]}")
+                print(f"  → Continuing with standard (eager) mode...")
 
         criterion = nn.CrossEntropyLoss()
         # PyTorch 2.x: Use fused SGD for better performance
@@ -128,9 +138,9 @@ class ResNet50Bench(object):
         print(f"Pre-load completed on {main_device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
 
         # Warmup: run a few iterations to stabilize GPU state (eliminate cold start effects)
-        print("Warming up...")
         warmup_batches = min(5, len(data_preloaded))
         model.train()  # Ensure model is in training mode
+        warmup_pbar = tqdm(total=warmup_batches, desc="Warming up", unit="batch")
         for i in range(warmup_batches):
             images, labels = data_preloaded[i]
             # PyTorch 2.x: Use set_to_none for better performance
@@ -159,6 +169,9 @@ class ResNet50Bench(object):
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
+            
+            warmup_pbar.update(1)
+        warmup_pbar.close()
         
         # Synchronize before starting the timer to ensure all previous operations are completed
         if main_device.type == 'cuda':
