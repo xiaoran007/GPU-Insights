@@ -241,8 +241,21 @@
       "fp32bs": 256,
       "fp16": 28764,
       "fp16bs": 256,
-      "note": "wsl2",
+      "note": "wsl2 ver.1",
       "date": "2025.11.5"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ampere",
+      "device": "NVIDIA GeForce RTX 3090",
+      "memory": "24GB",
+      "platform": "Linux (Docker) 581.29",
+      "fp32": 19614,
+      "fp32bs": 256,
+      "fp16": 36035,
+      "fp16bs": 256,
+      "note": "wsl2 ver.2",
+      "date": "2025.11.6"
     },
     {
       "vendor": "nvidia",
@@ -334,6 +347,19 @@
       "fp16bs": 256,
       "note": "",
       "date": "2025.3.20"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Volta",
+      "device": "Tesla V100S-PCIE",
+      "memory": "32GB",
+      "platform": "Linux (Docker) 550.90",
+      "fp32": 11032,
+      "fp32bs": 256,
+      "fp16": 43447,
+      "fp16bs": 256,
+      "note": "ver.2",
+      "date": "2025.11.6"
     },
     {
       "vendor": "nvidia",
