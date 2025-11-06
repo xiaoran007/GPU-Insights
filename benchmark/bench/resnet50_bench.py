@@ -59,7 +59,7 @@ class ResNet50Bench(object):
             self.train_dataset, 
             batch_size=batch_size, 
             shuffle=True, 
-            num_workers=0, 
+            num_workers=1, 
             pin_memory=True,
             drop_last=True,
             persistent_workers=True if TORCH_2_PLUS else False,
