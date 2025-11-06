@@ -1,7 +1,6 @@
 # GPU-Insights
 GPU Insights, repository for all kinds of code related to GPUs
 
-For better visual experience, visit [this](https://xiaoran007.github.io/GPU-Insights/) website.
 
 ## Default benchmark
 ```shell
@@ -16,7 +15,10 @@ This performance test evaluates the performance of the hardware device in a trai
 ### Model Params
 23.5 M
 
-### Test command
+### Results
+For better visual experience, visit [this](https://xiaoran007.github.io/GPU-Insights/) website.
+
+<!-- ### Test command
 
 FP32: `python main.py -m -s 512 -e 3 -mt resnet50 -bs 256 -dt FP32`
 
@@ -26,9 +28,9 @@ FP32 cudnn: `python main.py -m -s 512 -e 10 -mt resnet50 -bs 256 -dt FP32 -cudnn
 
 FP16 cudnn: `python main.py -m -s 512 -e 10 -mt resnet50 -bs 256 -dt FP16 -cudnn`
 
-Note: In general, Multi-GPU test case using batch size 2048 `-bs 2048` for FP16 and batch size 1024 `-bs 1024` for FP32.
+Note: In general, Multi-GPU test case using batch size 2048 `-bs 2048` for FP16 and batch size 1024 `-bs 1024` for FP32. -->
 
-### Results
+<!-- ### Results
 
 Most of the results are obtained by adjusting the batch size to get the maximum video memory usage.
 
@@ -155,4 +157,4 @@ Most of the results are obtained by adjusting the batch size to get the maximum 
 
 |                  Device                  |      Platform      | FP32 | FP32BS | FP16 | FP16BS |        Note         | Date      |
 | :--------------------------------------: | :----------------: | :--: | :----: | :--: | :----: | :-----------------: | --------- |
-| Intel(R) Arc(TM) A770 Graphics<br />16GB | Linux<br />i915 xe | 5121 |  256   | 8049 |  256   | GradScaler Not Work | 2025.3.20 |
+| Intel(R) Arc(TM) A770 Graphics<br />16GB | Linux<br />i915 xe | 5121 |  256   | 8049 |  256   | GradScaler Not Work | 2025.3.20 | -->
