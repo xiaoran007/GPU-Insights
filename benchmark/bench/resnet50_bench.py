@@ -81,9 +81,9 @@ class ResNet50Bench(object):
         # Note: torch.compile requires C/C++ compiler (gcc/clang on Linux/macOS, MSVC on Windows)
         if TORCH_2_PLUS and hasattr(torch, 'compile'):
             try:
-                # Use reduce-overhead mode for training workloads
+                # Use default mode for training workloads
                 # Falls back gracefully on unsupported backends (MPS, NPU, etc.)
-                model = torch.compile(model, mode='reduce-overhead')
+                model = torch.compile(model, mode='default')
                 print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
             except Exception as e:
                 error_msg = str(e)
