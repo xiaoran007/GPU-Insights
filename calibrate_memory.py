@@ -82,7 +82,7 @@ def main():
     print(f"Total Memory: {total_memory_gb:.2f} GB")
     print("-" * 45)
 
-    batch_sizes_to_test = [128, 256]
+    batch_sizes_to_test = [128, 256, 512]
     results = {}
 
     for precision in ['FP32', 'FP16']:
