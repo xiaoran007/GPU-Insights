@@ -6,13 +6,13 @@ from macos_hw_detector import get_gpu_info
 
 
 class Bench(object):
-    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0]):
+    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0], auto_batch_size=False):
         self.huawei = huawei
         self.mthreads = mthreads
         torch.backends.cudnn.benchmark = cudnn_benchmark
         self.gpu_device = self._get_gpu_device(gpu_ids)
         self.cpu_device = self._get_cpu_device()
-        self.backend = self._load_backend(method=method, auto=auto, size=size, epochs=epochs, batch_size=batch_size, data_type=data_type)
+        self.backend = self._load_backend(method=method, auto=auto, size=size, epochs=epochs, batch_size=batch_size, data_type=data_type, auto_batch_size=auto_batch_size)
 
     def start(self):
         self.backend.start()
@@ -68,7 +68,7 @@ class Bench(object):
         else:
             return 0
 
-    def _load_backend(self, method, auto, size, epochs, batch_size, data_type):
+    def _load_backend(self, method, auto, size, epochs, batch_size, data_type, auto_batch_size):
         if auto:
             cuda_memory_size = self._get_cuda_memory_size(self.gpu_device)
             data_size = int(int((cuda_memory_size / 12296) / 100) * 100 * 0.7)
@@ -83,7 +83,7 @@ class Bench(object):
             return CNNBench(gpu_device=self.gpu_device[0], cpu_device=self.cpu_device, data_size=data_size,
                             batch_size=batch_size, epochs=epochs)
         elif method == "resnet50":
-            if batch_size == 0:
+            if batch_size == 0 and not auto_batch_size:
                 batch_size = 4
             if data_type == "FP16":
                 use_fp16 = True
@@ -95,7 +95,8 @@ class Bench(object):
                 use_fp16 = False
                 use_bf16 = False
             return ResNet50Bench(gpu_device=self.gpu_device, cpu_device=self.cpu_device, data_size=data_size,
-                                 batch_size=batch_size, epochs=epochs, use_fp16=use_fp16, use_bf16=use_bf16)
+                                 batch_size=batch_size, epochs=epochs, use_fp16=use_fp16, use_bf16=use_bf16, 
+                                 auto_batch_size=auto_batch_size)
         else:
             raise NotImplementedError
 

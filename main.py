@@ -21,6 +21,8 @@ def main():
                         help="Set the data type (FP32, FP16 or BF16).")
     parser.add_argument("-bs", "--batch", type=int, required=False, default=0,
                         help="Set the batch size.")
+    parser.add_argument("-abs", "--auto_batch_size", action="store_true", default=False,
+                        help="Enable automatic batch size optimization (only for ResNet50).")
     parser.add_argument("-cudnn", "--cudnn_benchmark", action="store_true", default=False,
                         help="Enable cudnn benchmark.")
     parser.add_argument("-gpu", "--gpu_id", type=str, required=False, default="0",
@@ -49,8 +51,13 @@ def main():
         # b = Bench(auto=True)
         # b.start()
     elif args.manual:
+        # Check if auto_batch_size is enabled for non-resnet50 models
+        if args.auto_batch_size and model != "resnet50":
+            print("Warning: Auto batch size is only supported for ResNet50 model. Ignoring -abs flag.")
+            args.auto_batch_size = False
+        
         b = Bench(auto=False, huawei=args.huawei, mthreads=args.mthreads, size=args.size, epochs=args.epochs, method=model, batch_size=args.batch,
-                  cudnn_benchmark=args.cudnn_benchmark, data_type=data_type, gpu_ids=gpu_ids)
+                  cudnn_benchmark=args.cudnn_benchmark, data_type=data_type, gpu_ids=gpu_ids, auto_batch_size=args.auto_batch_size)
         b.start()
 
 

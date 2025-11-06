@@ -25,16 +25,16 @@ except ImportError:
 
 
 class ResNet50Bench(object):
-    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False, use_bf16=False, monitor_performance=False):
+    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False, use_bf16=False, monitor_performance=False, auto_batch_size=False):
         self.gpu_devices = gpu_device
         self.cpu_device = cpu_device
         self.epochs = epochs
-        self.batch_size = batch_size
         self.lr = lr
         self.data_size = data_size
         self.use_fp16 = use_fp16
         self.use_bf16 = use_bf16
         self.monitor_performance = monitor_performance  # Optional: monitor batch-level performance
+        self.auto_batch_size = auto_batch_size
 
         if use_bf16:
             if torch.cuda.is_bf16_supported(including_emulation=False):
@@ -44,18 +44,109 @@ class ResNet50Bench(object):
                 self.use_bf16 = False
                 self.use_fp16 = True
 
+        # Auto batch size calculation if enabled
+        if auto_batch_size and gpu_device is not None:
+            print("\n=== Auto Batch Size Calculation ===")
+            batch_size = self._find_optimal_batch_size()
+            print(f"✓ Optimal batch size determined: {batch_size}")
+            print("===================================\n")
+        
+        self.batch_size = batch_size
+        
         self.train_dataset = FakeDataset(size=data_size, image_size=image_size, num_classes=num_classes)
         # PyTorch 2.x: Enable persistent_workers for better performance
         self.train_loader = torch.utils.data.DataLoader(
             self.train_dataset, 
             batch_size=batch_size, 
             shuffle=True, 
-            num_workers=8, 
+            num_workers=0, 
             pin_memory=True,
             drop_last=True,
             persistent_workers=True if TORCH_2_PLUS else False,
             prefetch_factor=2 if TORCH_2_PLUS else 2
         )
+
+    def _find_optimal_batch_size(self):
+        """
+        Calculate optimal batch size based on available GPU memory.
+        Uses empirical memory formulas for ResNet50 to directly compute the best batch size.
+        Only supports CUDA devices.
+        """
+        main_device = self.gpu_devices[0]
+        
+        # Only support CUDA devices
+        if main_device.type != 'cuda':
+            print(f"Warning: Auto batch size only supports CUDA devices, current device: {main_device.type}")
+            print(f"Falling back to default batch size: 4")
+            return 4
+        
+        # Get GPU memory information
+        total_memory = torch.cuda.get_device_properties(main_device).total_memory
+        # Reserve some memory for CUDA context and other overhead
+        reserved_memory = 500 * 1024 * 1024  # 500MB reserved
+        available_memory = total_memory - reserved_memory
+        1
+        print(f"GPU: {torch.cuda.get_device_name(main_device)}")
+        print(f"Total Memory: {total_memory / 1024**2:.2f} MB")
+        print(f"Available Memory: {available_memory / 1024**2:.2f} MB")
+        
+        # ResNet50 memory usage estimation
+        # Based on actual measurements with image size (3, 32, 32)
+        # Empirical data: BS=2048 → 31GB, BS=512 → 8.8GB
+        # This gives us: per_sample ≈ 14.8MB, model_fixed ≈ 1.4GB
+        
+        if self.use_fp16 or self.use_bf16:
+            # FP16/BF16 mode (with AMP)
+            # Fixed memory: model weights (FP16) + optimizer states (FP32) + gradients (FP16/FP32 mixed)
+            # Measured: ~1.4 GB fixed overhead
+            model_memory = 1.4 * 1024 * 1024 * 1024  # 1.4 GB in bytes
+            
+            # Per-sample memory: activations + temporary buffers + gradient accumulation
+            # Measured: ~14.8 MB per sample
+            per_sample_memory = 14.8 * 1024 * 1024  # bytes
+        else:
+            # FP32 mode
+            # Fixed memory is higher due to all FP32 operations
+            # Estimated: ~1.8 GB fixed overhead
+            model_memory = 1.8 * 1024 * 1024 * 1024  # 1.8 GB in bytes
+            
+            # Per-sample memory in FP32 is roughly 1.8-2x of FP16
+            # Estimated: ~26 MB per sample
+            per_sample_memory = 26 * 1024 * 1024  # bytes
+        
+        # Calculate maximum batch size
+        memory_for_batch = available_memory - model_memory
+        max_batch_size = int(memory_for_batch / per_sample_memory)
+        
+        # Apply safety factor (90% of theoretical maximum since our formula is now calibrated)
+        safe_batch_size = int(max_batch_size * 0.90)
+        
+        # Adjust for multi-GPU (more total memory available)
+        if len(self.gpu_devices) > 1:
+            safe_batch_size = int(safe_batch_size * len(self.gpu_devices) * 0.9)  # Slight overhead for DataParallel
+        
+        # Round down to nearest power of 2 for optimal GPU utilization
+        if safe_batch_size >= 32:
+            power = int(torch.log2(torch.tensor(float(safe_batch_size))).item())
+            safe_batch_size = 2 ** power
+        else:
+            # For very small values, just ensure it's at least 4
+            safe_batch_size = max(4, safe_batch_size)
+        
+        # Clamp to reasonable range
+        if self.use_fp16 or self.use_bf16:
+            safe_batch_size = max(32, min(safe_batch_size, 4096))
+        else:
+            safe_batch_size = max(16, min(safe_batch_size, 2048))
+        
+        print(f"\nCalculated batch size: {safe_batch_size}")
+        print(f"  - Model fixed memory: {model_memory / 1024**2:.0f} MB")
+        print(f"  - Per-sample memory: {per_sample_memory / 1024**2:.1f} MB")
+        print(f"  - Theoretical max batch size: {max_batch_size}")
+        print(f"  - Safe batch size (90%): {safe_batch_size} (power of 2)")
+        print(f"  - Estimated total memory: {(model_memory + safe_batch_size * per_sample_memory) / 1024**3:.1f} GB")
+        
+        return safe_batch_size
 
     def start(self):
         if self.gpu_devices is None:
