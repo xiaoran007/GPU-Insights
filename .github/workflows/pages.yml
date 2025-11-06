@@ -3,8 +3,12 @@ name: Deploy GitHub Pages
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'docs/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'docs/**'
 
 permissions:
   contents: read
