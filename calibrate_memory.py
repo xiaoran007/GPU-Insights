@@ -111,8 +111,6 @@ def main():
             print("  - Measurement failed (likely out of memory).")
     
     print("-" * 28)
-    print("\nPlease copy and paste this entire report back to me.")
-    print("I will use these values to calculate the fixed and per-sample memory costs.")
 
 if __name__ == '__main__':
     main()

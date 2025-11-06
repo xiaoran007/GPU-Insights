@@ -91,35 +91,32 @@ class ResNet50Bench(object):
         print(f"Available Memory: {available_memory / 1024**2:.2f} MB")
         
         # ResNet50 memory usage estimation
-        # Based on actual measurements with image size (3, 32, 32)
-        # Empirical data: BS=2048 → 31GB, BS=512 → 8.8GB
-        # This gives us: per_sample ≈ 14.8MB, model_fixed ≈ 1.4GB
+        # Based on calibration data from Tesla V100S (32GB) and RTX 3090 (24GB).
+        # Using linear regression on BS=[128, 256, 512] measurements.
         
         if self.use_fp16 or self.use_bf16:
             # FP16/BF16 mode (with AMP)
-            # Fixed memory: model weights (FP16) + optimizer states (FP32) + gradients (FP16/FP32 mixed)
-            # Measured: ~1.4 GB fixed overhead
-            model_memory = 1.4 * 1024 * 1024 * 1024  # 1.4 GB in bytes
+            # Calibrated from real-world data (V100S, 3090)
+            # Fixed memory: ~145 MB
+            model_memory = 145 * 1024 * 1024  # bytes
             
-            # Per-sample memory: activations + temporary buffers + gradient accumulation
-            # Measured: ~14.8 MB per sample
-            per_sample_memory = 14.8 * 1024 * 1024  # bytes
+            # Per-sample memory: ~12.5 MB
+            per_sample_memory = 12.5 * 1024 * 1024  # bytes
         else:
             # FP32 mode
-            # Fixed memory is higher due to all FP32 operations
-            # Estimated: ~1.8 GB fixed overhead
-            model_memory = 1.8 * 1024 * 1024 * 1024  # 1.8 GB in bytes
+            # Calibrated from real-world data (V100S, 3090)
+            # Fixed memory: ~170 MB
+            model_memory = 170 * 1024 * 1024  # bytes
             
-            # Per-sample memory in FP32 is roughly 1.8-2x of FP16
-            # Estimated: ~26 MB per sample
-            per_sample_memory = 26 * 1024 * 1024  # bytes
+            # Per-sample memory: ~24.4 MB
+            per_sample_memory = 24.4 * 1024 * 1024  # bytes
         
         # Calculate maximum batch size
         memory_for_batch = available_memory - model_memory
         max_batch_size = int(memory_for_batch / per_sample_memory)
         
-        # Apply safety factor (90% of theoretical maximum since our formula is now calibrated)
-        safe_batch_size = int(max_batch_size * 0.90)
+        # Apply safety factor (95% of theoretical maximum since our formula is now well-calibrated)
+        safe_batch_size = int(max_batch_size * 0.95)
         
         # Adjust for multi-GPU (more total memory available)
         if len(self.gpu_devices) > 1:
