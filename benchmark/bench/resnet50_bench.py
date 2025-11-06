@@ -4,6 +4,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
 import time
+
+# PyTorch 2.x optimizations
+TORCH_VERSION = tuple(int(x) for x in torch.__version__.split('.')[:2])
+TORCH_2_PLUS = TORCH_VERSION >= (2, 0)
+
 try:
     from torch.amp import autocast, GradScaler
     version_flag = True
@@ -40,7 +45,16 @@ class ResNet50Bench(object):
                 self.use_fp16 = True
 
         self.train_dataset = FakeDataset(size=data_size, image_size=image_size, num_classes=num_classes)
-        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
+        # PyTorch 2.x: Enable persistent_workers for better performance
+        self.train_loader = torch.utils.data.DataLoader(
+            self.train_dataset, 
+            batch_size=batch_size, 
+            shuffle=True, 
+            num_workers=8, 
+            pin_memory=True,
+            persistent_workers=True if TORCH_2_PLUS else False,
+            prefetch_factor=2 if TORCH_2_PLUS else 2
+        )
 
     def start(self):
         if self.gpu_devices is None:
@@ -61,9 +75,20 @@ class ResNet50Bench(object):
 
         if len(self.gpu_devices) > 1:
             model = nn.DataParallel(model, device_ids=[device.index for device in devices])
+        
+        # PyTorch 2.x: Compile model for better performance (if supported)
+        if TORCH_2_PLUS and hasattr(torch, 'compile'):
+            try:
+                # Use reduce-overhead mode for training workloads
+                # Falls back gracefully on unsupported backends (MPS, NPU, etc.)
+                model = torch.compile(model, mode='reduce-overhead')
+                print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
+            except Exception as e:
+                print(f"⚠ torch.compile not supported on {main_device.type}: {e}")
 
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(model.parameters(), lr=self.lr)
+        # PyTorch 2.x: Use fused SGD for better performance
+        optimizer = optim.SGD(model.parameters(), lr=self.lr, fused=True if (TORCH_2_PLUS and main_device.type == 'cuda') else False)
         if main_device.type in ["xpu", "npu"]:
             GS_dev = "cuda"
         else:
@@ -73,14 +98,28 @@ class ResNet50Bench(object):
         else:
             AC_dev = main_device.type
 
+        # PyTorch 2.x: Setup AMP with proper configuration
         if self.use_bf16:
-            # BF16 is not need GradScaler
-            pass
+            # BF16 doesn't need GradScaler
+            scaler = None
         else:
             if version_flag:
                 scaler = GradScaler(device=GS_dev, enabled=self.use_fp16)
             else:
                 scaler = GradScaler(enabled=self.use_fp16)
+        
+        # PyTorch 2.x: Set matmul precision for better performance
+        # TF32 is only available on Ampere (compute capability 8.0) and newer GPUs
+        if TORCH_2_PLUS and main_device.type == 'cuda':
+            props = torch.cuda.get_device_properties(main_device)
+            compute_capability = props.major + props.minor / 10.0
+            # Ampere architecture starts at compute capability 8.0
+            if compute_capability >= 8.0:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+                print(f"✓ Enabled TF32 for {props.name} (Compute Capability {props.major}.{props.minor})")
+            else:
+                print(f"ℹ TF32 not available for {props.name} (Compute Capability {props.major}.{props.minor}, requires 8.0+)")
 
         total_step = len(self.train_loader)
         pre_load_start = time.time()
@@ -91,8 +130,12 @@ class ResNet50Bench(object):
         # Warmup: run a few iterations to stabilize GPU state (eliminate cold start effects)
         print("Warming up...")
         warmup_batches = min(5, len(data_preloaded))
+        model.train()  # Ensure model is in training mode
         for i in range(warmup_batches):
             images, labels = data_preloaded[i]
+            # PyTorch 2.x: Use set_to_none for better performance
+            optimizer.zero_grad(set_to_none=True)
+            
             if self.use_bf16:
                 if version_flag:
                     with autocast(device_type=AC_dev, dtype=torch.bfloat16, enabled=True):
@@ -116,7 +159,6 @@ class ResNet50Bench(object):
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
-            optimizer.zero_grad()
         
         # Synchronize before starting the timer to ensure all previous operations are completed
         if main_device.type == 'cuda':
@@ -150,8 +192,9 @@ class ResNet50Bench(object):
                         torch.mps.synchronize()
                     batch_start = time.time()
                 
-                # images = images.to(device)
-                # labels = labels.to(device)
+                # PyTorch 2.x: Use set_to_none for better memory efficiency
+                optimizer.zero_grad(set_to_none=True)
+                
                 if self.use_bf16:
                     if version_flag:
                         with autocast(device_type=AC_dev, dtype=torch.bfloat16, enabled=True):
@@ -175,8 +218,6 @@ class ResNet50Bench(object):
                     scaler.scale(loss).backward()
                     scaler.step(optimizer)
                     scaler.update()
-
-                optimizer.zero_grad()
                 
                 # Optional: record batch time for sampled batches
                 if self.monitor_performance and i % sample_interval == 0:
@@ -250,17 +291,19 @@ class Bottleneck(nn.Module):
         self.conv3 = nn.Conv2d(out_channels, out_channels * self.expansion, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_channels * self.expansion)
         self.downsample = downsample
+        # PyTorch 2.x: Use inplace ReLU for memory efficiency
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         identity = x
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = F.relu(out)
+        out = self.relu(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
-        out = F.relu(out)
+        out = self.relu(out)
 
         out = self.conv3(out)
         out = self.bn3(out)
@@ -269,7 +312,7 @@ class Bottleneck(nn.Module):
             identity = self.downsample(x)
 
         out += identity
-        out = F.relu(out)
+        out = self.relu(out)
 
         return out
 
@@ -280,6 +323,8 @@ class ResNet(nn.Module):
         self.in_channels = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
+        # PyTorch 2.x: Use inplace ReLU
+        self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
@@ -304,7 +349,7 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = F.relu(x)
+        x = self.relu(x)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
