@@ -22,7 +22,7 @@ def get_gpu_info(device_id):
 def measure_memory_usage(precision, batch_size, gpu_id):
     """
     Runs a simplified ResNet50 training loop and measures the real peak GPU memory usage during training.
-    This directly implements the training loop to capture accurate memory statistics.
+    Uses torch.cuda.memory_reserved() which matches nvidia-smi more closely.
     """
     device = torch.device(f"cuda:{gpu_id}")
     
@@ -43,6 +43,14 @@ def measure_memory_usage(precision, batch_size, gpu_id):
         except ImportError:
             from torch.cuda.amp import autocast, GradScaler
             version_flag = False
+        
+        # Empty cache and reset stats before starting
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device)
+        
+        # Get baseline memory (CUDA context)
+        torch.cuda.synchronize(device)
+        baseline_memory = torch.cuda.memory_reserved(device) / (1024 * 1024)
         
         # Create model and move to device
         model = ResNet50().to(device)
@@ -70,7 +78,7 @@ def measure_memory_usage(precision, batch_size, gpu_id):
         # Preload data to GPU
         data_preloaded = [(images.to(device), labels.to(device)) for images, labels in train_loader]
         
-        # Warmup phase (to trigger all initialization)
+        # Warmup phase (to trigger all initialization and memory pool allocation)
         model.train()
         warmup_batches = min(3, len(data_preloaded))
         for i in range(warmup_batches):
@@ -95,13 +103,13 @@ def measure_memory_usage(precision, batch_size, gpu_id):
                 loss.backward()
                 optimizer.step()
         
-        # Synchronize and reset memory stats AFTER warmup
+        # Synchronize after warmup
         torch.cuda.synchronize(device)
-        torch.cuda.reset_peak_memory_stats(device)
         
         # Run actual training for a few batches and monitor peak memory
         training_batches = min(10, len(data_preloaded))
-        peak_memory_mb = 0.0
+        peak_memory_reserved = 0.0
+        peak_memory_allocated = 0.0
         
         for i in range(training_batches):
             images, labels = data_preloaded[i]
@@ -127,11 +135,21 @@ def measure_memory_usage(precision, batch_size, gpu_id):
             
             # Synchronize and check memory after each batch
             torch.cuda.synchronize(device)
-            current_peak = torch.cuda.max_memory_allocated(device) / (1024 * 1024)
-            peak_memory_mb = max(peak_memory_mb, current_peak)
+            # memory_reserved() is what nvidia-smi shows (total reserved by PyTorch)
+            current_reserved = torch.cuda.memory_reserved(device) / (1024 * 1024)
+            # memory_allocated() is actual tensor memory in use
+            current_allocated = torch.cuda.memory_allocated(device) / (1024 * 1024)
+            
+            peak_memory_reserved = max(peak_memory_reserved, current_reserved)
+            peak_memory_allocated = max(peak_memory_allocated, current_allocated)
         
-        print(f"✓ Success! Peak memory usage: {peak_memory_mb:.2f} MB")
-        return peak_memory_mb
+        print(f"✓ Success!")
+        print(f"  - Peak Reserved (≈nvidia-smi): {peak_memory_reserved:.2f} MB")
+        print(f"  - Peak Allocated (actual tensors): {peak_memory_allocated:.2f} MB")
+        print(f"  - Memory Pool Overhead: {peak_memory_reserved - peak_memory_allocated:.2f} MB")
+        
+        # Return reserved memory as it matches nvidia-smi
+        return peak_memory_reserved
 
     except RuntimeError as e:
         if 'out of memory' in str(e).lower():
