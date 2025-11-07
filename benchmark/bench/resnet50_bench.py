@@ -222,6 +222,13 @@ class ResNet50Bench(object):
         data_preloaded = [(images.to(main_device), labels.to(main_device)) for images, labels in self.train_loader]
         pre_load_end = time.time()
         print(f"Pre-load completed on {main_device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
+        
+        # Calculate actual data size processed (accounts for drop_last=True)
+        actual_data_size = len(data_preloaded) * self.batch_size
+        if actual_data_size != self.data_size:
+            dropped_samples = self.data_size - actual_data_size
+            print(f"Note: Dropped {dropped_samples} samples due to incomplete batch (drop_last=True)")
+            print(f"      Processing {actual_data_size}/{self.data_size} images ({actual_data_size/self.data_size*100:.1f}%)")
 
         # Warmup: run a few iterations to stabilize GPU state (eliminate cold start effects)
         warmup_batches = min(5, len(data_preloaded))
@@ -348,7 +355,8 @@ class ResNet50Bench(object):
         
         end_time = time.time()
         time_usage = end_time - start_time
-        basic_score = self.data_size / time_usage
+        # Use actual processed data size for accurate score calculation
+        basic_score = actual_data_size / time_usage
         final_score = basic_score * (self.epochs / 10) * 100
         print(f"Training completed on {main_device}. Time taken: {time_usage:.2f} seconds. Score: {final_score:.0f}")
         
