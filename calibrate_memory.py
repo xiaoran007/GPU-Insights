@@ -21,35 +21,114 @@ def get_gpu_info(device_id):
 
 def measure_memory_usage(precision, batch_size, gpu_id):
     """
-    Runs the ResNet50 benchmark for a single epoch and measures the peak GPU memory usage.
+    Runs a simplified ResNet50 training loop and measures the real peak GPU memory usage during training.
+    This directly implements the training loop to capture accurate memory statistics.
     """
     device = torch.device(f"cuda:{gpu_id}")
-    
-    # Reset memory stats before the run
-    torch.cuda.reset_peak_memory_stats(device)
     
     print(f"Testing {precision} with batch size: {batch_size} on GPU {gpu_id}...")
     
     try:
-        # Configure and run the benchmark
+        import torch.nn as nn
+        import torch.optim as optim
+        from benchmark.bench.resnet50_bench import ResNet50, FakeDataset
+        
+        # Configure precision
         use_fp16 = precision == 'FP16'
         
-        # We only need to run for one epoch and a small data size for this test
-        bench = ResNet50Bench(
-            gpu_device=[device],
-            cpu_device=torch.device("cpu"),
-            epochs=1,
-            batch_size=batch_size,
-            data_size=1024, # Use a reasonable data size
-            use_fp16=use_fp16
+        # Import AMP modules
+        try:
+            from torch.amp import autocast, GradScaler
+            version_flag = True
+        except ImportError:
+            from torch.cuda.amp import autocast, GradScaler
+            version_flag = False
+        
+        # Create model and move to device
+        model = ResNet50().to(device)
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(model.parameters(), lr=0.001)
+        
+        # Setup GradScaler for FP16
+        if use_fp16:
+            scaler = GradScaler(device="cuda", enabled=True)
+        else:
+            scaler = None
+        
+        # Create dataset and dataloader
+        data_size = 1024
+        train_dataset = FakeDataset(size=data_size, image_size=(3, 32, 32), num_classes=10)
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset, 
+            batch_size=batch_size, 
+            shuffle=False,
+            num_workers=0,
+            pin_memory=True,
+            drop_last=True
         )
         
-        # The benchmark internally handles the training loop
-        bench.start()
+        # Preload data to GPU
+        data_preloaded = [(images.to(device), labels.to(device)) for images, labels in train_loader]
         
-        # Get peak memory usage after the run
-        peak_memory_bytes = torch.cuda.max_memory_allocated(device)
-        peak_memory_mb = peak_memory_bytes / (1024 * 1024)
+        # Warmup phase (to trigger all initialization)
+        model.train()
+        warmup_batches = min(3, len(data_preloaded))
+        for i in range(warmup_batches):
+            images, labels = data_preloaded[i]
+            optimizer.zero_grad(set_to_none=True)
+            
+            if use_fp16:
+                if version_flag:
+                    with autocast(device_type="cuda", dtype=torch.float16, enabled=True):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                else:
+                    with autocast(dtype=torch.float16, enabled=True):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+        
+        # Synchronize and reset memory stats AFTER warmup
+        torch.cuda.synchronize(device)
+        torch.cuda.reset_peak_memory_stats(device)
+        
+        # Run actual training for a few batches and monitor peak memory
+        training_batches = min(10, len(data_preloaded))
+        peak_memory_mb = 0.0
+        
+        for i in range(training_batches):
+            images, labels = data_preloaded[i]
+            optimizer.zero_grad(set_to_none=True)
+            
+            if use_fp16:
+                if version_flag:
+                    with autocast(device_type="cuda", dtype=torch.float16, enabled=True):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                else:
+                    with autocast(dtype=torch.float16, enabled=True):
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+            
+            # Synchronize and check memory after each batch
+            torch.cuda.synchronize(device)
+            current_peak = torch.cuda.max_memory_allocated(device) / (1024 * 1024)
+            peak_memory_mb = max(peak_memory_mb, current_peak)
         
         print(f"✓ Success! Peak memory usage: {peak_memory_mb:.2f} MB")
         return peak_memory_mb
