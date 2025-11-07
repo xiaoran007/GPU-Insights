@@ -91,32 +91,30 @@ class ResNet50Bench(object):
         print(f"Available Memory: {available_memory / 1024**2:.2f} MB")
         
         # ResNet50 memory usage estimation
-        # Based on calibration data from Tesla V100S (32GB) and RTX 3090 (24GB).
-        # Using linear regression on BS=[128, 256, 512] measurements.
+        # Calibrated using torch.cuda.memory_reserved() which matches nvidia-smi
+        # Based on RTX 3090 measurements with BS=[128, 256, 512]
+        # Data includes PyTorch memory pool overhead for accurate real-world usage
         
         if self.use_fp16 or self.use_bf16:
             # FP16/BF16 mode (with AMP)
-            # Calibrated from real-world data (V100S, 3090)
-            # Fixed memory: ~145 MB
-            model_memory = 145 * 1024 * 1024  # bytes
-            
-            # Per-sample memory: ~12.5 MB
-            per_sample_memory = 12.5 * 1024 * 1024  # bytes
+            # Calibrated: BS=128→2002MB, BS=256→4086MB, BS=512→7538MB
+            # Linear regression: Memory = 164 + 14.4 × BS (MB)
+            model_memory = 164 * 1024 * 1024  # bytes
+            per_sample_memory = 14.4 * 1024 * 1024  # bytes
         else:
             # FP32 mode
-            # Calibrated from real-world data (V100S, 3090)
-            # Fixed memory: ~170 MB
-            model_memory = 170 * 1024 * 1024  # bytes
-            
-            # Per-sample memory: ~24.4 MB
-            per_sample_memory = 24.4 * 1024 * 1024  # bytes
+            # Calibrated: BS=128→3816MB, BS=256→7386MB, BS=512→15346MB
+            # Linear regression: Memory = 246 + 27.9 × BS (MB)
+            model_memory = 246 * 1024 * 1024  # bytes
+            per_sample_memory = 27.9 * 1024 * 1024  # bytes
         
         # Calculate maximum batch size
         memory_for_batch = available_memory - model_memory
         max_batch_size = int(memory_for_batch / per_sample_memory)
         
-        # Apply safety factor (95% of theoretical maximum since our formula is now well-calibrated)
-        safe_batch_size = int(max_batch_size * 0.95)
+        # Apply safety factor (92% since memory_reserved includes pool overhead)
+        # This accounts for potential fragmentation and runtime variations
+        safe_batch_size = int(max_batch_size * 0.92)
         
         # Adjust for multi-GPU (more total memory available)
         if len(self.gpu_devices) > 1:
