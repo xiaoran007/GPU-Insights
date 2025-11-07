@@ -112,9 +112,9 @@ class ResNet50Bench(object):
         memory_for_batch = available_memory - model_memory
         max_batch_size = int(memory_for_batch / per_sample_memory)
         
-        # Apply safety factor (92% since memory_reserved includes pool overhead)
+        # Apply safety factor (99% since memory_reserved includes pool overhead)
         # This accounts for potential fragmentation and runtime variations
-        safe_batch_size = int(max_batch_size * 0.92)
+        safe_batch_size = int(max_batch_size * 0.99)
         
         # Adjust for multi-GPU (more total memory available)
         if len(self.gpu_devices) > 1:
@@ -138,7 +138,7 @@ class ResNet50Bench(object):
         print(f"  - Model fixed memory: {model_memory / 1024**2:.0f} MB")
         print(f"  - Per-sample memory: {per_sample_memory / 1024**2:.1f} MB")
         print(f"  - Theoretical max batch size: {max_batch_size}")
-        print(f"  - Safe batch size (90%): {safe_batch_size} (power of 2)")
+        print(f"  - Safe batch size (99%): {safe_batch_size} (power of 2)")
         print(f"  - Estimated total memory: {(model_memory + safe_batch_size * per_sample_memory) / 1024**3:.1f} GB")
         
         return safe_batch_size
