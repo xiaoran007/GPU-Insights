@@ -117,6 +117,19 @@
     {
       "vendor": "nvidia",
       "architecture": "Blackwell",
+      "device": "NVIDIA GeForce RTX 5090",
+      "memory": "32GB",
+      "platform": "Linux (Docker) 580.76",
+      "fp32": 46701,
+      "fp32bs": 0,
+      "fp16": 101039,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2025.11.7"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Blackwell",
       "device": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
       "memory": "96GB",
       "platform": "Linux (Docker) 570.124",
@@ -256,6 +269,19 @@
       "fp16bs": 256,
       "note": "wsl2 ver.2",
       "date": "2025.11.6"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ampere",
+      "device": "NVIDIA GeForce RTX 3090",
+      "memory": "24GB",
+      "platform": "Linux (Docker) 581.29",
+      "fp32": 20166,
+      "fp32bs": 0,
+      "fp16": 44323,
+      "fp16bs": 0,
+      "note": "wsl2 ver.2",
+      "date": "2025.11.7"
     },
     {
       "vendor": "nvidia",
