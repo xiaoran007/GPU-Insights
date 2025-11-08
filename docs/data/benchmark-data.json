@@ -142,6 +142,19 @@
     },
     {
       "vendor": "nvidia",
+      "architecture": "Blackwell",
+      "device": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+      "memory": "96GB",
+      "platform": "Linux (Docker) 580.76",
+      "fp32": 44230,
+      "fp32bs": 0,
+      "fp16": 111574,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2025.11.8"
+    },
+    {
+      "vendor": "nvidia",
       "architecture": "Hopper",
       "device": "NVIDIA H20",
       "memory": "96GB",
