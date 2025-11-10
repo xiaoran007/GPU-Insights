@@ -9,6 +9,15 @@ import time
 TORCH_VERSION = tuple(int(x) for x in torch.__version__.split('.')[:2])
 TORCH_2_PLUS = TORCH_VERSION >= (2, 0)
 
+# DDP support
+try:
+    from torch.nn.parallel import DistributedDataParallel as DDP
+    from torch.utils.data.distributed import DistributedSampler
+    DDP_AVAILABLE = True
+except ImportError:
+    DDP_AVAILABLE = False
+    print("Warning: torch.distributed not available, DDP support disabled")
+
 try:
     from torch.amp import autocast, GradScaler
     version_flag = True
@@ -25,7 +34,7 @@ except ImportError:
 
 
 class ResNet50Bench(object):
-    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False, use_bf16=False, monitor_performance=False, auto_batch_size=False):
+    def __init__(self, gpu_device, cpu_device, epochs=5, batch_size=4, lr=0.001, data_size=1000, image_size=(3, 32, 32), num_classes=10, use_fp16=False, use_bf16=False, monitor_performance=False, auto_batch_size=False, use_ddp=False, ddp_rank=0, ddp_world_size=1):
         self.gpu_devices = gpu_device
         self.cpu_device = cpu_device
         self.epochs = epochs
@@ -35,6 +44,12 @@ class ResNet50Bench(object):
         self.use_bf16 = use_bf16
         self.monitor_performance = monitor_performance  # Optional: monitor batch-level performance
         self.auto_batch_size = auto_batch_size
+        
+        # DDP parameters
+        self.use_ddp = use_ddp and DDP_AVAILABLE
+        self.ddp_rank = ddp_rank
+        self.ddp_world_size = ddp_world_size
+        self.is_main_process = (ddp_rank == 0)  # Only rank 0 prints messages
 
         if use_bf16:
             if torch.cuda.is_bf16_supported(including_emulation=False):
@@ -46,19 +61,37 @@ class ResNet50Bench(object):
 
         # Auto batch size calculation if enabled
         if auto_batch_size and gpu_device is not None:
-            print("\n=== Auto Batch Size Calculation ===")
+            if self.is_main_process:
+                print("\n=== Auto Batch Size Calculation ===")
             batch_size = self._find_optimal_batch_size()
-            print(f"✓ Optimal batch size determined: {batch_size}")
-            print("===================================\n")
+            if self.is_main_process:
+                print(f"✓ Optimal batch size determined: {batch_size}")
+                print("===================================\n")
         
         self.batch_size = batch_size
         
         self.train_dataset = FakeDataset(size=data_size, image_size=image_size, num_classes=num_classes)
+        
+        # DDP: Use DistributedSampler for data distribution across processes
+        if self.use_ddp:
+            self.train_sampler = DistributedSampler(
+                self.train_dataset,
+                num_replicas=ddp_world_size,
+                rank=ddp_rank,
+                shuffle=True,
+                drop_last=True
+            )
+            shuffle = False  # Sampler handles shuffling
+        else:
+            self.train_sampler = None
+            shuffle = True
+        
         # PyTorch 2.x: Enable persistent_workers for better performance
         self.train_loader = torch.utils.data.DataLoader(
             self.train_dataset, 
             batch_size=batch_size, 
-            shuffle=True, 
+            shuffle=shuffle,
+            sampler=self.train_sampler,  # Use sampler for DDP
             num_workers=1, 
             pin_memory=True,
             drop_last=True,
@@ -85,10 +118,11 @@ class ResNet50Bench(object):
         # Reserve some memory for CUDA context and other overhead
         reserved_memory = 500 * 1024 * 1024  # 500MB reserved
         available_memory = total_memory - reserved_memory
-        1
-        print(f"GPU: {torch.cuda.get_device_name(main_device)}")
-        print(f"Total Memory: {total_memory / 1024**2:.2f} MB")
-        print(f"Available Memory: {available_memory / 1024**2:.2f} MB")
+        
+        if self.is_main_process:
+            print(f"GPU: {torch.cuda.get_device_name(main_device)}")
+            print(f"Total Memory: {total_memory / 1024**2:.2f} MB")
+            print(f"Available Memory: {available_memory / 1024**2:.2f} MB")
         
         # ResNet50 memory usage estimation
         # Calibrated using torch.cuda.memory_reserved() which matches nvidia-smi
@@ -118,7 +152,12 @@ class ResNet50Bench(object):
         
         # Adjust for multi-GPU (more total memory available)
         if len(self.gpu_devices) > 1:
-            safe_batch_size = int(safe_batch_size * len(self.gpu_devices) * 0.9)  # Slight overhead for DataParallel
+            if self.use_ddp:
+                # DDP: Each process uses one GPU, no adjustment needed
+                pass
+            else:
+                # DataParallel: Adjust for multiple GPUs
+                safe_batch_size = int(safe_batch_size * len(self.gpu_devices) * 0.9)  # Slight overhead for DataParallel
         
         # Round down to nearest power of 2 for optimal GPU utilization
         if safe_batch_size >= 32:
@@ -134,12 +173,13 @@ class ResNet50Bench(object):
         else:
             safe_batch_size = max(16, min(safe_batch_size, 2048))
         
-        print(f"\nCalculated batch size: {safe_batch_size}")
-        print(f"  - Model fixed memory: {model_memory / 1024**2:.0f} MB")
-        print(f"  - Per-sample memory: {per_sample_memory / 1024**2:.1f} MB")
-        print(f"  - Theoretical max batch size: {max_batch_size}")
-        print(f"  - Safe batch size (99%): {safe_batch_size} (power of 2)")
-        print(f"  - Estimated total memory: {(model_memory + safe_batch_size * per_sample_memory) / 1024**3:.1f} GB")
+        if self.is_main_process:
+            print(f"\nCalculated batch size: {safe_batch_size}")
+            print(f"  - Model fixed memory: {model_memory / 1024**2:.0f} MB")
+            print(f"  - Per-sample memory: {per_sample_memory / 1024**2:.1f} MB")
+            print(f"  - Theoretical max batch size: {max_batch_size}")
+            print(f"  - Safe batch size (99%): {safe_batch_size} (power of 2)")
+            print(f"  - Estimated total memory: {(model_memory + safe_batch_size * per_sample_memory) / 1024**3:.1f} GB")
         
         return safe_batch_size
 
@@ -147,12 +187,14 @@ class ResNet50Bench(object):
         if self.gpu_devices is None:
             # print("GPU is not available, only CPU will be benched.")
             # print("DEBUG mode, skipping CPU bench.")
-            print("GPU is not available")
+            if self.is_main_process:
+                print("GPU is not available")
             # self._bench(self.cpu_device)
         else:
             # print("GPU is available, both GPU and CPU will be benched.")
             # print("DEBUG mode, skipping CPU bench.")
-            print("DEBUG mode.")
+            if self.is_main_process:
+                print("DEBUG mode.")
             self._bench(self.gpu_devices)
             # self._bench(self.cpu_device)
 
@@ -160,8 +202,43 @@ class ResNet50Bench(object):
         main_device = devices[0]
         model = ResNet50().to(main_device)
 
-        if len(self.gpu_devices) > 1:
+        # Choose parallelization strategy
+        if self.use_ddp:
+            # DDP: Wrap model with DistributedDataParallel
+            # In DDP mode, each process has only one GPU (main_device)
+            device_id = main_device.index if hasattr(main_device, 'index') else 0
+            
+            # Fix stride mismatch issue for 1x1 convolutions
+            # ResNet50's 1x1 conv layers can produce gradients with non-standard strides
+            # We need to ensure all parameters have contiguous gradients
+            for param in model.parameters():
+                if param.requires_grad and param.grad is not None:
+                    param.grad = param.grad.contiguous()
+            
+            # DDP configuration:
+            # - gradient_as_bucket_view=False: Avoids stride mismatch warnings
+            #   This occurs when gradient strides don't match bucket view strides,
+            #   typically with 1x1 convolutions. Setting to False copies gradients
+            #   to ensure proper layout, trading ~5-10% performance for compatibility.
+            # - broadcast_buffers=True: Sync BatchNorm stats across processes
+            # - find_unused_parameters=False: Faster, assumes all params used in forward
+            # - bucket_cap_mb=25: Default bucket size, can tune for your network
+            model = DDP(
+                model, 
+                device_ids=[device_id], 
+                output_device=device_id,
+                gradient_as_bucket_view=False,  # Prevent stride warnings (slight perf cost)
+                broadcast_buffers=True,
+                find_unused_parameters=False,
+                bucket_cap_mb=25  # Default 25MB, tune if needed
+            )
+            if self.is_main_process:
+                print(f"✓ Using DDP with {self.ddp_world_size} processes (Rank {self.ddp_rank}/{self.ddp_world_size})")
+                print(f"  Configuration: gradient_as_bucket_view=False (stride-safe mode)")
+        elif len(self.gpu_devices) > 1:
+            # DataParallel: Legacy multi-GPU support
             model = nn.DataParallel(model, device_ids=[device.index for device in devices])
+            print(f"✓ Using DataParallel with {len(devices)} GPUs")
         
         # PyTorch 2.x: Compile model for better performance (if supported)
         # Note: torch.compile requires C/C++ compiler (gcc/clang on Linux/macOS, MSVC on Windows)
@@ -170,17 +247,19 @@ class ResNet50Bench(object):
                 # Use default mode for training workloads
                 # Falls back gracefully on unsupported backends (MPS, NPU, etc.)
                 model = torch.compile(model, mode='default')
-                print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
+                if self.is_main_process:
+                    print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
             except Exception as e:
                 error_msg = str(e)
-                if "C compiler" in error_msg or "CC environment" in error_msg:
-                    print(f"⚠ torch.compile disabled: C/C++ compiler not found")
-                    print(f"  Install: macOS: xcode-select --install | Linux: sudo apt install build-essential")
-                elif "triton" in error_msg.lower():
-                    print(f"⚠ torch.compile disabled: Triton compiler issue")
-                else:
-                    print(f"⚠ torch.compile not supported on {main_device.type}: {error_msg[:100]}")
-                print(f"  → Continuing with standard (eager) mode...")
+                if self.is_main_process:
+                    if "C compiler" in error_msg or "CC environment" in error_msg:
+                        print(f"⚠ torch.compile disabled: C/C++ compiler not found")
+                        print(f"  Install: macOS: xcode-select --install | Linux: sudo apt install build-essential")
+                    elif "triton" in error_msg.lower():
+                        print(f"⚠ torch.compile disabled: Triton compiler issue")
+                    else:
+                        print(f"⚠ torch.compile not supported on {main_device.type}: {error_msg[:100]}")
+                    print(f"  → Continuing with standard (eager) mode...")
 
         criterion = nn.CrossEntropyLoss()
         # PyTorch 2.x: Use fused SGD for better performance
@@ -213,27 +292,63 @@ class ResNet50Bench(object):
             if compute_capability >= 8.0:
                 torch.backends.cuda.matmul.allow_tf32 = True
                 torch.backends.cudnn.allow_tf32 = True
-                print(f"✓ Enabled TF32 for {props.name} (Compute Capability {props.major}.{props.minor})")
+                if self.is_main_process:
+                    print(f"✓ Enabled TF32 for {props.name} (Compute Capability {props.major}.{props.minor})")
             else:
-                print(f"ℹ TF32 not available for {props.name} (Compute Capability {props.major}.{props.minor}, requires 8.0+)")
+                if self.is_main_process:
+                    print(f"ℹ TF32 not available for {props.name} (Compute Capability {props.major}.{props.minor}, requires 8.0+)")
 
         total_step = len(self.train_loader)
+        
+        # DDP: Register gradient hooks to ensure contiguous gradients
+        # This prevents stride mismatch warnings from 1x1 convolutions
+        if self.use_ddp:
+            def make_grads_contiguous(module):
+                """Hook to ensure gradients are contiguous after backward pass"""
+                def hook(grad):
+                    if grad is not None and not grad.is_contiguous():
+                        return grad.contiguous()
+                    return grad
+                return hook
+            
+            # Register hooks for all parameters with gradients
+            for param in model.parameters():
+                if param.requires_grad:
+                    param.register_hook(make_grads_contiguous(model))
+            
+            if self.is_main_process:
+                print("✓ Registered gradient contiguity hooks for DDP")
+        
         pre_load_start = time.time()
         data_preloaded = [(images.to(main_device), labels.to(main_device)) for images, labels in self.train_loader]
         pre_load_end = time.time()
-        print(f"Pre-load completed on {main_device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
+        if self.is_main_process:
+            print(f"Pre-load completed on {main_device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
         
         # Calculate actual data size processed (accounts for drop_last=True)
         actual_data_size = len(data_preloaded) * self.batch_size
+        
+        # DDP: Each process handles a fraction of the data due to DistributedSampler
+        # For score calculation, we need the total data processed across all processes
+        if self.use_ddp:
+            total_data_size = actual_data_size * self.ddp_world_size
+        else:
+            total_data_size = actual_data_size
+            
         if actual_data_size != self.data_size:
-            dropped_samples = self.data_size - actual_data_size
-            print(f"Note: Dropped {dropped_samples} samples due to incomplete batch (drop_last=True)")
-            print(f"      Processing {actual_data_size}/{self.data_size} images ({actual_data_size/self.data_size*100:.1f}%)")
+            if self.is_main_process:
+                print(f"Note: Dropped samples due to incomplete batch (drop_last=True)")
+                if self.use_ddp:
+                    print(f"      This process: {actual_data_size}/{self.data_size} images ({actual_data_size/self.data_size*100:.1f}%)")
+                    print(f"      All processes: {total_data_size} images total")
+                else:
+                    print(f"      Processing {actual_data_size}/{self.data_size} images ({actual_data_size/self.data_size*100:.1f}%)")
 
         # Warmup: run a few iterations to stabilize GPU state (eliminate cold start effects)
         warmup_batches = min(5, len(data_preloaded))
         model.train()  # Ensure model is in training mode
-        warmup_pbar = tqdm(total=warmup_batches, desc="Warming up", unit="batch")
+        if self.is_main_process:
+            warmup_pbar = tqdm(total=warmup_batches, desc="Warming up", unit="batch")
         for i in range(warmup_batches):
             images, labels = data_preloaded[i]
             # PyTorch 2.x: Use set_to_none for better performance
@@ -263,8 +378,10 @@ class ResNet50Bench(object):
                 scaler.step(optimizer)
                 scaler.update()
             
-            warmup_pbar.update(1)
-        warmup_pbar.close()
+            if self.is_main_process:
+                warmup_pbar.update(1)
+        if self.is_main_process:
+            warmup_pbar.close()
         
         # Synchronize before starting the timer to ensure all previous operations are completed
         if main_device.type == 'cuda':
@@ -276,15 +393,21 @@ class ResNet50Bench(object):
         elif main_device.type == 'mps':
             torch.mps.synchronize()
         
-        print("Timer started.")
+        if self.is_main_process:
+            print("Timer started.")
         
         start_time = time.time()
         batch_times = []  # Store batch times for optional performance monitoring
         sample_interval = max(1, len(data_preloaded) // 10)  # Sample ~10 batches per epoch
         
         for epoch in range(self.epochs):
+            # DDP: Set epoch for DistributedSampler to ensure proper shuffling
+            if self.use_ddp and self.train_sampler is not None:
+                self.train_sampler.set_epoch(epoch)
+            
             iters = len(self.train_loader)
-            pbar = tqdm(total=iters, desc=f"Epoch: {epoch+1}/{self.epochs}", unit="it")
+            if self.is_main_process:
+                pbar = tqdm(total=iters, desc=f"Epoch: {epoch+1}/{self.epochs}", unit="it")
             for i, (images, labels) in enumerate(data_preloaded):
                 # Optional: monitor performance for sampled batches (only if enabled)
                 if self.monitor_performance and i % sample_interval == 0:
@@ -338,10 +461,12 @@ class ResNet50Bench(object):
                     batch_end = time.time()
                     batch_times.append(batch_end - batch_start)
 
-                pbar.update(1)
-                pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.detach().item():.4f}")
+                if self.is_main_process:
+                    pbar.update(1)
+                    pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.detach().item():.4f}")
 
-            pbar.close()
+            if self.is_main_process:
+                pbar.close()
         
         # Synchronize after training to ensure all GPU operations are completed before stopping the timer
         if main_device.type == 'cuda':
@@ -355,13 +480,25 @@ class ResNet50Bench(object):
         
         end_time = time.time()
         time_usage = end_time - start_time
-        # Use actual processed data size for accurate score calculation
-        basic_score = actual_data_size / time_usage
+        
+        # Score calculation:
+        # - In DDP mode: use total_data_size (all processes combined) for system throughput
+        # - In single-GPU/DataParallel mode: use actual_data_size
+        basic_score = total_data_size / time_usage
         final_score = basic_score * (self.epochs / 10) * 100
-        print(f"Training completed on {main_device}. Time taken: {time_usage:.2f} seconds. Score: {final_score:.0f}")
+        
+        # DDP: Only rank 0 prints the final results
+        if self.is_main_process:
+            if self.use_ddp:
+                print(f"Training completed. Time: {time_usage:.2f}s")
+                print(f"  This process: {actual_data_size} images on {main_device}")
+                print(f"  Total throughput: {total_data_size} images across {self.ddp_world_size} GPUs")
+                print(f"  Score: {final_score:.0f}")
+            else:
+                print(f"Training completed on {main_device}. Time taken: {time_usage:.2f} seconds. Score: {final_score:.0f}")
         
         # Optional: print performance statistics if monitoring is enabled
-        if self.monitor_performance and batch_times:
+        if self.monitor_performance and batch_times and self.is_main_process:
             import numpy as np
             batch_times = np.array(batch_times)
             print(f"\nPerformance Statistics (sampled {len(batch_times)} batches):")
