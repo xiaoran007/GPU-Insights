@@ -182,6 +182,32 @@
     {
       "vendor": "nvidia",
       "architecture": "Ada Lovelace",
+      "device": "NVIDIA GeForce RTX 4090 D",
+      "memory": "24GB",
+      "platform": "Linux 570.124",
+      "fp32": 29677,
+      "fp32bs": 0,
+      "fp16": 63426,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2025.11.10"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ada Lovelace",
+      "device": "NVIDIA GeForce RTX 4090 D - 2 GPUs",
+      "memory": "24GB",
+      "platform": "Linux 570.124",
+      "fp32": 51736,
+      "fp32bs": 0,
+      "fp16": 105745,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2025.11.10"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ada Lovelace",
       "device": "NVIDIA vGPU (2x RTX 4090)",
       "memory": "48GB",
       "platform": "Linux (Docker) 575.64",
