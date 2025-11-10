@@ -6,13 +6,16 @@ from macos_hw_detector import get_gpu_info
 
 
 class Bench(object):
-    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0], auto_batch_size=False):
+    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0], auto_batch_size=False, use_ddp=False, ddp_rank=0, ddp_world_size=1):
         self.huawei = huawei
         self.mthreads = mthreads
+        self.use_ddp = use_ddp
+        self.ddp_rank = ddp_rank
+        self.ddp_world_size = ddp_world_size
         torch.backends.cudnn.benchmark = cudnn_benchmark
         self.gpu_device = self._get_gpu_device(gpu_ids)
         self.cpu_device = self._get_cpu_device()
-        self.backend = self._load_backend(method=method, auto=auto, size=size, epochs=epochs, batch_size=batch_size, data_type=data_type, auto_batch_size=auto_batch_size)
+        self.backend = self._load_backend(method=method, auto=auto, size=size, epochs=epochs, batch_size=batch_size, data_type=data_type, auto_batch_size=auto_batch_size, use_ddp=use_ddp, ddp_rank=ddp_rank, ddp_world_size=ddp_world_size)
 
     def start(self):
         self.backend.start()
@@ -68,7 +71,7 @@ class Bench(object):
         else:
             return 0
 
-    def _load_backend(self, method, auto, size, epochs, batch_size, data_type, auto_batch_size):
+    def _load_backend(self, method, auto, size, epochs, batch_size, data_type, auto_batch_size, use_ddp=False, ddp_rank=0, ddp_world_size=1):
         if auto:
             cuda_memory_size = self._get_cuda_memory_size(self.gpu_device)
             data_size = int(int((cuda_memory_size / 12296) / 100) * 100 * 0.7)
@@ -76,7 +79,11 @@ class Bench(object):
         else:
             self._get_cuda_memory_size(self.gpu_device)
             data_size = int(int((size * 1024 * 1024 / 12296) / 1) * 1)
-        print(f"Set model, set data size to {data_size} images, total memory size: {data_size * 12296 / 1024 / 1024:.2f} MB")
+        
+        # Only rank 0 prints in DDP mode
+        if not use_ddp or ddp_rank == 0:
+            print(f"Set model, set data size to {data_size} images, total memory size: {data_size * 12296 / 1024 / 1024:.2f} MB")
+        
         if method == "cnn":
             if batch_size == 0:
                 batch_size = 2048
@@ -96,7 +103,8 @@ class Bench(object):
                 use_bf16 = False
             return ResNet50Bench(gpu_device=self.gpu_device, cpu_device=self.cpu_device, data_size=data_size,
                                  batch_size=batch_size, epochs=epochs, use_fp16=use_fp16, use_bf16=use_bf16, 
-                                 auto_batch_size=auto_batch_size)
+                                 auto_batch_size=auto_batch_size, use_ddp=use_ddp, ddp_rank=ddp_rank, 
+                                 ddp_world_size=ddp_world_size)
         else:
             raise NotImplementedError
 
