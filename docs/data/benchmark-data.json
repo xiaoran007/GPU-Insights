@@ -260,6 +260,19 @@
     {
       "vendor": "nvidia",
       "architecture": "Ampere",
+      "device": "NVIDIA Jetson Orin Nano Super",
+      "memory": "8GB",
+      "platform": "Linux",
+      "fp32": 1780,
+      "fp32bs": 0,
+      "fp16": 3380,
+      "fp16bs": 0,
+      "note": "Jetson Orin Nano Super Developer Kit",
+      "date": "2025.11.14"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ampere",
       "device": "NVIDIA A100-PCIE",
       "memory": "40GB",
       "platform": "Linux 550.90",
