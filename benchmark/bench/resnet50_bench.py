@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
+from helper import getOS, getArch
 import time
 
 # PyTorch 2.x optimizations
@@ -243,23 +244,28 @@ class ResNet50Bench(object):
         # PyTorch 2.x: Compile model for better performance (if supported)
         # Note: torch.compile requires C/C++ compiler (gcc/clang on Linux/macOS, MSVC on Windows)
         if TORCH_2_PLUS and hasattr(torch, 'compile'):
-            try:
-                # Use default mode for training workloads
-                # Falls back gracefully on unsupported backends (MPS, NPU, etc.)
-                model = torch.compile(model, mode='default')
+            if getArch() == "aarch64" and getOS() == "linux":
                 if self.is_main_process:
-                    print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
-            except Exception as e:
-                error_msg = str(e)
-                if self.is_main_process:
-                    if "C compiler" in error_msg or "CC environment" in error_msg:
-                        print(f"⚠ torch.compile disabled: C/C++ compiler not found")
-                        print(f"  Install: macOS: xcode-select --install | Linux: sudo apt install build-essential")
-                    elif "triton" in error_msg.lower():
-                        print(f"⚠ torch.compile disabled: Triton compiler issue")
-                    else:
-                        print(f"⚠ torch.compile not supported on {main_device.type}: {error_msg[:100]}")
+                    print("⚠ torch.compile disabled: aarch64 Linux backend not yet supported")
                     print(f"  → Continuing with standard (eager) mode...")
+            else:
+                try:
+                    # Use default mode for training workloads
+                    # Falls back gracefully on unsupported backends (MPS, NPU, etc.)
+                    model = torch.compile(model, mode='default')
+                    if self.is_main_process:
+                        print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
+                except Exception as e:
+                    error_msg = str(e)
+                    if self.is_main_process:
+                        if "C compiler" in error_msg or "CC environment" in error_msg:
+                            print(f"⚠ torch.compile disabled: C/C++ compiler not found")
+                            print(f"  Install: macOS: xcode-select --install | Linux: sudo apt install build-essential")
+                        elif "triton" in error_msg.lower():
+                            print(f"⚠ torch.compile disabled: Triton compiler issue")
+                        else:
+                            print(f"⚠ torch.compile not supported on {main_device.type}: {error_msg[:100]}")
+                        print(f"  → Continuing with standard (eager) mode...")
 
         criterion = nn.CrossEntropyLoss()
         # PyTorch 2.x: Use fused SGD for better performance
