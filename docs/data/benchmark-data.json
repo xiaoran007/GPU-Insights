@@ -441,6 +441,19 @@
     },
     {
       "vendor": "nvidia",
+      "architecture": "Volta",
+      "device": "Tesla V100S-PCIE - 2 GPUs",
+      "memory": "32GB",
+      "platform": "Linux (Docker) 550.90",
+      "fp32": 21096,
+      "fp32bs": 0,
+      "fp16": 80919,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2025.11.15"
+    },
+    {
+      "vendor": "nvidia",
       "architecture": "Pascal",
       "device": "NVIDIA TITAN X (Pascal)",
       "memory": "12GB",
