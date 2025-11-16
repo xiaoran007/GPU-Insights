@@ -231,60 +231,6 @@
             font-style: italic;
         }
 
-        .chart-section {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .chart-section h2 {
-            margin-bottom: 20px;
-            color: #495057;
-            font-weight: 600;
-        }
-
-        .chart-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .chart-tab-button {
-            padding: 10px 20px;
-            border: none;
-            background: #f0f0f0;
-            color: #666;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .chart-tab-button.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .chart-tab-button:hover {
-            background: #e0e0e0;
-        }
-
-        .chart-tab-button.active:hover {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .chart-container {
-            height: 400px;
-            position: relative;
-        }
-
-        .chart-container canvas {
-            max-height: 400px;
-        }
-
         .error-message {
             background: #f8d7da;
             color: #721c24;
@@ -378,32 +324,6 @@
             <div class="stat-card">
                 <div class="stat-number" id="vendorCount">0</div>
                 <div class="stat-label">GPU Vendors</div>
-            </div>
-        </div>
-
-        <div class="chart-section">
-            <h2>Performance Visualization</h2>
-            <div class="chart-tabs">
-                <button class="chart-tab-button active" data-chart="performance">Top Performance</button>
-                <button class="chart-tab-button" data-chart="vendor">Vendor Analysis</button>
-                <button class="chart-tab-button" data-chart="architecture">Architecture Comparison</button>
-                <button class="chart-tab-button" data-chart="scatter">FP32 vs FP16</button>
-            </div>
-            
-            <div id="performanceChart" class="chart-container">
-                <canvas id="performanceCanvas"></canvas>
-            </div>
-            
-            <div id="vendorChart" class="chart-container" style="display: none;">
-                <canvas id="vendorCanvas"></canvas>
-            </div>
-            
-            <div id="architectureChart" class="chart-container" style="display: none;">
-                <canvas id="architectureCanvas"></canvas>
-            </div>
-            
-            <div id="scatterChart" class="chart-container" style="display: none;">
-                <canvas id="scatterCanvas"></canvas>
             </div>
         </div>
         
@@ -635,7 +555,6 @@
             
             renderTable();
             updateStats();
-            updateCharts();
         }
 
         function createPerformanceChart() {
@@ -1071,23 +990,6 @@
             document.getElementById('architectureFilter').addEventListener('change', applyFilters);
             document.getElementById('platformFilter').addEventListener('change', applyFilters);
             document.getElementById('sortBy').addEventListener('change', applyFilters);
-
-            // Chart tabs
-            document.querySelectorAll('.chart-tab-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    document.querySelectorAll('.chart-tab-button').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    const chartType = this.dataset.chart;
-                    document.querySelectorAll('.chart-container').forEach(container => {
-                        container.style.display = 'none';
-                    });
-                    document.getElementById(chartType + 'Chart').style.display = 'block';
-                });
-            });
-
-            // Initialize charts
-            updateCharts();
         });
     </script>
 </body>
