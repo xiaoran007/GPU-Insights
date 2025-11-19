@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "lastUpdated": "2025-09-19",
-    "version": "1.0",
+    "lastUpdated": "2025-11-19",
+    "version": "2.0",
     "description": "GPU benchmark data for ResNet50 training performance",
     "testConfiguration": {
       "model": "ResNet50",
       "parameters": "23.5M",
-      "defaultCommand": "python main.py -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32/FP16 -gpu 0"
+      "defaultCommand": "make ddp-abs"
     }
   },
   "benchmarks": [
