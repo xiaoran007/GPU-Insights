@@ -415,6 +415,19 @@
     },
     {
       "vendor": "nvidia",
+      "architecture": "Turing",
+      "device": "Tesla T4",
+      "memory": "16GB",
+      "platform": "Linux 580.65",
+      "fp32": 3387,
+      "fp32bs": 0,
+      "fp16": 15994,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2025.11.30"
+    },
+    {
+      "vendor": "nvidia",
       "architecture": "Volta",
       "device": "Tesla V100S-PCIE",
       "memory": "32GB",
