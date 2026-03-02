@@ -428,6 +428,32 @@
     },
     {
       "vendor": "nvidia",
+      "architecture": "Turing",
+      "device": "Quadro RTX 6000",
+      "memory": "24GB",
+      "platform": "Linux 575.57",
+      "fp32": 9964,
+      "fp32bs": 0,
+      "fp16": 37509,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2026.3.2"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Turing",
+      "device": "Quadro RTX 6000 - 2 GPUs",
+      "memory": "24GB",
+      "platform": "Linux 575.57",
+      "fp32": 18657,
+      "fp32bs": 0,
+      "fp16": 61666,
+      "fp16bs": 0,
+      "note": "ver.2",
+      "date": "2026.3.2"
+    },
+    {
+      "vendor": "nvidia",
       "architecture": "Volta",
       "device": "Tesla V100S-PCIE",
       "memory": "32GB",
