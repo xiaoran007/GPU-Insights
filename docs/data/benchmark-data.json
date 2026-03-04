@@ -279,6 +279,20 @@
     {
       "vendor": "nvidia",
       "architecture": "Ampere",
+      "device": "NVIDIA vGPU (RTX 3090)",
+      "memory": "48GB",
+      "platform": "Linux (Docker) 580.105",
+      "fp32": 21078,
+      "fp32bs": 0,
+      "fp16": 44679,
+      "fp16bs": 0,
+      "note": "RTX 3090 48GB vMemory Edition",
+      "date": "2026.3.4",
+      "version": "ver2"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ampere",
       "device": "NVIDIA A2",
       "memory": "26GB",
       "platform": "Linux 575.57",
