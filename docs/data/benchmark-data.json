@@ -279,6 +279,20 @@
     {
       "vendor": "nvidia",
       "architecture": "Ampere",
+      "device": "NVIDIA A2",
+      "memory": "26GB",
+      "platform": "Linux 575.57",
+      "fp32": 4240,
+      "fp32bs": 0,
+      "fp16": 9141,
+      "fp16bs": 0,
+      "note": "",
+      "date": "2026.3.4",
+      "version": "ver2"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ampere",
       "device": "NVIDIA Jetson Orin Nano Super",
       "memory": "8GB",
       "platform": "Linux",
