@@ -18,6 +18,33 @@ This performance test evaluates the performance of the hardware device in a trai
 ### Results
 For better visual experience, visit [this](https://xiaoran007.github.io/GPU-Insights/) website.
 
+### Benchmark Data Version Field
+
+Each benchmark entry in `docs/data/benchmark-data.json` now includes:
+
+- `version`: `"ver1"` or `"ver2"`
+
+Version mapping rule:
+
+- If `note` contains `ver.2` (case-insensitive), the entry is `ver2`.
+- Otherwise, the entry is `ver1`.
+
+### Data Maintenance Commands
+
+```shell
+# Validate benchmark data schema and values
+python3 scripts/manage-data.py validate
+
+# Backfill or normalize per-entry version field
+python3 scripts/manage-data.py migrate-version
+
+# Force recompute version field from notes for all entries
+python3 scripts/manage-data.py migrate-version --force
+
+# Add a benchmark entry (version is optional; defaults to inferred rule)
+python3 scripts/manage-data.py add --vendor nvidia --architecture Ada --device "Example GPU" --platform "Linux" --fp32 10000 --fp32bs 256 --fp16 20000 --fp16bs 256 --note "ver.2"
+```
+
 <!-- ### Test command
 
 FP32: `python main.py -m -s 512 -e 3 -mt resnet50 -bs 256 -dt FP32`
