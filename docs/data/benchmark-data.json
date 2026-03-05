@@ -294,7 +294,7 @@
       "vendor": "nvidia",
       "architecture": "Ampere",
       "device": "NVIDIA A2",
-      "memory": "26GB",
+      "memory": "24GB",
       "platform": "Linux 575.57",
       "fp32": 4240,
       "fp32bs": 0,
