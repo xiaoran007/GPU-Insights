@@ -111,6 +111,20 @@
     {
       "vendor": "nvidia",
       "architecture": "Blackwell",
+      "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+      "memory": "8GB",
+      "platform": "Linux (Docker) 591.74",
+      "fp32": 8425,
+      "fp32bs": 128,
+      "fp16": 17477,
+      "fp16bs": 256,
+      "note": "wsl2 ver.2",
+      "date": "2026.3.6",
+      "version": "ver2"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Blackwell",
       "device": "NVIDIA GeForce RTX 5090",
       "memory": "32GB",
       "platform": "Linux (Docker) 570.124",
