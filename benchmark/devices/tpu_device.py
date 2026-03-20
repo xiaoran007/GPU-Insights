@@ -50,7 +50,13 @@ class TPUDeviceBackend(DeviceBackend):
         self._lazy_import()
         try:
             info = self._xm.get_memory_info(device)
-            return info.get("kb_total", 0) * 1024
+            # Try common key names across torch_xla versions
+            for key in ("kb_total", "bytes_limit", "total"):
+                if key in info and info[key] > 0:
+                    if "kb" in key:
+                        return info[key] * 1024
+                    return info[key]
+            return 0
         except Exception:
             return 0
 
@@ -102,7 +108,7 @@ class TPUDeviceBackend(DeviceBackend):
             print(f"  {name}: {mem_gb:.1f} GB HBM")
         return total_mem
 
-    def try_compile_model(self, model, main_device, is_main_process=True):
+    def try_compile_model(self, model, is_main_process=True):
         try:
             compiled = torch.compile(model, backend="openxla")
             if is_main_process:
