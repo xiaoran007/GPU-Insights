@@ -14,9 +14,10 @@ class Bench(object):
     Internally delegates to pluggable models, device backends, and runners.
     """
 
-    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0], auto_batch_size=False, use_ddp=False, ddp_rank=0, ddp_world_size=1):
+    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, tpu=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0], auto_batch_size=False, use_ddp=False, ddp_rank=0, ddp_world_size=1):
         self.huawei = huawei
         self.mthreads = mthreads
+        self.tpu = tpu
         self.use_ddp = use_ddp
         self.ddp_rank = ddp_rank
         self.ddp_world_size = ddp_world_size
@@ -59,7 +60,7 @@ class Bench(object):
                 print("MUSA is not available.")
                 return None, [None]
 
-        backend = auto_detect_backend()
+        backend = auto_detect_backend(tpu=self.tpu)
         if backend is not None:
             devices = backend.detect_devices(gpu_ids)
             return backend, devices

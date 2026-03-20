@@ -9,6 +9,7 @@ def main():
                         help="Enable manual benchmark.")
     parser.add_argument("-H", "--huawei", action="store_true", default=False, help="Enable Huawei NPU benchmark.")
     parser.add_argument("-M", "--mthreads", action="store_true", default=False, help="Enable mthreads GPU benchmark.")
+    parser.add_argument("-T", "--tpu", action="store_true", default=False, help="Enable Google TPU benchmark.")
     parser.add_argument("-a", "--auto", action="store_true", default=False,
                         help="Enable auto benchmark.")
     parser.add_argument("-s", "--size", type=int, required=False, default=1024,
@@ -56,7 +57,7 @@ def main():
             print("Warning: Auto batch size is only supported for ResNet50 model. Ignoring -abs flag.")
             args.auto_batch_size = False
         
-        b = Bench(auto=False, huawei=args.huawei, mthreads=args.mthreads, size=args.size, epochs=args.epochs, method=model, batch_size=args.batch,
+        b = Bench(auto=False, huawei=args.huawei, mthreads=args.mthreads, tpu=args.tpu, size=args.size, epochs=args.epochs, method=model, batch_size=args.batch,
                   cudnn_benchmark=args.cudnn_benchmark, data_type=data_type, gpu_ids=gpu_ids, auto_batch_size=args.auto_batch_size)
         b.start()
 

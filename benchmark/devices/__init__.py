@@ -5,6 +5,7 @@ import torch
 from benchmark.devices.base import DeviceBackend
 from benchmark.devices.cuda_device import CudaDeviceBackend
 from benchmark.devices.mps_device import MPSDeviceBackend
+from benchmark.devices.tpu_device import TPUDeviceBackend
 
 
 _DEVICE_REGISTRY: Dict[str, DeviceBackend] = {}
@@ -24,16 +25,21 @@ def list_device_backends():
     return list(_DEVICE_REGISTRY.keys())
 
 
-def auto_detect_backend(huawei: bool = False, mthreads: bool = False) -> Optional[DeviceBackend]:
+def auto_detect_backend(huawei: bool = False, mthreads: bool = False, tpu: bool = False) -> Optional[DeviceBackend]:
     """Auto-detect available device backend, matching original Bench._get_gpu_device logic."""
     if huawei:
-        # NPU handled externally (requires torch_npu)
         return None
     if mthreads:
-        # MUSA handled externally (requires torch_musa)
         return None
 
-    # Standard detection order: CUDA → MPS → XPU → None
+    # Explicit TPU request
+    if tpu:
+        if "tpu" in _DEVICE_REGISTRY and _DEVICE_REGISTRY["tpu"].is_available():
+            return _DEVICE_REGISTRY["tpu"]
+        print("Warning: TPU requested but torch_xla is not available.")
+        return None
+
+    # Standard detection order: CUDA → MPS → None
     if "cuda" in _DEVICE_REGISTRY and _DEVICE_REGISTRY["cuda"].is_available():
         return _DEVICE_REGISTRY["cuda"]
     if "mps" in _DEVICE_REGISTRY and _DEVICE_REGISTRY["mps"].is_available():
@@ -44,3 +50,9 @@ def auto_detect_backend(huawei: bool = False, mthreads: bool = False) -> Optiona
 # Auto-register built-in backends
 register_device(CudaDeviceBackend())
 register_device(MPSDeviceBackend())
+
+try:
+    _tpu_backend = TPUDeviceBackend()
+    register_device(_tpu_backend)
+except Exception:
+    pass

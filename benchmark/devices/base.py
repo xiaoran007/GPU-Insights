@@ -68,3 +68,24 @@ class DeviceBackend(ABC):
     def print_device_info(self, devices: List[torch.device]) -> int:
         """Print device info and return total memory in bytes."""
         return 0
+
+    def optimizer_step(self, optimizer, scaler=None, use_amp: bool = False) -> None:
+        """Execute an optimizer step, handling AMP scaler if present.
+
+        TPU overrides this to call ``xm.optimizer_step()`` instead.
+        Default implementation preserves exact CUDA / MPS behavior.
+        """
+        if scaler is not None and use_amp:
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            optimizer.step()
+
+    @property
+    def should_reduce_logging(self) -> bool:
+        """If True, runners should avoid calling loss.item() every step.
+
+        On TPU/XLA, loss.item() triggers a graph sync and is very expensive.
+        CUDA/MPS return False (no change to existing behavior).
+        """
+        return False

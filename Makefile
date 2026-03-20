@@ -1,4 +1,4 @@
-.PHONY: run help abs ddp ddp-abs
+.PHONY: run help abs ddp ddp-abs tpu tpu-multi
 
 # Number of processes for DDP (default: 2)
 GPU ?= 2
@@ -19,6 +19,13 @@ ddp-abs:
 	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -abs -dt FP16
 	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -abs -dt FP32
 
+tpu:
+	python main.py -T -m -s 512 -e 2 -mt resnet50 -bs 256 -dt BF16
+	python main.py -T -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32
+
+tpu-multi:
+	python main_tpu.py -s 512 -e 2 -mt resnet50 -bs 256 -dt BF16 --num_cores 8
+
 help:
 	@echo "==================================================================="
 	@echo "GPU-Insights Benchmark Makefile"
@@ -29,6 +36,8 @@ help:
 	@echo "  make abs      - Run ResNet50 with automatic batch size optimization"
 	@echo "  make ddp      - Run ResNet50 with DDP (default: 2 GPUs, FP16 + FP32)"
 	@echo "  make ddp-abs  - Run ResNet50 with DDP and auto batch size (default: 2 GPUs)"
+	@echo "  make tpu      - Run ResNet50 on TPU single-core (BF16 + FP32)"
+	@echo "  make tpu-multi- Run ResNet50 on TPU multi-core (8 cores, BF16)"
 	@echo "  make help     - Show this help message"
 	@echo ""
 	@echo "DDP Parameters:"

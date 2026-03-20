@@ -221,6 +221,8 @@ class SingleRunner(BenchRunner):
             print("Timer started.")
 
         start_time = time.time()
+        reduce_log = self.backend.should_reduce_logging
+        log_interval = max(1, len(data_preloaded) // 10) if reduce_log else 1
         for epoch in range(self.epochs):
             iters = len(train_loader)
             if self.is_main_process:
@@ -230,7 +232,8 @@ class SingleRunner(BenchRunner):
                 loss = self._train_step(model, images, labels, criterion, optimizer, scaler, use_fp16, use_bf16, main_device)
                 if self.is_main_process:
                     pbar.update(1)
-                    pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.detach().item():.4f}")
+                    if i % log_interval == 0:
+                        pbar.set_postfix_str(f"Step {i+1}/{total_step}, Loss {loss.detach().item():.4f}")
             if self.is_main_process:
                 pbar.close()
 
@@ -262,14 +265,13 @@ class SingleRunner(BenchRunner):
                 outputs = model(images)
                 loss = criterion(outputs, labels)
             loss.backward()
-            optimizer.step()
+            self.backend.optimizer_step(optimizer)
         else:
             with self.backend.get_autocast_context(device, torch.float16, use_fp16):
                 outputs = model(images)
                 loss = criterion(outputs, labels)
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            self.backend.optimizer_step(optimizer, scaler=scaler, use_amp=use_fp16)
         return loss
 
     # ---------------------------------------- auto batch size (CUDA only)
