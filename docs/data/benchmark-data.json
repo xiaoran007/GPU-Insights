@@ -11,6 +11,20 @@
   },
   "benchmarks": [
     {
+      "vendor": "google",
+      "architecture": "TPU v6e",
+      "device": "TPU v6e chip",
+      "memory": "32GB",
+      "platform": "Linux 6.6",
+      "fp32": 69361,
+      "fp32bs": 0,
+      "fp16": 56961,
+      "fp16bs": 0,
+      "note": "colab",
+      "date": "2026.3.20",
+      "version": "ver2"
+    },
+    {
       "vendor": "mthreads",
       "architecture": "MUSA-Chunxiao",
       "device": "Mthreads S4000",
