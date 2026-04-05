@@ -419,6 +419,20 @@
     {
       "vendor": "nvidia",
       "architecture": "Ampere",
+      "device": "NVIDIA RTX A5500",
+      "memory": "24GB",
+      "platform": "Linux 575.57",
+      "fp32": 19971,
+      "fp32bs": 0,
+      "fp16": 43376,
+      "fp16bs": 0,
+      "note": "",
+      "date": "2026.4.04",
+      "version": "ver2"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Ampere",
       "device": "NVIDIA RTX A5000",
       "memory": "24GB",
       "platform": "Linux 535.183",
