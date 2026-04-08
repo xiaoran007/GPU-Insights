@@ -9,22 +9,46 @@ from benchmark.runners.ddp_runner import DDPRunner
 
 
 class Bench(object):
-    """Orchestrator — public API is unchanged from the original implementation.
+    """Orchestrator — configures device, model, and runner.
 
-    Internally delegates to pluggable models, device backends, and runners.
+    The ``device`` parameter replaces the legacy ``huawei`` / ``mthreads`` /
+    ``tpu`` boolean flags:
+
+        device="auto"  → probe CUDA → NPU → MUSA → MPS
+        device="cuda"  → explicit CUDA
+        device="npu"   → explicit NPU (Huawei Ascend)
+        device="musa"  → explicit MUSA (Moore Threads)
+        device="tpu"   → explicit TPU
+        device="mps"   → explicit Apple MPS
     """
 
-    def __init__(self, method="cnn", auto=True, huawei=False, mthreads=False, tpu=False, size=1024, epochs=10, batch_size=4, cudnn_benchmark=False, data_type="FP32", gpu_ids=[0], auto_batch_size=False, use_ddp=False, ddp_rank=0, ddp_world_size=1):
-        self.huawei = huawei
-        self.mthreads = mthreads
-        self.tpu = tpu
+    def __init__(
+        self,
+        method="resnet50",
+        auto=True,
+        device="auto",
+        size=1024,
+        epochs=10,
+        batch_size=0,
+        cudnn_benchmark=False,
+        data_type="FP32",
+        gpu_ids=None,
+        auto_batch_size=False,
+        use_ddp=False,
+        ddp_rank=0,
+        ddp_world_size=1,
+    ):
+        if gpu_ids is None:
+            gpu_ids = [0]
+
+        self.device_request = device
         self.use_ddp = use_ddp
         self.ddp_rank = ddp_rank
         self.ddp_world_size = ddp_world_size
         self.is_main_process = (ddp_rank == 0)
         torch.backends.cudnn.benchmark = cudnn_benchmark
 
-        # --- Device detection (preserves original output) ---
+        # --- Device detection via registry ---
         self.device_backend, self.gpu_devices = self._detect_devices(gpu_ids)
         self.cpu_device = torch.device("cpu")
 
@@ -41,38 +65,24 @@ class Bench(object):
     # ------------------------------------------------------------------ private
 
     def _detect_devices(self, gpu_ids):
-        """Detect devices — handles Huawei/Mthreads legacy paths and delegates
-        to the DeviceRegistry for standard backends (CUDA, MPS, …)."""
-        if self.huawei:
-            import torch_npu
-            if torch_npu.npu.is_available():
-                print(f"Found NPU device: {torch_npu.npu.get_device_name()}")
-                return None, [torch.device("npu")]
-            else:
-                print("NPU is not available.")
-                return None, [None]
-        elif self.mthreads:
-            import torch_musa
-            if torch.musa.is_available():
-                print(f"Found MUSA device: {torch.musa.get_device_name()}")
-                return None, [torch.device("musa")]
-            else:
-                print("MUSA is not available.")
-                return None, [None]
-
-        backend = auto_detect_backend(tpu=self.tpu)
+        """Detect devices through the unified device registry."""
+        backend = auto_detect_backend(device=self.device_request)
         if backend is not None:
             devices = backend.detect_devices(gpu_ids)
             return backend, devices
         else:
-            print("No GPU device found.")
-            print("----------------")
+            if self.is_main_process:
+                print("No GPU device found.")
+                print("----------------")
             return None, [None]
 
     def _build_runner(self, method, auto, size, epochs, batch_size, data_type, auto_batch_size):
-        """Build the appropriate runner, matching the original _load_backend logic exactly."""
+        """Build the appropriate runner."""
 
-        # --- Data size calculation (unchanged) ---
+        # --- Resolve model ---
+        model_spec = get_model(method)
+
+        # --- Data size calculation ---
         if self.device_backend is not None:
             total_memory = self.device_backend.print_device_info(
                 [d for d in self.gpu_devices if d is not None]
@@ -80,25 +90,21 @@ class Bench(object):
         else:
             total_memory = 0
 
+        item_bytes = model_spec.get_data_item_bytes()
+
         if auto:
-            data_size = int(int((total_memory / 12296) / 100) * 100 * 0.7)
+            data_size = int(int((total_memory / item_bytes) / 100) * 100 * 0.7)
             epochs = 10
         else:
-            data_size = int(int((size * 1024 * 1024 / 12296) / 1) * 1)
+            data_size = int(int((size * 1024 * 1024 / item_bytes) / 1) * 1)
 
         if self.is_main_process:
-            print(f"Set model, set data size to {data_size} images, total memory size: {data_size * 12296 / 1024 / 1024:.2f} MB")
-
-        # --- Resolve model ---
-        model_spec = get_model(method)
+            print(f"Set model [{model_spec.name}], data size: {data_size} samples, "
+                  f"memory: {data_size * item_bytes / 1024 / 1024:.2f} MB")
 
         # --- Resolve batch_size defaults ---
-        if method == "cnn":
-            if batch_size == 0:
-                batch_size = model_spec.get_default_batch_size(data_type)
-        elif method == "resnet50":
-            if batch_size == 0 and not auto_batch_size:
-                batch_size = model_spec.get_default_batch_size(data_type)
+        if batch_size == 0 and not auto_batch_size:
+            batch_size = model_spec.get_default_batch_size(data_type)
 
         # --- Parse data type flags ---
         use_fp16 = (data_type == "FP16")
@@ -144,4 +150,3 @@ class _NoOpRunner:
     """Placeholder when no GPU is available."""
     def run(self):
         pass
-

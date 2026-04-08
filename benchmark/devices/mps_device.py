@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import torch
+import torch.nn as nn
 
 from benchmark.devices.base import DeviceBackend
 
@@ -44,14 +45,12 @@ class MPSDeviceBackend(DeviceBackend):
         return "Apple GPU"
 
     def get_device_memory(self, device: torch.device) -> int:
-        # MPS uses shared (unified) memory; not directly queryable via PyTorch
         return 0
 
     def synchronize(self, device: torch.device) -> None:
         torch.mps.synchronize()
 
     def get_autocast_context(self, device: torch.device, dtype: torch.dtype, enabled: bool):
-        # MPS has limited AMP support; return a no-op context if needed
         try:
             from torch.amp import autocast
             return autocast(device_type="mps", dtype=dtype, enabled=enabled)
@@ -60,8 +59,6 @@ class MPSDeviceBackend(DeviceBackend):
             return contextlib.nullcontext()
 
     def get_grad_scaler(self, enabled: bool) -> Optional[Any]:
-        # MPS has limited AMP support; return a GradScaler with enabled=False
-        # for FP32 mode so the scaler passthrough works correctly
         try:
             from torch.amp import GradScaler
             return GradScaler(device="cpu", enabled=enabled)
@@ -83,8 +80,7 @@ class MPSDeviceBackend(DeviceBackend):
         print("----------------")
         return 0
 
-    def try_compile_model(self, model, is_main_process: bool = True):
-        """MPS does not support torch.compile — return model unchanged."""
+    def try_compile_model(self, model: nn.Module, is_main_process: bool = True) -> nn.Module:
         if is_main_process:
             print(f"⚠ torch.compile not supported on MPS")
             print(f"  → Continuing with standard (eager) mode...")

@@ -3,178 +3,142 @@ import argparse
 import sys
 import os
 
-# Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from benchmark.bench.resnet50_bench import ResNet50Bench
+from benchmark.models import get_model
+
 
 def get_gpu_info(device_id):
-    """Gets information about the specified GPU."""
     if not torch.cuda.is_available():
         return "N/A", 0
-    
     properties = torch.cuda.get_device_properties(device_id)
     total_memory_gb = properties.total_memory / (1024**3)
     return properties.name, total_memory_gb
 
-def measure_memory_usage(precision, batch_size, gpu_id):
-    """
-    Runs a simplified ResNet50 training loop and measures the real peak GPU memory usage during training.
-    Uses torch.cuda.memory_reserved() which matches nvidia-smi more closely.
-    """
+
+def measure_memory_usage(model_name, precision, batch_size, gpu_id):
+    """Run a simplified training loop and measure peak GPU memory."""
     device = torch.device(f"cuda:{gpu_id}")
-    
-    print(f"Testing {precision} with batch size: {batch_size} on GPU {gpu_id}...")
-    
+    print(f"Testing {model_name} {precision} with batch size: {batch_size} on GPU {gpu_id}...")
+
     try:
         import torch.nn as nn
         import torch.optim as optim
-        from benchmark.bench.resnet50_bench import ResNet50, FakeDataset
-        
-        # Configure precision
-        use_fp16 = precision == 'FP16'
-        
-        # Import AMP modules
+
+        model_spec = get_model(model_name)
+
         try:
             from torch.amp import autocast, GradScaler
             version_flag = True
         except ImportError:
             from torch.cuda.amp import autocast, GradScaler
             version_flag = False
-        
-        # Empty cache and reset stats before starting
+
+        use_fp16 = precision == 'FP16'
+        num_classes = model_spec.get_num_classes()
+
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats(device)
-        
-        # Get baseline memory (CUDA context)
         torch.cuda.synchronize(device)
-        baseline_memory = torch.cuda.memory_reserved(device) / (1024 * 1024)
-        
-        # Create model and move to device
-        model = ResNet50().to(device)
-        criterion = nn.CrossEntropyLoss()
+
+        model = model_spec.create_model(num_classes=num_classes).to(device)
+        criterion = model_spec.get_criterion()
         optimizer = optim.SGD(model.parameters(), lr=0.001)
-        
-        # Setup GradScaler for FP16
-        if use_fp16:
-            scaler = GradScaler(device="cuda", enabled=True)
-        else:
-            scaler = None
-        
-        # Create dataset and dataloader
+
+        scaler = GradScaler(device="cuda", enabled=True) if use_fp16 else None
+
         data_size = 1024
-        train_dataset = FakeDataset(size=data_size, image_size=(3, 32, 32), num_classes=10)
+        train_dataset = model_spec.create_dataset(data_size)
         train_loader = torch.utils.data.DataLoader(
-            train_dataset, 
-            batch_size=batch_size, 
+            train_dataset,
+            batch_size=batch_size,
             shuffle=False,
             num_workers=0,
             pin_memory=True,
-            drop_last=True
+            drop_last=True,
         )
-        
-        # Preload data to GPU
-        data_preloaded = [(images.to(device), labels.to(device)) for images, labels in train_loader]
-        
-        # Warmup phase (to trigger all initialization and memory pool allocation)
+
+        data_preloaded = [
+            (images.to(device), labels.to(device))
+            for images, labels in train_loader
+        ]
+
+        # Warmup
         model.train()
-        warmup_batches = min(3, len(data_preloaded))
-        for i in range(warmup_batches):
+        for i in range(min(3, len(data_preloaded))):
             images, labels = data_preloaded[i]
             optimizer.zero_grad(set_to_none=True)
-            
             if use_fp16:
-                if version_flag:
-                    with autocast(device_type="cuda", dtype=torch.float16, enabled=True):
-                        outputs = model(images)
-                        loss = criterion(outputs, labels)
-                else:
-                    with autocast(dtype=torch.float16, enabled=True):
-                        outputs = model(images)
-                        loss = criterion(outputs, labels)
+                ctx = autocast(device_type="cuda", dtype=torch.float16, enabled=True) if version_flag else autocast(dtype=torch.float16, enabled=True)
+                with ctx:
+                    loss = model_spec.compute_loss(model, images, labels, criterion, device)
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
             else:
-                outputs = model(images)
-                loss = criterion(outputs, labels)
+                loss = model_spec.compute_loss(model, images, labels, criterion, device)
                 loss.backward()
                 optimizer.step()
-        
-        # Synchronize after warmup
+
         torch.cuda.synchronize(device)
-        
-        # Run actual training for a few batches and monitor peak memory
-        training_batches = min(10, len(data_preloaded))
+
+        # Measure
         peak_memory_reserved = 0.0
         peak_memory_allocated = 0.0
-        
-        for i in range(training_batches):
+        for i in range(min(10, len(data_preloaded))):
             images, labels = data_preloaded[i]
             optimizer.zero_grad(set_to_none=True)
-            
             if use_fp16:
-                if version_flag:
-                    with autocast(device_type="cuda", dtype=torch.float16, enabled=True):
-                        outputs = model(images)
-                        loss = criterion(outputs, labels)
-                else:
-                    with autocast(dtype=torch.float16, enabled=True):
-                        outputs = model(images)
-                        loss = criterion(outputs, labels)
+                ctx = autocast(device_type="cuda", dtype=torch.float16, enabled=True) if version_flag else autocast(dtype=torch.float16, enabled=True)
+                with ctx:
+                    loss = model_spec.compute_loss(model, images, labels, criterion, device)
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
             else:
-                outputs = model(images)
-                loss = criterion(outputs, labels)
+                loss = model_spec.compute_loss(model, images, labels, criterion, device)
                 loss.backward()
                 optimizer.step()
-            
-            # Synchronize and check memory after each batch
+
             torch.cuda.synchronize(device)
-            # memory_reserved() is what nvidia-smi shows (total reserved by PyTorch)
             current_reserved = torch.cuda.memory_reserved(device) / (1024 * 1024)
-            # memory_allocated() is actual tensor memory in use
             current_allocated = torch.cuda.memory_allocated(device) / (1024 * 1024)
-            
             peak_memory_reserved = max(peak_memory_reserved, current_reserved)
             peak_memory_allocated = max(peak_memory_allocated, current_allocated)
-        
+
         print(f"✓ Success!")
         print(f"  - Peak Reserved (≈nvidia-smi): {peak_memory_reserved:.2f} MB")
         print(f"  - Peak Allocated (actual tensors): {peak_memory_allocated:.2f} MB")
         print(f"  - Memory Pool Overhead: {peak_memory_reserved - peak_memory_allocated:.2f} MB")
-        
-        # Return reserved memory as it matches nvidia-smi
         return peak_memory_reserved
 
     except RuntimeError as e:
         if 'out of memory' in str(e).lower():
-            print(f"✗ Error: CUDA out of memory with batch size {batch_size}. Please try with a smaller batch size.")
+            print(f"✗ Error: CUDA out of memory with batch size {batch_size}.")
             return -1
-        else:
-            print(f"An unexpected runtime error occurred: {e}")
-            raise e
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        raise e
+        raise
+    except Exception:
+        raise
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Calibrate memory usage for ResNet50 on CUDA.")
-    parser.add_argument('-gpu', type=str, default='0', help='GPU ID to use for calibration.')
+    parser = argparse.ArgumentParser(description="Calibrate memory usage on CUDA.")
+    parser.add_argument('-gpu', type=str, default='0', help='GPU ID.')
+    parser.add_argument('-mt', '--model', type=str, default='resnet50',
+                        help='Model to calibrate (resnet50, cnn, vit, unet, ddpm).')
     args = parser.parse_args()
 
     gpu_id = int(args.gpu)
-    
+
     if not torch.cuda.is_available():
-        print("Error: CUDA is not available. This script requires a CUDA-enabled GPU.")
+        print("Error: CUDA is not available.")
         return
 
     device_name, total_memory_gb = get_gpu_info(gpu_id)
-    print(f"--- GPU Memory Calibration for ResNet50 ---")
+    model_name = args.model
+    print(f"--- GPU Memory Calibration for {model_name} ---")
     print(f"GPU Detected: {device_name}")
     print(f"Total Memory: {total_memory_gb:.2f} GB")
     print("-" * 45)
@@ -186,19 +150,17 @@ def main():
         results[precision] = {}
         print(f"\n--- Starting calibration for {precision} ---")
         for bs in batch_sizes_to_test:
-            peak_mem = measure_memory_usage(precision, bs, gpu_id)
+            peak_mem = measure_memory_usage(model_name, precision, bs, gpu_id)
             if peak_mem != -1:
                 results[precision][bs] = peak_mem
             else:
-                # If OOM, we can't continue for this precision
                 break
-    
-    # --- Report ---
+
     print("\n\n--- CALIBRATION REPORT ---")
     print(f"GPU Model: {device_name}")
     print(f"Total VRAM: {total_memory_gb:.2f} GB")
     print("-" * 28)
-    
+
     for precision, bs_data in results.items():
         print(f"Precision: {precision}")
         if bs_data:
@@ -206,8 +168,9 @@ def main():
                 print(f"  - Batch Size: {bs:<5} -> Peak Memory: {mem:.2f} MB")
         else:
             print("  - Measurement failed (likely out of memory).")
-    
+
     print("-" * 28)
+
 
 if __name__ == '__main__':
     main()

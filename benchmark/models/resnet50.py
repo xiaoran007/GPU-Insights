@@ -12,6 +12,9 @@ class ResNet50Model(BenchModel):
     def name(self) -> str:
         return "resnet50"
 
+    def get_model_aliases(self):
+        return ["ResNet-50", "ResNet50"]
+
     @property
     def supports_ddp(self) -> bool:
         return True

@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 from contextlib import contextmanager
 
 import torch
+import torch.nn as nn
 
 from benchmark.devices.base import DeviceBackend
 from helper import getOS, getArch
@@ -23,7 +24,7 @@ except ImportError:
 
 
 class CudaDeviceBackend(DeviceBackend):
-    """CUDA device backend — preserves all existing CUDA behavior exactly."""
+    """CUDA device backend."""
 
     @property
     def name(self) -> str:
@@ -73,13 +74,18 @@ class CudaDeviceBackend(DeviceBackend):
     def supports_ddp(self) -> bool:
         return True
 
+    def supports_bf16(self, device: torch.device) -> bool:
+        try:
+            return torch.cuda.is_bf16_supported(including_emulation=False)
+        except Exception:
+            return False
+
     def get_optimizer_kwargs(self) -> Dict[str, Any]:
         if TORCH_2_PLUS:
             return {"fused": True}
         return {}
 
     def setup_precision(self, device: torch.device, is_main_process: bool = True) -> None:
-        """Enable TF32 on Ampere+ GPUs."""
         if not TORCH_2_PLUS:
             return
         props = torch.cuda.get_device_properties(device)
@@ -102,8 +108,7 @@ class CudaDeviceBackend(DeviceBackend):
         print("----------------")
         return total_memory
 
-    def try_compile_model(self, model, is_main_process: bool = True):
-        """Attempt torch.compile with graceful fallback. Returns the (possibly compiled) model."""
+    def try_compile_model(self, model: nn.Module, is_main_process: bool = True) -> nn.Module:
         if not TORCH_2_PLUS or not hasattr(torch, 'compile'):
             return model
 
@@ -129,3 +134,10 @@ class CudaDeviceBackend(DeviceBackend):
                     print(f"⚠ torch.compile not supported on cuda: {error_msg[:100]}")
                 print(f"  → Continuing with standard (eager) mode...")
         return model
+
+    def get_peak_memory_mb(self, device: torch.device) -> float:
+        return torch.cuda.max_memory_reserved(device) / (1024 * 1024)
+
+    def reset_peak_memory(self, device: torch.device) -> None:
+        torch.cuda.reset_peak_memory_stats(device)
+        torch.cuda.empty_cache()

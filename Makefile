@@ -1,4 +1,4 @@
-.PHONY: run help abs ddp ddp-abs tpu tpu-multi
+.PHONY: run help abs ddp ddp-abs tpu tpu-multi vit unet ddpm
 
 # Number of processes for DDP (default: 2)
 GPU ?= 2
@@ -11,6 +11,18 @@ abs:
 	python main.py -m -s 512 -e 2 -mt resnet50 -abs -dt FP16
 	python main.py -m -s 512 -e 2 -mt resnet50 -abs -dt FP32
 
+vit:
+	python main.py -m -s 512 -e 2 -mt vit -bs 32 -dt FP16
+	python main.py -m -s 512 -e 2 -mt vit -bs 32 -dt FP32
+
+unet:
+	python main.py -m -s 512 -e 2 -mt unet -bs 8 -dt FP16
+	python main.py -m -s 512 -e 2 -mt unet -bs 8 -dt FP32
+
+ddpm:
+	python main.py -m -s 512 -e 2 -mt ddpm -bs 32 -dt FP16
+	python main.py -m -s 512 -e 2 -mt ddpm -bs 32 -dt FP32
+
 ddp:
 	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -bs 256 -dt FP16
 	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32
@@ -20,8 +32,8 @@ ddp-abs:
 	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -abs -dt FP32
 
 tpu:
-	python main.py -T -m -s 512 -e 2 -mt resnet50 -bs 256 -dt BF16
-	python main.py -T -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32
+	python main_tpu.py -s 512 -e 2 -mt resnet50 -bs 256 -dt BF16
+	python main_tpu.py -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32
 
 tpu-multi:
 	python main_tpu.py -s 512 -e 2 -mt resnet50 -bs 256 -dt BF16 --num_cores 8
@@ -31,28 +43,27 @@ help:
 	@echo "GPU-Insights Benchmark Makefile"
 	@echo "==================================================================="
 	@echo ""
-	@echo "Available targets:"
-	@echo "  make run      - Run standard ResNet50 benchmarks (FP16 + FP32)"
-	@echo "  make abs      - Run ResNet50 with automatic batch size optimization"
-	@echo "  make ddp      - Run ResNet50 with DDP (default: 2 GPUs, FP16 + FP32)"
-	@echo "  make ddp-abs  - Run ResNet50 with DDP and auto batch size (default: 2 GPUs)"
-	@echo "  make tpu      - Run ResNet50 on TPU single-core (BF16 + FP32)"
-	@echo "  make tpu-multi- Run ResNet50 on TPU multi-core (8 cores, BF16)"
-	@echo "  make help     - Show this help message"
+	@echo "Available models: cnn, resnet50, vit, unet, ddpm"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make run       - ResNet50 benchmarks (FP16 + FP32)"
+	@echo "  make abs       - ResNet50 with auto batch size"
+	@echo "  make vit       - ViT-Base benchmarks (FP16 + FP32)"
+	@echo "  make unet      - UNet segmentation benchmarks (FP16 + FP32)"
+	@echo "  make ddpm      - DDPM diffusion benchmarks (FP16 + FP32)"
+	@echo "  make ddp       - ResNet50 DDP (default: 2 GPUs)"
+	@echo "  make ddp-abs   - ResNet50 DDP with auto batch size"
+	@echo "  make tpu       - ResNet50 on TPU single-core"
+	@echo "  make tpu-multi - ResNet50 on TPU multi-core (8 cores)"
+	@echo "  make help      - Show this help"
 	@echo ""
 	@echo "DDP Parameters:"
-	@echo "  GPU=<num>   - Number of processes/GPUs to use (default: 2)"
+	@echo "  GPU=<num>   - Number of processes/GPUs (default: 2)"
 	@echo ""
-	@echo "Single GPU examples:"
-	@echo "  python main.py -m -s 512 -e 2 -mt resnet50 -abs -dt FP16"
-	@echo "  python main.py -m -s 512 -e 2 -mt resnet50 -abs -dt BF16"
-	@echo "  python main.py -m -s 512 -e 2 -mt resnet50 -abs -dt FP32"
-	@echo ""
-	@echo "DDP examples (multi-GPU):"
-	@echo "  make ddp GPU=2     # Run with 2 GPUs (default)"
-	@echo "  make ddp GPU=4     # Run with 4 GPUs"
-	@echo "  make ddp-abs GPU=4 # Run with 4 GPUs and auto batch size"
-	@echo ""
-	@echo "Direct torchrun examples:"
-	@echo "  torchrun --nproc_per_node=2 main_ddp.py -s 512 -e 2 -mt resnet50 -abs -dt FP16"
-	@echo "  torchrun --nproc_per_node=4 main_ddp.py -s 1024 -e 5 -mt resnet50 -abs -dt FP32"
+	@echo "Examples:"
+	@echo "  python main.py -m -mt vit -s 512 -e 2 -bs 32 -dt FP16"
+	@echo "  python main.py -m -mt unet -s 512 -e 2 -bs 8 -dt FP32"
+	@echo "  python main.py -m -mt ddpm -s 512 -e 2 -bs 32 -dt FP16"
+	@echo "  python main.py -m -mt resnet50 -s 512 -e 2 -abs -dt FP16"
+	@echo "  python main.py -m -mt resnet50 -d npu -s 512 -e 2 -bs 64 -dt FP16"
+	@echo "  torchrun --nproc_per_node=4 main_ddp.py -mt vit -s 512 -e 2 -bs 32 -dt FP16"

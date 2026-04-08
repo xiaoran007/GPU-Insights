@@ -11,8 +11,19 @@ class CNNModel(BenchModel):
     def name(self) -> str:
         return "cnn"
 
+    def get_model_aliases(self):
+        return ["CNN"]
+
     @property
     def supports_ddp(self) -> bool:
+        return False
+
+    @property
+    def supports_amp(self) -> bool:
+        return False
+
+    @property
+    def supports_compile(self) -> bool:
         return False
 
     def create_model(self, num_classes: int = 10) -> nn.Module:

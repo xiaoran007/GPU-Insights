@@ -6,6 +6,8 @@ from benchmark.devices.base import DeviceBackend
 from benchmark.devices.cuda_device import CudaDeviceBackend
 from benchmark.devices.mps_device import MPSDeviceBackend
 from benchmark.devices.tpu_device import TPUDeviceBackend
+from benchmark.devices.npu_device import NPUDeviceBackend
+from benchmark.devices.musa_device import MUSADeviceBackend
 
 
 _DEVICE_REGISTRY: Dict[str, DeviceBackend] = {}
@@ -25,34 +27,41 @@ def list_device_backends():
     return list(_DEVICE_REGISTRY.keys())
 
 
-def auto_detect_backend(huawei: bool = False, mthreads: bool = False, tpu: bool = False) -> Optional[DeviceBackend]:
-    """Auto-detect available device backend, matching original Bench._get_gpu_device logic."""
-    if huawei:
-        return None
-    if mthreads:
+def auto_detect_backend(device: str = "auto") -> Optional[DeviceBackend]:
+    """Auto-detect or explicitly select a device backend.
+
+    Args:
+        device: One of ``"auto"``, ``"cuda"``, ``"mps"``, ``"npu"``, ``"musa"``, ``"tpu"``.
+                ``"auto"`` probes in order: CUDA → NPU → MUSA → MPS → None.
+    """
+    if device != "auto":
+        if device in _DEVICE_REGISTRY and _DEVICE_REGISTRY[device].is_available():
+            return _DEVICE_REGISTRY[device]
+        print(f"Warning: Requested device '{device}' is not available.")
         return None
 
-    # Explicit TPU request
-    if tpu:
-        if "tpu" in _DEVICE_REGISTRY and _DEVICE_REGISTRY["tpu"].is_available():
-            return _DEVICE_REGISTRY["tpu"]
-        print("Warning: TPU requested but torch_xla is not available.")
-        return None
-
-    # Standard detection order: CUDA → MPS → None
-    if "cuda" in _DEVICE_REGISTRY and _DEVICE_REGISTRY["cuda"].is_available():
-        return _DEVICE_REGISTRY["cuda"]
-    if "mps" in _DEVICE_REGISTRY and _DEVICE_REGISTRY["mps"].is_available():
-        return _DEVICE_REGISTRY["mps"]
+    # Auto detection priority: CUDA → NPU → MUSA → MPS
+    for name in ("cuda", "npu", "musa", "mps"):
+        if name in _DEVICE_REGISTRY and _DEVICE_REGISTRY[name].is_available():
+            return _DEVICE_REGISTRY[name]
     return None
 
 
-# Auto-register built-in backends
+# Auto-register built-in backends (try/except for optional dependencies)
 register_device(CudaDeviceBackend())
 register_device(MPSDeviceBackend())
 
 try:
-    _tpu_backend = TPUDeviceBackend()
-    register_device(_tpu_backend)
+    register_device(TPUDeviceBackend())
+except Exception:
+    pass
+
+try:
+    register_device(NPUDeviceBackend())
+except Exception:
+    pass
+
+try:
+    register_device(MUSADeviceBackend())
 except Exception:
     pass

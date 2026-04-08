@@ -1,9 +1,10 @@
 """TPU (XLA) device backend for Google Cloud TPU / Colab TPU."""
 
 from typing import Any, Dict, List, Optional
-from contextlib import contextmanager, nullcontext
+from contextlib import nullcontext
 
 import torch
+import torch.nn as nn
 from benchmark.devices.base import DeviceBackend
 
 
@@ -50,7 +51,6 @@ class TPUDeviceBackend(DeviceBackend):
         self._lazy_import()
         try:
             info = self._xm.get_memory_info(device)
-            # Try common key names across torch_xla versions
             for key in ("kb_total", "bytes_limit", "total"):
                 if key in info and info[key] > 0:
                     if "kb" in key:
@@ -90,6 +90,9 @@ class TPUDeviceBackend(DeviceBackend):
     def supports_ddp(self) -> bool:
         return False
 
+    def supports_bf16(self, device: torch.device) -> bool:
+        return True
+
     def get_optimizer_kwargs(self) -> Dict[str, Any]:
         return {}
 
@@ -108,7 +111,7 @@ class TPUDeviceBackend(DeviceBackend):
             print(f"  {name}: {mem_gb:.1f} GB HBM")
         return total_mem
 
-    def try_compile_model(self, model, is_main_process=True):
+    def try_compile_model(self, model: nn.Module, is_main_process: bool = True) -> nn.Module:
         try:
             compiled = torch.compile(model, backend="openxla")
             if is_main_process:
@@ -133,8 +136,7 @@ class TPUDeviceBackend(DeviceBackend):
     def should_reduce_logging(self) -> bool:
         return True
 
-    def wrap_dataloader(self, dataloader, device):
-        """Wrap a DataLoader with MpDeviceLoader for optimal TPU performance."""
+    def wrap_dataloader(self, dataloader, device: torch.device):
         self._lazy_import()
         try:
             import torch_xla.distributed.parallel_loader as pl
