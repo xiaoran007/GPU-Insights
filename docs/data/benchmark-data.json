@@ -194,6 +194,20 @@
     },
     {
       "vendor": "nvidia",
+      "architecture": "Blackwell",
+      "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "memory": "96GB",
+      "platform": "Linux (Docker) 580.82",
+      "fp32": 42555,
+      "fp32bs": 0,
+      "fp16": 104945,
+      "fp16bs": 0,
+      "note": "Google Colab G4 GPU",
+      "date": "2026.4.7",
+      "version": "ver2"
+    },
+    {
+      "vendor": "nvidia",
       "architecture": "Hopper",
       "device": "NVIDIA H20",
       "memory": "96GB",
