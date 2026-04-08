@@ -209,6 +209,20 @@
     {
       "vendor": "nvidia",
       "architecture": "Hopper",
+      "device": "NVIDIA H100 80GB HBM3",
+      "memory": "80GB",
+      "platform": "Linux (Docker) 565.57",
+      "fp32": 108940,
+      "fp32bs": 0,
+      "fp16": 217105,
+      "fp16bs": 0,
+      "note": "Google Colab H100 GPU",
+      "date": "2025.4.7",
+      "version": "ver2"
+    },
+    {
+      "vendor": "nvidia",
+      "architecture": "Hopper",
       "device": "NVIDIA H20",
       "memory": "96GB",
       "platform": "Linux (Docker) 565.57",
