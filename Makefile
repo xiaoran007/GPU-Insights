@@ -1,4 +1,4 @@
-.PHONY: run help abs ddp ddp-abs tpu tpu-multi vit unet ddpm
+.PHONY: run help abs ddp ddp-abs tpu tpu-multi vit unet ddpm docs docs-dev
 
 # Number of processes for DDP (default: 2)
 GPU ?= 2
@@ -38,6 +38,12 @@ tpu:
 tpu-multi:
 	python main_tpu.py -s 512 -e 2 -mt resnet50 -bs 256 -dt BF16 --num_cores 8
 
+docs:
+	cd docs-src && npm ci && npm run build
+
+docs-dev:
+	cd docs-src && npm run dev
+
 help:
 	@echo "==================================================================="
 	@echo "GPU-Insights Benchmark Makefile"
@@ -55,6 +61,8 @@ help:
 	@echo "  make ddp-abs   - ResNet50 DDP with auto batch size"
 	@echo "  make tpu       - ResNet50 on TPU single-core"
 	@echo "  make tpu-multi - ResNet50 on TPU multi-core (8 cores)"
+	@echo "  make docs      - Build visualization website to docs/"
+	@echo "  make docs-dev  - Start docs dev server with hot reload"
 	@echo "  make help      - Show this help"
 	@echo ""
 	@echo "DDP Parameters:"
