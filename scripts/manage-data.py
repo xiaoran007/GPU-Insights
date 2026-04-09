@@ -12,9 +12,10 @@ from datetime import datetime
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
-DATA_FILE = SCRIPT_DIR.parent / "docs" / "data" / "benchmark-data.json"
+DATA_FILE = SCRIPT_DIR.parent / "docs-src" / "public" / "data" / "benchmark-data.json"
 
-VALID_VENDORS = {"nvidia", "amd", "intel", "apple", "huawei", "mthreads"}
+VALID_VENDORS = {"nvidia", "amd", "intel", "apple", "huawei", "mthreads", "google"}
+VALID_MODELS = {"resnet50", "cnn", "vit", "unet", "ddpm"}
 VALID_VERSIONS = {"ver1", "ver2"}
 VER2_NOTE_TOKEN = "ver.2"
 
@@ -54,6 +55,7 @@ def validate_entry(entry):
     errors = []
 
     required_fields = [
+        "model",
         "vendor",
         "architecture",
         "device",
@@ -71,6 +73,9 @@ def validate_entry(entry):
     for field in required_fields:
         if field not in entry:
             errors.append(f"Missing required field: {field}")
+
+    if "model" in entry and entry["model"] not in VALID_MODELS:
+        errors.append(f"Invalid model '{entry['model']}'. Must be one of: {', '.join(sorted(VALID_MODELS))}")
 
     if "vendor" in entry and entry["vendor"] not in VALID_VENDORS:
         errors.append(f"Invalid vendor '{entry['vendor']}'. Must be one of: {', '.join(sorted(VALID_VENDORS))}")
@@ -157,6 +162,7 @@ def add_benchmark(args):
     version = args.version or infer_version_from_note(note)
 
     new_entry = {
+        "model": args.model,
         "vendor": args.vendor,
         "architecture": args.architecture,
         "device": args.device,
@@ -251,11 +257,18 @@ def list_stats():
 
     vendor_counts = {}
     version_counts = {"ver1": 0, "ver2": 0}
+    model_counts = {}
     for entry in benchmarks:
         vendor = entry["vendor"]
         vendor_counts[vendor] = vendor_counts.get(vendor, 0) + 1
         if entry.get("version") in version_counts:
             version_counts[entry["version"]] += 1
+        model = entry.get("model", "unknown")
+        model_counts[model] = model_counts.get(model, 0) + 1
+
+    print("  By model:")
+    for model, count in sorted(model_counts.items()):
+        print(f"    {model}: {count}")
 
     print("  By vendor:")
     for vendor, count in sorted(vendor_counts.items()):
@@ -283,7 +296,8 @@ def main():
     subparsers.add_parser("stats", help="Show data statistics")
 
     add_parser = subparsers.add_parser("add", help="Add a new benchmark entry")
-    add_parser.add_argument("--vendor", required=True, choices=VALID_VENDORS, help="GPU vendor")
+    add_parser.add_argument("--model", required=True, choices=sorted(VALID_MODELS), help="Model name")
+    add_parser.add_argument("--vendor", required=True, choices=sorted(VALID_VENDORS), help="GPU vendor")
     add_parser.add_argument("--architecture", required=True, help="GPU architecture")
     add_parser.add_argument("--device", required=True, help="Device name")
     add_parser.add_argument("--memory", help="Memory amount (e.g., 24GB)")
