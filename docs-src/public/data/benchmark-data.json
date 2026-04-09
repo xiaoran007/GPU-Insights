@@ -1,12 +1,49 @@
 {
   "metadata": {
     "lastUpdated": "2026-03-04",
-    "version": "2.1",
-    "description": "GPU benchmark data for ResNet50 training performance",
-    "testConfiguration": {
-      "model": "ResNet50",
+    "version": "3.0",
+    "description": "Multi-model GPU/NPU training benchmark data"
+  },
+  "models": {
+    "vit": {
+      "name": "vit",
+      "displayName": "ViT-Base/16",
+      "parameters": "85.8M",
+      "inputSize": "3×224×224",
+      "task": "Classification",
+      "defaultCommand": "make vit"
+    },
+    "unet": {
+      "name": "unet",
+      "displayName": "UNet",
+      "parameters": "31.0M",
+      "inputSize": "3×256×256",
+      "task": "Segmentation",
+      "defaultCommand": "make unet"
+    },
+    "ddpm": {
+      "name": "ddpm",
+      "displayName": "DDPM",
+      "parameters": "29.9M",
+      "inputSize": "3×64×64",
+      "task": "Diffusion",
+      "defaultCommand": "make ddpm"
+    },
+    "resnet50": {
+      "name": "resnet50",
+      "displayName": "ResNet50",
       "parameters": "23.5M",
-      "defaultCommand": "make ddp-abs"
+      "inputSize": "3×32×32",
+      "task": "Classification",
+      "defaultCommand": "make run"
+    },
+    "cnn": {
+      "name": "cnn",
+      "displayName": "CNN",
+      "parameters": "62K",
+      "inputSize": "3×32×32",
+      "task": "Classification",
+      "defaultCommand": "python main.py -mt cnn"
     }
   },
   "benchmarks": [
@@ -22,7 +59,8 @@
       "fp16bs": 0,
       "note": "colab",
       "date": "2026.3.20",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "mthreads",
@@ -36,7 +74,8 @@
       "fp16bs": 256,
       "note": "MUSA 3.1.0",
       "date": "2025.5.19",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "mthreads",
@@ -50,7 +89,8 @@
       "fp16bs": 256,
       "note": "MUSA 3.1.0",
       "date": "2025.11.5",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "amd",
@@ -64,7 +104,8 @@
       "fp16bs": 256,
       "note": "ROCm 6.2.4",
       "date": "2025.4.14",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "huawei",
@@ -78,7 +119,8 @@
       "fp16bs": 1024,
       "note": "FP16 GradScaler seems overflow.",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "apple",
@@ -92,7 +134,8 @@
       "fp16bs": 128,
       "note": "10 Cores",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "apple",
@@ -106,7 +149,8 @@
       "fp16bs": 128,
       "note": "8 Cores",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "apple",
@@ -120,7 +164,8 @@
       "fp16bs": 256,
       "note": "32 Cores",
       "date": "2025.10.29",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -134,7 +179,8 @@
       "fp16bs": 256,
       "note": "wsl2 ver.2",
       "date": "2026.3.6",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -148,7 +194,8 @@
       "fp16bs": 512,
       "note": "Preview PyTorch",
       "date": "2025.4.19",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -162,7 +209,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2025.11.7",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -176,7 +224,8 @@
       "fp16bs": 256,
       "note": "Preview PyTorch",
       "date": "2025.7.28",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -190,7 +239,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2025.11.8",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -204,7 +254,8 @@
       "fp16bs": 0,
       "note": "Google Colab G4 GPU",
       "date": "2026.4.7",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -218,7 +269,8 @@
       "fp16bs": 0,
       "note": "Google Colab H100 GPU",
       "date": "2025.4.7",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -232,7 +284,8 @@
       "fp16bs": 256,
       "note": "",
       "date": "2025.3.27",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -246,7 +299,8 @@
       "fp16bs": 1024,
       "note": "",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -260,7 +314,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2025.11.10",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -274,7 +329,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2025.11.10",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -288,7 +344,8 @@
       "fp16bs": 256,
       "note": "RTX 4090 48GB vMemory Edition",
       "date": "2025.9.04",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -302,7 +359,8 @@
       "fp16bs": 256,
       "note": "RTX 4080 SUPER 32GB vMemory Edition",
       "date": "2025.3.27",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -316,7 +374,8 @@
       "fp16bs": 4096,
       "note": "2 * RTX 4080 SUPER 32GB vMemory Edition",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -330,7 +389,8 @@
       "fp16bs": 8192,
       "note": "4 * RTX 4080 SUPER 32GB vMemory Edition",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -344,7 +404,8 @@
       "fp16bs": 0,
       "note": "RTX 3090 48GB vMemory Edition",
       "date": "2026.3.4",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -358,7 +419,8 @@
       "fp16bs": 0,
       "note": "",
       "date": "2026.3.4",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -372,7 +434,8 @@
       "fp16bs": 0,
       "note": "Jetson Orin Nano Super Developer Kit",
       "date": "2025.11.14",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -386,7 +449,8 @@
       "fp16bs": 256,
       "note": "",
       "date": "2025.3.31",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -400,7 +464,8 @@
       "fp16bs": 256,
       "note": "",
       "date": "2025.3.10",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -414,7 +479,8 @@
       "fp16bs": 256,
       "note": "wsl2 ver.1",
       "date": "2025.11.5",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -428,7 +494,8 @@
       "fp16bs": 256,
       "note": "wsl2 ver.2",
       "date": "2025.11.6",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -442,7 +509,8 @@
       "fp16bs": 0,
       "note": "wsl2 ver.2",
       "date": "2025.11.7",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -456,7 +524,8 @@
       "fp16bs": 0,
       "note": "",
       "date": "2026.4.04",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -470,7 +539,8 @@
       "fp16bs": 1024,
       "note": "",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -484,7 +554,8 @@
       "fp16bs": 3072,
       "note": "NVLink",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -498,7 +569,8 @@
       "fp16bs": 256,
       "note": "Unofficial Video Memory Expansion",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -512,7 +584,8 @@
       "fp16bs": 2048,
       "note": "Unofficial Video Memory Expansion",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -526,7 +599,8 @@
       "fp16bs": 1024,
       "note": "Unofficial Video Memory Expansion",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -540,7 +614,8 @@
       "fp16bs": 256,
       "note": "",
       "date": "2025.4.02",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -554,7 +629,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2025.11.30",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -568,7 +644,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2026.3.2",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -582,7 +659,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2026.3.2",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -596,7 +674,8 @@
       "fp16bs": 256,
       "note": "",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -610,7 +689,8 @@
       "fp16bs": 256,
       "note": "ver.2",
       "date": "2025.11.6",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -624,7 +704,8 @@
       "fp16bs": 0,
       "note": "ver.2",
       "date": "2025.11.15",
-      "version": "ver2"
+      "version": "ver2",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -638,7 +719,8 @@
       "fp16bs": 256,
       "note": "FP16 Not Officially Supported By Pascal Arch",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -652,7 +734,8 @@
       "fp16bs": 256,
       "note": "FP16 Not Officially Supported By Pascal Arch",
       "date": "2025.3.26",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -666,7 +749,8 @@
       "fp16bs": 256,
       "note": "PCIE 3.0 x4 180W",
       "date": "2025.4.05",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "nvidia",
@@ -680,7 +764,8 @@
       "fp16bs": 256,
       "note": "PCIE 3.0 x4 120W",
       "date": "2025.7.07",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "intel",
@@ -694,7 +779,8 @@
       "fp16bs": 256,
       "note": "GradScaler Not Work",
       "date": "2025.3.20",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     },
     {
       "vendor": "apple",
@@ -708,7 +794,8 @@
       "fp16bs": 128,
       "note": "10 Cores",
       "date": "2025.9.19",
-      "version": "ver1"
+      "version": "ver1",
+      "model": "resnet50"
     }
   ]
 }
