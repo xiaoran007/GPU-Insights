@@ -1,187 +1,156 @@
 # GPU-Insights
-GPU Insights, repository for all kinds of code related to GPUs
 
+Multi-model GPU/NPU training performance benchmark suite. Measures compute throughput across diverse deep learning workloads and hardware platforms.
 
-## Default benchmark
+## Features
+
+- **5 Benchmark Models** — CNN, ResNet50, ViT, UNet, DDPM covering classification, segmentation, and diffusion
+- **6 Device Backends** — CUDA, MPS, NPU (Huawei Ascend), MUSA (Moore Threads), TPU, auto-detection
+- **DDP Multi-GPU** — Distributed data-parallel training via `torchrun`
+- **Auto Batch Size** — Automatic memory-optimal batch size detection
+- **Unified Scoring** — Throughput-based scoring system consistent across all models
+
+## Quick Start
+
 ```shell
-python main.py -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP32 -gpu 0
-python main.py -m -s 512 -e 2 -mt resnet50 -bs 256 -dt FP16 -gpu 0
+# Install dependencies
+pip install torch torchvision
+
+# Run default benchmark (ResNet50, auto-detect device)
+python main.py -mt resnet50 -s 512 -e 2 -abs -dt FP32
+
+# Run ViT benchmark
+python main.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
 ```
 
-### How to understand the results
+## Models
 
-This performance test evaluates the performance of the hardware device in a training scenario, and the output is a score. Score reflects the unit time to complete a given training task (ResNet50). Thus, a higher score means higher computational performance. Note that the score is affected by both the video memory bandwidth and the PCIe bus bandwidth.
+| Model | Parameters | Input Size | Task | Aliases |
+|-------|-----------|------------|------|---------|
+| CNN | 62K | 3×32×32 | Classification | `cnn` |
+| ResNet50 | 23.5M | 3×32×32 | Classification | `resnet50`, `resnet` |
+| ViT-Base/16 | 85.8M | 3×224×224 | Classification | `vit`, `vit-base` |
+| UNet | 31.0M | 3×256×256 | Segmentation | `unet` |
+| DDPM | 29.9M | 3×64×64 | Diffusion (noise prediction) | `ddpm` |
 
-### Model Params
-23.5 M
+## CLI Arguments
 
-### Results
-For better visual experience, visit [this](https://xiaoran007.github.io/GPU-Insights/) website.
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-mt`, `--model` | Model to benchmark | `resnet50` |
+| `-s`, `--size` | Data size in MB | `1024` |
+| `-e`, `--epochs` | Training epochs | `5` |
+| `-dt`, `--data_type` | Precision: `FP32`, `FP16`, `BF16` | `FP32` |
+| `-bs`, `--batch` | Batch size (0 = model default) | `0` |
+| `-abs`, `--auto_batch_size` | Auto batch size optimisation | off |
+| `-d`, `--device` | Device: `auto`, `cuda`, `mps`, `npu`, `musa`, `tpu` | `auto` |
+| `-cudnn`, `--cudnn_benchmark` | Enable cuDNN benchmark mode | off |
 
-<!-- ### Benchmark Data Version Field
-
-Each benchmark entry in `docs/data/benchmark-data.json` now includes:
-
-- `version`: `"ver1"` or `"ver2"`
-
-Version mapping rule:
-
-- If `note` contains `ver.2` (case-insensitive), the entry is `ver2`.
-- Otherwise, the entry is `ver1`.
-
-### Data Maintenance Commands
+## Makefile Targets
 
 ```shell
-# Validate benchmark data schema and values
+make run        # ResNet50 FP16 + FP32
+make abs        # ResNet50 with auto batch size
+make vit        # ViT-Base FP16 + FP32
+make unet       # UNet segmentation FP16 + FP32
+make ddpm       # DDPM diffusion FP16 + FP32
+make ddp        # ResNet50 DDP (GPU=2 by default)
+make ddp-abs    # ResNet50 DDP with auto batch size
+make tpu        # ResNet50 on TPU single-core
+make tpu-multi  # ResNet50 on TPU 8-core
+make help       # Show all targets
+```
+
+## Device Backends
+
+| Backend | Hardware | Requirements |
+|---------|----------|-------------|
+| `cuda` | NVIDIA GPUs | PyTorch with CUDA |
+| `mps` | Apple Silicon | PyTorch ≥ 1.12, macOS |
+| `npu` | Huawei Ascend | `torch_npu` |
+| `musa` | Moore Threads | `torch_musa` |
+| `tpu` | Google TPU | `torch_xla` |
+| `auto` | Auto-detect | Tries CUDA → NPU → MUSA → MPS |
+
+Use `--device` to select a specific backend, or leave as `auto` (default).
+
+## DDP Multi-GPU Training
+
+```shell
+# 2 GPUs (default)
+torchrun --nproc_per_node=2 main_ddp.py -mt resnet50 -s 512 -e 2 -abs -dt FP16
+
+# 4 GPUs
+make ddp GPU=4
+
+# DDP with ViT
+torchrun --nproc_per_node=4 main_ddp.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
+```
+
+## How to Understand Results
+
+The benchmark evaluates hardware training throughput under a fixed workload. Output is a **score** representing compute performance — higher is better. Scores are affected by compute capability, memory bandwidth, and PCIe/interconnect bandwidth.
+
+## Results
+
+For a visual dashboard, visit the [GPU-Insights Dashboard](https://xiaoran007.github.io/GPU-Insights/).
+
+## Data Management
+
+```shell
+# Validate benchmark data
 python3 scripts/manage-data.py validate
 
-# Backfill or normalize per-entry version field
+# Show statistics
+python3 scripts/manage-data.py stats
+
+# Add a benchmark entry
+python3 scripts/manage-data.py add \
+  --vendor nvidia --architecture Ada \
+  --device "RTX 4090" --memory "24GB" \
+  --platform "Linux" --fp32 24000 --fp32bs 512 \
+  --fp16 43000 --fp16bs 1024
+
+# Migrate version field
 python3 scripts/manage-data.py migrate-version
-
-# Force recompute version field from notes for all entries
-python3 scripts/manage-data.py migrate-version --force
-
-# Add a benchmark entry (version is optional; defaults to inferred rule)
-python3 scripts/manage-data.py add --vendor nvidia --architecture Ada --device "Example GPU" --platform "Linux" --fp32 10000 --fp32bs 256 --fp16 20000 --fp16bs 256 --note "ver.2"
-``` -->
-
-<!-- ### Test command
-
-FP32: `python main.py -m -s 512 -e 3 -mt resnet50 -bs 256 -dt FP32`
-
-FP16: `python main.py -m -s 512 -e 3 -mt resnet50 -bs 256 -dt FP16`
-
-FP32 cudnn: `python main.py -m -s 512 -e 10 -mt resnet50 -bs 256 -dt FP32 -cudnn`
-
-FP16 cudnn: `python main.py -m -s 512 -e 10 -mt resnet50 -bs 256 -dt FP16 -cudnn`
-
-Note: In general, Multi-GPU test case using batch size 2048 `-bs 2048` for FP16 and batch size 1024 `-bs 1024` for FP32. -->
-
-<!-- ### Results
-
-Most of the results are obtained by adjusting the batch size to get the maximum video memory usage.
-
-#### Mthreads
-
-|          Device          |    Platform     | FP32 | FP32BS | FP16 | FP16BS |    Note    | **Date**  |
-| :----------------------: | :-------------: | :--: | :----: | :--: | :----: | :--------: | --------- |
-| Mthreads S4000<br />48GB | Linux<br />5.15 | 9078 |  256   |  /   |  256   | MUSA 3.1.0 | 2025.5.19 |
-
-
-
-#### AMD
-
-|             Device             |    Platform     | FP32 | FP32BS | FP16 | FP16BS |    Note    | **Date**  |
-| :----------------------------: | :-------------: | :--: | :----: | :--: | :----: | :--------: | --------- |
-| Radeon Instinct MI50<br />32GB | Linux<br />5.15 | 2017 |  256   | 2951 |  256   | ROCm 6.2.4 | 2025.4.14 |
-
-
-
-#### Huawei
-
-|   Device    |         Platform         | FP32  | FP32BS | FP16  | FP16BS |              Note               | **Date**  |
-| :---------: | :----------------------: | :---: | :----: | :---: | :----: | :-----------------------------: | --------- |
-| Ascend910B2 | Linux (Docker)<br />5.15 | 18283 |  1024  | 55517 |  1024  | FP16 GradScaler seems overflow. | 2025.3.20 |
-
-
-
-#### Apple
-
-|    Device    |     Platform      | FP32 | FP32BS | FP16 | FP16BS |   Note   | Date      |
-| :----------: | :---------------: | :--: | :----: | :--: | :----: | :------: | --------- |
-| Apple M4 GPU | macOS<br />15.3.1 | 1723 |  128   | 1591 |  128   | 10 Cores | 2025.3.20 |
-| Apple M1 GPU | macOS<br />15.3.1 | 948  |  128   | 843  |  128   | 8 Cores  | 2025.3.20 |
-
-
-
-#### Nvidia Blackwell
-
-|                           Device                            |          Platform           | FP32  | FP32BS | FP16  | FP16BS |      Note       | Date      |
-| :---------------------------------------------------------: | :-------------------------: | :---: | :----: | :---: | :----: | :-------------: | --------- |
-|              NVIDIA GeForce RTX 5090<br />32GB              | Linux (Docker)<br />570.124 | 37232 |  512   | 63230 |  512   | Preview PyTorch | 2025.4.19 |
-| NVIDIA RTX PRO 6000 Blackwell Workstation Edition<br />96GB | Linux (Docker)<br />570.124 | 43201 |  256   | 78837 |  256   | Preview PyTorch | 2025.7.28 |
-
-
-
-#### Nvidia Hopper
-
-|        Device        |          Platform          | FP32  | FP32BS | FP16  | FP16BS | Note | Date      |
-| :------------------: | :------------------------: | :---: | :----: | :---: | :----: | :--: | --------- |
-| NVIDIA H20<br />96GB | Linux (Docker)<br />565.57 | 37360 |  256   | 55222 |  256   |  /   | 2025.3.27 |
-
-
-
-#### Nvidia Ada
-
-|              Device               |          Platform          | FP32  | FP32BS |  FP16  | FP16BS |               Note                | Date      |
-| :-------------------------------: | :------------------------: | :---: | :----: | :----: | :----: | :-------------------------------: | --------- |
-| NVIDIA GeForce RTX 4090<br />24GB |     Linux<br />560.35      | 24046 |  512   | 43733  |  1024  |                 /                 | 2025.3.20 |
-|       NVIDIA vGPU<br />48GB       | Linux (Docker)<br />575.64 | 24300 |  256   | 48337  |  256   |    Two NVIDIA GeForce RTX 4090    | 2025.9.04 |
-|       NVIDIA vGPU<br />32GB       | Linux (Docker)<br />560.35 | 17308 |  1024  | 33238  |  256   | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.27 |
-|  NVIDIA vGPU<br />32GB    2 GPUs  | Linux (Docker)<br />560.35 | 30275 |  2048  | 52756  |  4096  | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.20 |
-|  NVIDIA vGPU<br />32GB    4 GPUs  | Linux (Docker)<br />560.35 | 56178 |  4096  | 101268 |  8192  | Two NVIDIA GeForce RTX 4080 SUPER | 2025.3.20 |
-
-
-
-#### Nvidia Ampere
-
-|                   Device                    |          Platform          | FP32  | FP32BS | FP16  | FP16BS |               Note                | Date      |
-| :-----------------------------------------: | :------------------------: | :---: | :----: | :---: | :----: | :-------------------------------: | --------- |
-|         NVIDIA A100-PCIE<br />40GB          |     Linux<br />550.90      | 27478 |  256   | 43802 |  256   |                 /                 | 2025.3.31 |
-|      NVIDIA GeForce RTX 3090<br />24GB      |    Windows<br />566.14     | 16311 |  256   | 28197 |  256   |                 /                 | 2025.3.10 |
-|         NVIDIA RTX A5000<br />24GB          |     Linux<br />535.183     | 15090 |  512   | 27155 |  1024  |                 /                 | 2025.3.20 |
-|    NVIDIA RTX A5000<br />24GB    2 GPUs     |     Linux<br />535.183     | 26962 |  1024  | 49930 |  3072  |              NVLink               | 2025.3.20 |
-|      NVIDIA GeForce RTX 3080<br />20GB      | Linux (Docker)<br />560.35 | 13320 |  256   | 24205 |  256   | Unofficial Video Memory Expansion | 2025.3.20 |
-| NVIDIA GeForce RTX 3080<br />20GB    2 GPUs | Linux (Docker)<br />560.35 | 23261 |  1024  | 40250 |  2048  | Unofficial Video Memory Expansion | 2025.3.20 |
-
-
-
-#### Nvidia Turing
-
-|                Device                |      Platform      | FP32 | FP32BS | FP16  | FP16BS |               Note                | Date      |
-| :----------------------------------: | :----------------: | :--: | :----: | :---: | :----: | :-------------------------------: | --------- |
-| NVIDIA GeForce RTX 2080 Ti<br />22GB | Linux<br />550.120 | 8754 |  256   | 19007 |  1024  | Unofficial Video Memory Expansion | 2025.3.20 |
-| NVIDIA GeForce RTX 2080 Ti<br />11GB | Linux<br />550.120 | 8681 |  256   | 19475 |  256   |                 /                 | 2025.4.02 |
-
-
-
-#### Nvidia Volta
-
-|           Device           |          Platform          | FP32  | FP32BS | FP16  | FP16BS | Note | Date      |
-| :------------------------: | :------------------------: | :---: | :----: | :---: | :----: | :--: | --------- |
-| Tesla V100S-PCIE<br />32GB | Linux (Docker)<br />550.90 | 11577 |  256   | 27963 |  256   |  /   | 2025.3.20 |
-
-
-
-#### Nvidia Pascal
-
-|              Device               |          Platform           | FP32 | FP32BS | FP16 | FP16BS |                     Note                     | Date      |
-| :-------------------------------: | :-------------------------: | :--: | :----: | :--: | :----: | :------------------------------------------: | --------- |
-| NVIDIA TITAN X (Pascal)<br />12GB |     Windows<br />566.14     | 5792 |  256   | 7230 |  256   | FP16 Not Officially Supported By Pascal Arch | 2025.3.20 |
-|     NVIDIA TITAN Xp<br />12GB     | Linux (Docker)<br />550.120 | 6792 |  256   | 7641 |  256   | FP16 Not Officially Supported By Pascal Arch | 2025.3.26 |
-|     NVIDIA P104-100<br />8GB      |     Windows<br />536.23     | 4114 |  256   | 4766 |  256   |               PCIE 3.0 x4 180W               | 2025.4.05 |
-|     NVIDIA P104-100<br />8GB      |     Windows<br />576.88     | 3745 |  256   | 4278 |  256   |               PCIE 3.0 x4 120W               | 2025.7.07 |
-
-
-
-#### Nvidia Maxwell
-
-| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note | Date |
-| :----: | :------: | :--: | :----: | :--: | :----: | :--: | ---- |
-|   /    |    /     |  /   |   /    |  /   |   /    |  /   | /    |
-
-
-
-#### Nvidia Kepler
-
-| Device | Platform | FP32 | FP32BS | FP16 | FP16BS | Note | Date |
-| :----: | :------: | :--: | :----: | :--: | :----: | :--: | ---- |
-|   /    |    /     |  /   |   /    |  /   |   /    |  /   | /    |
-
-
-
-#### Intel
-
-|                  Device                  |      Platform      | FP32 | FP32BS | FP16 | FP16BS |        Note         | Date      |
-| :--------------------------------------: | :----------------: | :--: | :----: | :--: | :----: | :-----------------: | --------- |
-| Intel(R) Arc(TM) A770 Graphics<br />16GB | Linux<br />i915 xe | 5121 |  256   | 8049 |  256   | GradScaler Not Work | 2025.3.20 | -->
+```
+
+## Project Structure
+
+```
+├── main.py              # Single-device entry point
+├── main_ddp.py          # DDP multi-GPU entry point
+├── main_tpu.py          # TPU entry point
+├── calibrate_memory.py  # Memory calibration utility
+├── Makefile             # Convenience targets
+├── benchmark/
+│   ├── Bench.py         # Orchestrator
+│   ├── cli.py           # Unified CLI parsing
+│   ├── scoring.py       # Scoring system
+│   ├── models/          # BenchModel implementations
+│   │   ├── base.py      # BenchModel ABC
+│   │   ├── cnn.py       # Simple CNN (62K params)
+│   │   ├── resnet50.py  # ResNet50 (23.5M params)
+│   │   ├── vit.py       # ViT-Base/16 (85.8M params)
+│   │   ├── unet.py      # UNet segmentation (31.0M params)
+│   │   └── ddpm.py      # DDPM diffusion (29.9M params)
+│   ├── devices/         # DeviceBackend implementations
+│   │   ├── base.py      # DeviceBackend ABC
+│   │   ├── cuda_device.py
+│   │   ├── mps_device.py
+│   │   ├── npu_device.py
+│   │   ├── musa_device.py
+│   │   └── tpu_device.py
+│   ├── runners/         # Training runners
+│   │   ├── common.py    # Shared training utilities
+│   │   ├── single_runner.py
+│   │   └── ddp_runner.py
+│   └── data/            # Dataset utilities
+├── scripts/
+│   └── manage-data.py   # Benchmark data management
+└── docs/                # GitHub Pages dashboard
+```
+
+## License
+
+See [LICENSE](LICENSE).
