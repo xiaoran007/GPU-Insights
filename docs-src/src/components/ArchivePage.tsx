@@ -1,6 +1,5 @@
-import { useState } from "react";
 import type { BenchmarkEntry, Filters } from "../types/benchmark";
-import { useFilteredEntries, useFilterOptions, useFilters } from "../hooks/useBenchmarkData";
+import { useFilters } from "../hooks/useBenchmarkData";
 import FilterControls from "./FilterControls";
 import StatsGrid from "./StatsGrid";
 import BenchmarkTable from "./BenchmarkTable";
@@ -17,7 +16,6 @@ export default function ArchivePage({ entries }: ArchivePageProps) {
   const archiveEntries = entries.filter((e) => ARCHIVE_MODELS.includes(e.model));
   const { filters, updateFilter } = useFilters();
   const filtered = useFilteredArchive(archiveEntries, filters);
-  const { vendors, architectures, platforms } = useFilterOptions(archiveEntries, "resnet50");
 
   // Merge filter options across both archive models
   const allVendors = [...new Set(archiveEntries.map((e) => e.vendor))].sort();
