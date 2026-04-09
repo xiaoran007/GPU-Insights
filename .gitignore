@@ -5,6 +5,9 @@
 docs/README.md
 docs/data/README.md
 
+# Node.js (docs-src)
+node_modules/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

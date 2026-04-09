@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "IBM Plex Sans", sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Sans", "Segoe UI", monospace;
+  --color-brand: #0f766e;
+  --color-brand-strong: #115e59;
+  --color-brand-soft: #c9efea;
+  --color-accent: #0369a1;
+  --color-accent-soft: #d8effd;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f4f8fc;
+  --color-line: #d7e2ee;
+  --color-muted: #5b6b80;
+}
