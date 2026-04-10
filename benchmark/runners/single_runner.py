@@ -174,8 +174,7 @@ class SingleRunner(BenchRunner):
 
         # ---- Training loop ----
         start_time = time.time()
-        reduce_log = self.backend.should_reduce_logging
-        log_interval = max(1, len(data_preloaded) // 10) if reduce_log else 1
+        log_interval = max(1, len(data_preloaded) // 10)
         total_steps = 0
 
         for epoch in range(self.epochs):
