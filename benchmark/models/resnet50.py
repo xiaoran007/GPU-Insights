@@ -30,7 +30,9 @@ class ResNet50Model(BenchModel):
         return (3, 32, 32)
 
     def get_default_batch_size(self, data_type: str = "FP32") -> int:
-        return 4
+        if data_type in ("FP16", "BF16"):
+            return 128
+        return 64
 
 
 class Bottleneck(nn.Module):
