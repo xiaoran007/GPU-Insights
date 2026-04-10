@@ -176,11 +176,13 @@ class DDPRunner(BenchRunner):
         cl = self.model_spec.use_channels_last
         data_preloaded = [
             (
-                images.to(main_device, memory_format=torch.channels_last) if cl else images.to(main_device),
-                labels.to(main_device),
+                images.to(main_device, memory_format=torch.channels_last, non_blocking=True)
+                if cl else images.to(main_device, non_blocking=True),
+                labels.to(main_device, non_blocking=True),
             )
             for images, labels in train_loader
         ]
+        self.backend.synchronize(main_device)
         pre_load_end = time.time()
         if self.is_main_process:
             print(f"Pre-load completed on {main_device}. Time taken: {pre_load_end - pre_load_start:.2f} seconds.")
