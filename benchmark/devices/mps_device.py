@@ -6,7 +6,7 @@ import torch.nn as nn
 from benchmark.devices.base import DeviceBackend
 
 try:
-    from macos_hw_detector import get_gpu_info
+    from benchmark.devices.macos_info import get_gpu_info
 except ImportError:
     get_gpu_info = None
 

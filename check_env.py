@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from helper import getArch, getOS
 
 try:
-    from macos_hw_detector import get_gpu_info, get_mem_info
+    from benchmark.devices.macos_info import get_gpu_info, get_mem_info
 except ImportError:
     get_gpu_info = None
     get_mem_info = None
