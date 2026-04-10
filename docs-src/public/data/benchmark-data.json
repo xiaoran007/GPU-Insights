@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "lastUpdated": "2026-03-04",
-    "version": "3.0",
-    "description": "Multi-model GPU/NPU training benchmark data"
+    "lastUpdated": "2026-04-10",
+    "version": "3.1",
+    "description": "GPU-Insights benchmark data for multi-model training throughput across GPUs, NPUs, TPUs, and Apple Silicon"
   },
   "models": {
     "vit": {
@@ -11,31 +11,31 @@
       "parameters": "85.8M",
       "inputSize": "3×224×224",
       "task": "Classification",
-      "defaultCommand": "make vit"
+      "defaultCommand": "python3 main_auto.py -mt vit"
     },
     "unet": {
       "name": "unet",
       "displayName": "UNet",
       "parameters": "31.0M",
       "inputSize": "3×256×256",
-      "task": "Segmentation",
-      "defaultCommand": "make unet"
+      "task": "Semantic Segmentation",
+      "defaultCommand": "python3 main_auto.py -mt unet"
     },
     "ddpm": {
       "name": "ddpm",
       "displayName": "DDPM",
-      "parameters": "29.9M",
+      "parameters": "62.3M",
       "inputSize": "3×64×64",
-      "task": "Diffusion",
-      "defaultCommand": "make ddpm"
+      "task": "Diffusion Noise Prediction",
+      "defaultCommand": "python3 main_auto.py -mt ddpm"
     },
     "resnet50": {
       "name": "resnet50",
-      "displayName": "ResNet50",
+      "displayName": "ResNet-50",
       "parameters": "23.5M",
       "inputSize": "3×32×32",
       "task": "Classification",
-      "defaultCommand": "make run"
+      "defaultCommand": "python3 main_auto.py -mt resnet50"
     },
     "cnn": {
       "name": "cnn",
@@ -43,7 +43,7 @@
       "parameters": "62K",
       "inputSize": "3×32×32",
       "task": "Classification",
-      "defaultCommand": "python main.py -mt cnn"
+      "defaultCommand": "python3 main_auto.py -mt cnn"
     }
   },
   "benchmarks": [
