@@ -25,7 +25,6 @@ class Bench(object):
     def __init__(
         self,
         method="resnet50",
-        auto=True,
         device="auto",
         size=1024,
         epochs=10,
@@ -54,7 +53,7 @@ class Bench(object):
 
         # --- Build runner ---
         self.runner = self._build_runner(
-            method=method, auto=auto, size=size, epochs=epochs,
+            method=method, size=size, epochs=epochs,
             batch_size=batch_size, data_type=data_type,
             auto_batch_size=auto_batch_size,
         )
@@ -76,7 +75,7 @@ class Bench(object):
                 print("----------------")
             return None, [None]
 
-    def _build_runner(self, method, auto, size, epochs, batch_size, data_type, auto_batch_size):
+    def _build_runner(self, method, size, epochs, batch_size, data_type, auto_batch_size):
         """Build the appropriate runner."""
 
         # --- Resolve model ---
@@ -84,19 +83,12 @@ class Bench(object):
 
         # --- Data size calculation ---
         if self.device_backend is not None:
-            total_memory = self.device_backend.print_device_info(
+            self.device_backend.print_device_info(
                 [d for d in self.gpu_devices if d is not None]
             )
-        else:
-            total_memory = 0
 
         item_bytes = model_spec.get_data_item_bytes()
-
-        if auto:
-            data_size = int(int((total_memory / item_bytes) / 100) * 100 * 0.7)
-            epochs = 10
-        else:
-            data_size = int(int((size * 1024 * 1024 / item_bytes) / 1) * 1)
+        data_size = int(size * 1024 * 1024 / item_bytes)
 
         if self.is_main_process:
             print(f"Set model [{model_spec.name}], data size: {data_size} samples, "

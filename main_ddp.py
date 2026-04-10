@@ -49,7 +49,6 @@ def main():
         return
 
     b = Bench(
-        auto=False,
         device="cuda",
         size=args.size,
         epochs=args.epochs,

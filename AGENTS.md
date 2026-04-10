@@ -15,7 +15,7 @@ GPU-Insights/
 ├── main_ddp.py              # DDP (multi-GPU) entry point via torchrun
 ├── main_tpu.py              # TPU entry point (xla_spawn)
 ├── Makefile                 # Convenience targets for all modes
-├── calibrate_memory.py      # CUDA memory profiling script
+├── calibrate_memory.py      # NVML-based memory calibration tool
 ├── check_env.py             # Environment diagnostic tool
 ├── helper.py                # Misc utilities
 ├── macos_hw_detector.py     # Apple hardware detection
@@ -24,6 +24,7 @@ GPU-Insights/
 │   ├── Bench.py             # Orchestrator: wires device + model + runner
 │   ├── cli.py               # Unified CLI argument parsing
 │   ├── scoring.py           # Score computation and display
+│   ├── calibration.py       # Calibration table + auto batch size logic
 │   ├── data/                # Synthetic dataset (FakeDataset)
 │   ├── models/              # Model specs (see below)
 │   ├── devices/             # Device backends (see below)
@@ -109,7 +110,10 @@ Runners implement the training loop. They are configured by `Bench.py` (the orch
 
 **Shared logic** lives in `runners/common.py`:
 - `train_step()` — one step with AMP handling, delegates to `model_spec.compute_loss()`
-- `find_optimal_batch_size()` — auto batch size (ABS) based on device memory
+
+**Auto batch size** logic lives in `benchmark/calibration.py`:
+- `find_optimal_batch_size()` — calibration-table lookup based on NVML-measured peak VRAM
+- `CALIBRATION_TABLE` — maps `(model_name, dtype)` to `[(batch_size, peak_memory_mb), ...]`
 
 **Runner flow:** preload data → warmup → timed training loop → score computation
 
@@ -138,7 +142,10 @@ These are applied conditionally based on model + backend capabilities:
 
 ```bash
 # Single-device benchmark
-python main.py -m -mt <model> -s <size_mb> -e <epochs> -dt <FP32|FP16|BF16>
+python main.py -mt <model> -s <size_mb> -e <epochs> -dt <FP32|FP16|BF16>
+
+# With auto batch size (uses calibration table)
+python main.py -mt <model> -s <size_mb> -e <epochs> -abs -dt <type>
 
 # DDP multi-GPU
 torchrun --nproc_per_node=N main_ddp.py -mt <model> -s <size_mb> -e <epochs> -dt <type>
@@ -146,8 +153,13 @@ torchrun --nproc_per_node=N main_ddp.py -mt <model> -s <size_mb> -e <epochs> -dt
 # TPU
 python main_tpu.py -mt <model> -s <size_mb> -e <epochs> -dt BF16
 
+# Memory calibration (NVML)
+python calibrate_memory.py                        # all models, all dtypes
+python calibrate_memory.py -mt resnet50 -dt FP16  # targeted
+python calibrate_memory.py --json                  # machine-readable output
+
 # Available models: cnn, resnet50, vit, unet, ddpm
-# Makefile targets: run, abs, vit, unet, ddpm, ddp, ddp-abs, tpu, tpu-multi, docs, docs-dev
+# Makefile targets: run, abs, vit, unet, ddpm, ddp, ddp-abs, tpu, tpu-multi, calibrate, docs, docs-dev
 ```
 
 ## Scoring
@@ -171,14 +183,15 @@ Primary metric is `throughput` (samples/sec). The `score` field exists for backw
 ## Known Constraints
 
 - **channels_last + MPS:** Backward pass fails for models using BatchNorm (ResNet50, UNet) due to PyTorch MPS backend limitation. DDPM (GroupNorm) works. Guard: `supports_channels_last()` returns False on MPS.
-- **Auto Batch Size (ABS):** Currently uses hardcoded memory estimates from ResNet50 calibration. Needs per-model calibration via `calibrate_memory.py`.
+- **Auto Batch Size (ABS):** Based on NVML-calibrated memory profile table in `benchmark/calibration.py`. Requires `pynvml` for calibration. CUDA is the primary target; NPU/MUSA use CUDA data as proxy; MPS/TPU fall back to model defaults.
 - **torch.compile + MPS:** Not supported; `MPSDeviceBackend.supports_compile()` returns False.
 - **TPU/NPU/MUSA backends:** Functional but less tested than CUDA and MPS.
 
 ## Development Notes
 
-- **Python environment:** Requires PyTorch 2.x+. Optional: `torch_xla` (TPU), `torch_npu` (NPU), `torch_musa` (MUSA).
-- **Testing models locally:** `python main.py -m -mt <model> -s 16 -e 1 -dt FP32` for a quick smoke test.
+- **Python environment:** Requires PyTorch 2.x+. Optional: `torch_xla` (TPU), `torch_npu` (NPU), `torch_musa` (MUSA). `pynvml` for calibration.
+- **Testing models locally:** `python main.py -mt <model> -s 16 -e 1 -dt FP32` for a quick smoke test.
 - **Registries are import-time:** Models and devices auto-register when their `__init__.py` is imported.
+- **Calibration workflow:** Run `python calibrate_memory.py` on a CUDA machine, then paste output into `benchmark/calibration.py` `CALIBRATION_TABLE`.
 - **Do not create doc or script files** unless explicitly instructed (see `.github/copilot-instructions.md`).
 - **Commit every small changes:** Commit every small changes with meaningful commit message. 

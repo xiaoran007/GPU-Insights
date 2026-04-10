@@ -7,7 +7,7 @@ Multi-model GPU/NPU training performance benchmark suite. Measures compute throu
 - **5 Benchmark Models** — CNN, ResNet50, ViT, UNet, DDPM covering classification, segmentation, and diffusion
 - **6 Device Backends** — CUDA, MPS, NPU (Huawei Ascend), MUSA (Moore Threads), TPU, auto-detection
 - **DDP Multi-GPU** — Distributed data-parallel training via `torchrun`
-- **Auto Batch Size** — Automatic memory-optimal batch size detection
+- **Auto Batch Size** — Calibration-table-based automatic batch size selection (NVML)
 - **Unified Scoring** — Throughput-based scoring system consistent across all models
 
 ## Quick Start
@@ -17,7 +17,10 @@ Multi-model GPU/NPU training performance benchmark suite. Measures compute throu
 pip install torch torchvision
 
 # Run default benchmark (ResNet50, auto-detect device)
-python main.py -mt resnet50 -s 512 -e 2 -abs -dt FP32
+python main.py -mt resnet50 -s 512 -e 2 -dt FP32
+
+# Run with auto batch size
+python main.py -mt resnet50 -s 512 -e 2 -abs -dt FP16
 
 # Run ViT benchmark
 python main.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
@@ -42,8 +45,9 @@ python main.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
 | `-e`, `--epochs` | Training epochs | `5` |
 | `-dt`, `--data_type` | Precision: `FP32`, `FP16`, `BF16` | `FP32` |
 | `-bs`, `--batch` | Batch size (0 = model default) | `0` |
-| `-abs`, `--auto_batch_size` | Auto batch size optimisation | off |
+| `-abs`, `--auto_batch_size` | Auto batch size via calibration table | off |
 | `-d`, `--device` | Device: `auto`, `cuda`, `mps`, `npu`, `musa`, `tpu` | `auto` |
+| `-gpu`, `--gpu_id` | GPU ID(s), e.g. `0` or `0,1` | `0` |
 | `-cudnn`, `--cudnn_benchmark` | Enable cuDNN benchmark mode | off |
 
 ## Makefile Targets
@@ -58,6 +62,9 @@ make ddp        # ResNet50 DDP (GPU=2 by default)
 make ddp-abs    # ResNet50 DDP with auto batch size
 make tpu        # ResNet50 on TPU single-core
 make tpu-multi  # ResNet50 on TPU 8-core
+make calibrate  # Run NVML memory calibration (JSON output)
+make docs       # Build visualization website
+make docs-dev   # Start docs dev server
 make help       # Show all targets
 ```
 
@@ -86,6 +93,46 @@ make ddp GPU=4
 # DDP with ViT
 torchrun --nproc_per_node=4 main_ddp.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
 ```
+
+## Auto Batch Size (ABS)
+
+When `-abs` is enabled, the benchmark automatically selects a batch size based on an NVML-calibrated memory profile table. The selection logic:
+
+1. Queries the device's total VRAM
+2. Applies a 10% safety margin (90% usable)
+3. Looks up pre-measured `(model, dtype)` peak memory data from the calibration table
+4. Picks the largest batch size whose peak memory fits within the usable budget
+5. Falls back to the model's default batch size if no calibration data exists
+
+The calibration table lives in `benchmark/calibration.py`. To generate calibration data for your GPU, see [Memory Calibration](#memory-calibration) below.
+
+**Backend support:** CUDA is the primary target. NPU/MUSA use CUDA calibration data as a proxy. MPS/TPU fall back to model defaults.
+
+## Memory Calibration
+
+The calibration tool measures real peak VRAM via NVML (`pynvml`) during short training runs:
+
+```shell
+# Install dependency
+pip install pynvml
+
+# Full calibration (all models × all precisions)
+python calibrate_memory.py
+
+# Specific model/precision
+python calibrate_memory.py -mt resnet50 -dt FP16
+
+# Custom batch sizes
+python calibrate_memory.py -mt vit -dt FP32 -bs 8,16,32,64
+
+# JSON output (for programmatic use)
+python calibrate_memory.py --json
+
+# Specify GPU
+python calibrate_memory.py -gpu 1
+```
+
+After running, paste the output into `benchmark/calibration.py` `CALIBRATION_TABLE`.
 
 ## How to Understand Results
 
@@ -121,12 +168,13 @@ python3 scripts/manage-data.py migrate-version
 ├── main.py              # Single-device entry point
 ├── main_ddp.py          # DDP multi-GPU entry point
 ├── main_tpu.py          # TPU entry point
-├── calibrate_memory.py  # Memory calibration utility
+├── calibrate_memory.py  # NVML memory calibration tool
 ├── Makefile             # Convenience targets
 ├── benchmark/
 │   ├── Bench.py         # Orchestrator
 │   ├── cli.py           # Unified CLI parsing
 │   ├── scoring.py       # Scoring system
+│   ├── calibration.py   # Calibration table + auto batch size logic
 │   ├── models/          # BenchModel implementations
 │   │   ├── base.py      # BenchModel ABC
 │   │   ├── cnn.py       # Simple CNN (62K params)

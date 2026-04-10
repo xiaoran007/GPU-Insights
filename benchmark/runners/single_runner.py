@@ -6,7 +6,8 @@ import time
 from typing import List, Optional
 
 from benchmark.runners.base import BenchRunner, BenchResult
-from benchmark.runners.common import train_step, find_optimal_batch_size
+from benchmark.runners.common import train_step
+from benchmark.calibration import find_optimal_batch_size
 from benchmark.devices.base import DeviceBackend
 from benchmark.models.base import BenchModel
 from benchmark.scoring import compute_score, print_score, BenchScore
@@ -67,18 +68,21 @@ class SingleRunner(BenchRunner):
 
         # ---- Resolve batch size ----
         batch_size = self.batch_size
+        data_type = "BF16" if use_bf16 else ("FP16" if use_fp16 else "FP32")
         if self.auto_batch_size:
             if self.is_main_process:
-                print("\n=== Auto Batch Size Calculation ===")
+                print("\n=== Auto Batch Size Selection ===")
             batch_size = find_optimal_batch_size(
-                self.backend, main_device, use_fp16, use_bf16,
+                model_spec=self.model_spec,
+                backend=self.backend,
+                device=main_device,
+                data_type=data_type,
                 is_main_process=self.is_main_process,
             )
             if self.is_main_process:
-                print(f"✓ Optimal batch size determined: {batch_size}")
-                print("===================================\n")
+                print(f"  ✓ batch_size = {batch_size}")
+                print("=================================\n")
         elif batch_size == 0:
-            data_type = "BF16" if use_bf16 else ("FP16" if use_fp16 else "FP32")
             batch_size = self.model_spec.get_default_batch_size(data_type)
 
         # ---- Dataset & DataLoader ----

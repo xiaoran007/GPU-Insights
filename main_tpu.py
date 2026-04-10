@@ -29,7 +29,6 @@ def _mp_fn(index, args):
         print("Note: BF16 is TPU's native precision and generally faster than FP16.")
 
     b = Bench(
-        auto=False,
         device="tpu",
         size=args.size,
         epochs=args.epochs,

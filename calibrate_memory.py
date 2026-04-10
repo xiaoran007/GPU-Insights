@@ -1,55 +1,147 @@
-import torch
+"""NVML-based GPU memory calibration tool.
+
+Measures **real** peak VRAM usage (via NVML / ``pynvml``) for each
+``(model, dtype, batch_size)`` combination.  The results are used to
+populate ``benchmark/calibration.py:CALIBRATION_TABLE`` so that the
+auto-batch-size logic can pick a safe batch size on any CUDA device.
+
+Workflow
+--------
+1. Run this script on a CUDA machine::
+
+       python calibrate_memory.py                        # full sweep
+       python calibrate_memory.py -mt resnet50 -dt FP16  # targeted
+       python calibrate_memory.py --json                  # machine-readable
+
+2. Copy the output into ``benchmark/calibration.py`` ``CALIBRATION_TABLE``.
+
+Prerequisites
+-------------
+``pip install pynvml``  (ships with most NVIDIA driver installs).
+"""
+
 import argparse
+import json
 import sys
 import os
+import time
+from typing import Dict, List, Optional, Tuple
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from benchmark.models import get_model
+from benchmark.models import get_model, list_models
+from benchmark.devices import auto_detect_backend
+from benchmark.runners.common import train_step
 
 
-def get_gpu_info(device_id):
-    if not torch.cuda.is_available():
-        return "N/A", 0
-    properties = torch.cuda.get_device_properties(device_id)
-    total_memory_gb = properties.total_memory / (1024**3)
-    return properties.name, total_memory_gb
+# ---------------------------------------------------------------------------
+# NVML helpers
+# ---------------------------------------------------------------------------
+
+def nvml_init() -> bool:
+    """Initialise NVML.  Returns True on success."""
+    try:
+        import pynvml
+        pynvml.nvmlInit()
+        return True
+    except Exception as e:
+        print(f"Error: pynvml is required for NVML calibration.  Install with:")
+        print(f"  pip install pynvml")
+        print(f"  (Underlying error: {e})")
+        return False
 
 
-def measure_memory_usage(model_name, precision, batch_size, gpu_id):
-    """Run a simplified training loop and measure peak GPU memory."""
+def nvml_get_handle(gpu_id: int):
+    import pynvml
+    return pynvml.nvmlDeviceGetHandleByIndex(gpu_id)
+
+
+def nvml_get_used_mb(handle) -> float:
+    """Return current GPU memory usage in MB as reported by NVML."""
+    import pynvml
+    info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+    return info.used / (1024 * 1024)
+
+
+def nvml_get_total_mb(handle) -> float:
+    import pynvml
+    info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+    return info.total / (1024 * 1024)
+
+
+def nvml_get_device_name(handle) -> str:
+    import pynvml
+    return pynvml.nvmlDeviceGetName(handle)
+
+
+# ---------------------------------------------------------------------------
+# Default batch-size ranges per model
+# ---------------------------------------------------------------------------
+
+DEFAULT_BATCH_SIZES: Dict[str, List[int]] = {
+    "cnn":      [256, 512, 1024, 2048, 4096],
+    "resnet50": [32, 64, 128, 256, 512, 1024],
+    "vit":      [8, 16, 32, 64, 128, 256],
+    "unet":     [2, 4, 8, 16, 32, 64],
+    "ddpm":     [8, 16, 32, 64, 128, 256],
+}
+
+
+# ---------------------------------------------------------------------------
+# Core calibration
+# ---------------------------------------------------------------------------
+
+def calibrate_one(
+    model_name: str,
+    data_type: str,
+    batch_size: int,
+    gpu_id: int,
+    nvml_handle,
+    warmup_steps: int = 3,
+    measure_steps: int = 10,
+) -> Optional[float]:
+    """Run a short training burst and return peak NVML VRAM in MB.
+
+    Returns ``None`` on OOM or other fatal error.
+    """
     device = torch.device(f"cuda:{gpu_id}")
-    print(f"Testing {model_name} {precision} with batch size: {batch_size} on GPU {gpu_id}...")
+    backend = auto_detect_backend(device="cuda")
+    if backend is None:
+        return None
+
+    model_spec = get_model(model_name)
+    use_fp16 = (data_type == "FP16")
+    use_bf16 = (data_type == "BF16")
+    num_classes = model_spec.get_num_classes()
 
     try:
-        import torch.nn as nn
-        import torch.optim as optim
-
-        model_spec = get_model(model_name)
-
-        try:
-            from torch.amp import autocast, GradScaler
-            version_flag = True
-        except ImportError:
-            from torch.cuda.amp import autocast, GradScaler
-            version_flag = False
-
-        use_fp16 = precision == 'FP16'
-        num_classes = model_spec.get_num_classes()
-
+        # --- Setup ---
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats(device)
         torch.cuda.synchronize(device)
 
         model = model_spec.create_model(num_classes=num_classes).to(device)
+        if model_spec.use_channels_last and backend.supports_channels_last():
+            model = model.to(memory_format=torch.channels_last)
+
         criterion = model_spec.get_criterion()
         optimizer = optim.SGD(model.parameters(), lr=0.001)
 
-        scaler = GradScaler(device="cuda", enabled=True) if use_fp16 else None
+        if use_bf16:
+            scaler = None
+        elif use_fp16:
+            scaler = backend.get_grad_scaler(enabled=True)
+        else:
+            scaler = backend.get_grad_scaler(enabled=False)
 
-        data_size = 1024
+        # --- Synthetic data ---
+        data_size = max(batch_size * (warmup_steps + measure_steps + 2), 256)
         train_dataset = model_spec.create_dataset(data_size)
         train_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -60,117 +152,224 @@ def measure_memory_usage(model_name, precision, batch_size, gpu_id):
             drop_last=True,
         )
 
+        cl = model_spec.use_channels_last and backend.supports_channels_last()
         data_preloaded = [
-            (images.to(device), labels.to(device))
+            (
+                images.to(device, memory_format=torch.channels_last, non_blocking=True)
+                if cl else images.to(device, non_blocking=True),
+                labels.to(device, non_blocking=True),
+            )
             for images, labels in train_loader
         ]
-
-        # Warmup
-        model.train()
-        for i in range(min(3, len(data_preloaded))):
-            images, labels = data_preloaded[i]
-            optimizer.zero_grad(set_to_none=True)
-            if use_fp16:
-                ctx = autocast(device_type="cuda", dtype=torch.float16, enabled=True) if version_flag else autocast(dtype=torch.float16, enabled=True)
-                with ctx:
-                    loss = model_spec.compute_loss(model, images, labels, criterion, device)
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-            else:
-                loss = model_spec.compute_loss(model, images, labels, criterion, device)
-                loss.backward()
-                optimizer.step()
-
         torch.cuda.synchronize(device)
 
-        # Measure
-        peak_memory_reserved = 0.0
-        peak_memory_allocated = 0.0
-        for i in range(min(10, len(data_preloaded))):
+        if len(data_preloaded) < warmup_steps + measure_steps:
+            # Not enough batches; unlikely but guard against it
+            return None
+
+        # --- Warmup ---
+        model.train()
+        for i in range(warmup_steps):
             images, labels = data_preloaded[i]
             optimizer.zero_grad(set_to_none=True)
-            if use_fp16:
-                ctx = autocast(device_type="cuda", dtype=torch.float16, enabled=True) if version_flag else autocast(dtype=torch.float16, enabled=True)
-                with ctx:
-                    loss = model_spec.compute_loss(model, images, labels, criterion, device)
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-            else:
-                loss = model_spec.compute_loss(model, images, labels, criterion, device)
-                loss.backward()
-                optimizer.step()
+            train_step(
+                model_spec, backend, model, images, labels,
+                criterion, optimizer, scaler, use_fp16, use_bf16, device,
+            )
+        torch.cuda.synchronize(device)
 
+        # --- Measurement (NVML peak) ---
+        peak_nvml_mb = nvml_get_used_mb(nvml_handle)
+        for i in range(warmup_steps, warmup_steps + measure_steps):
+            images, labels = data_preloaded[i]
+            optimizer.zero_grad(set_to_none=True)
+            train_step(
+                model_spec, backend, model, images, labels,
+                criterion, optimizer, scaler, use_fp16, use_bf16, device,
+            )
             torch.cuda.synchronize(device)
-            current_reserved = torch.cuda.memory_reserved(device) / (1024 * 1024)
-            current_allocated = torch.cuda.memory_allocated(device) / (1024 * 1024)
-            peak_memory_reserved = max(peak_memory_reserved, current_reserved)
-            peak_memory_allocated = max(peak_memory_allocated, current_allocated)
+            current = nvml_get_used_mb(nvml_handle)
+            peak_nvml_mb = max(peak_nvml_mb, current)
 
-        print(f"✓ Success!")
-        print(f"  - Peak Reserved (≈nvidia-smi): {peak_memory_reserved:.2f} MB")
-        print(f"  - Peak Allocated (actual tensors): {peak_memory_allocated:.2f} MB")
-        print(f"  - Memory Pool Overhead: {peak_memory_reserved - peak_memory_allocated:.2f} MB")
-        return peak_memory_reserved
+        # --- Cleanup ---
+        del model, optimizer, scaler, criterion, data_preloaded, train_loader, train_dataset
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize(device)
+
+        return peak_nvml_mb
 
     except RuntimeError as e:
-        if 'out of memory' in str(e).lower():
-            print(f"✗ Error: CUDA out of memory with batch size {batch_size}.")
-            return -1
+        if "out of memory" in str(e).lower():
+            torch.cuda.empty_cache()
+            return None
         raise
-    except Exception:
-        raise
+
+
+# ---------------------------------------------------------------------------
+# CLI & main
+# ---------------------------------------------------------------------------
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="NVML-based GPU memory calibration for auto batch size.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  python calibrate_memory.py                        # all models, all dtypes\n"
+            "  python calibrate_memory.py -mt resnet50 -dt FP16  # single combo\n"
+            "  python calibrate_memory.py -bs 16,32,64,128       # custom batch sizes\n"
+            "  python calibrate_memory.py --json                  # JSON output\n"
+        ),
+    )
+    parser.add_argument(
+        "-gpu", type=int, default=0,
+        help="CUDA GPU index (default: 0).",
+    )
+    parser.add_argument(
+        "-mt", "--model", type=str, default=None,
+        help=f"Model to calibrate.  Available: {', '.join(list_models())}.  Default: all.",
+    )
+    parser.add_argument(
+        "-dt", "--data_type", type=str, default=None,
+        help="Precision: FP32, FP16, BF16.  Default: all three.",
+    )
+    parser.add_argument(
+        "-bs", "--batch_sizes", type=str, default=None,
+        help="Comma-separated list of batch sizes to test (e.g. 16,32,64,128).",
+    )
+    parser.add_argument(
+        "--json", action="store_true", default=False,
+        help="Output results in JSON format.",
+    )
+    parser.add_argument(
+        "--warmup", type=int, default=3,
+        help="Number of warmup steps per measurement (default: 3).",
+    )
+    parser.add_argument(
+        "--steps", type=int, default=10,
+        help="Number of measurement steps per batch size (default: 10).",
+    )
+    return parser.parse_args()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Calibrate memory usage on CUDA.")
-    parser.add_argument('-gpu', type=str, default='0', help='GPU ID.')
-    parser.add_argument('-mt', '--model', type=str, default='resnet50',
-                        help='Model to calibrate (resnet50, cnn, vit, unet, ddpm).')
-    args = parser.parse_args()
+    args = parse_args()
+    gpu_id = args.gpu
 
-    gpu_id = int(args.gpu)
-
+    # --- CUDA check ---
     if not torch.cuda.is_available():
         print("Error: CUDA is not available.")
-        return
+        sys.exit(1)
 
-    device_name, total_memory_gb = get_gpu_info(gpu_id)
-    model_name = args.model
-    print(f"--- GPU Memory Calibration for {model_name} ---")
-    print(f"GPU Detected: {device_name}")
-    print(f"Total Memory: {total_memory_gb:.2f} GB")
-    print("-" * 45)
+    # --- NVML init ---
+    if not nvml_init():
+        sys.exit(1)
 
-    batch_sizes_to_test = [128, 256, 512]
-    results = {}
+    handle = nvml_get_handle(gpu_id)
+    gpu_name = nvml_get_device_name(handle)
+    if isinstance(gpu_name, bytes):
+        gpu_name = gpu_name.decode("utf-8")
+    total_mb = nvml_get_total_mb(handle)
 
-    for precision in ['FP32', 'FP16']:
-        results[precision] = {}
-        print(f"\n--- Starting calibration for {precision} ---")
-        for bs in batch_sizes_to_test:
-            peak_mem = measure_memory_usage(model_name, precision, bs, gpu_id)
-            if peak_mem != -1:
-                results[precision][bs] = peak_mem
-            else:
-                break
+    # --- Resolve targets ---
+    models = [args.model] if args.model else list_models()
+    dtypes = [args.data_type.upper()] if args.data_type else ["FP32", "FP16", "BF16"]
 
-    print("\n\n--- CALIBRATION REPORT ---")
-    print(f"GPU Model: {device_name}")
-    print(f"Total VRAM: {total_memory_gb:.2f} GB")
-    print("-" * 28)
+    # BF16 availability check
+    cuda_device = torch.device(f"cuda:{gpu_id}")
+    bf16_ok = True
+    try:
+        bf16_ok = torch.cuda.is_bf16_supported(including_emulation=False)
+    except Exception:
+        bf16_ok = False
 
-    for precision, bs_data in results.items():
-        print(f"Precision: {precision}")
-        if bs_data:
-            for bs, mem in bs_data.items():
-                print(f"  - Batch Size: {bs:<5} -> Peak Memory: {mem:.2f} MB")
-        else:
-            print("  - Measurement failed (likely out of memory).")
+    # --- Header ---
+    if not args.json:
+        print(f"\n{'='*55}")
+        print(f"  NVML Memory Calibration")
+        print(f"{'='*55}")
+        print(f"  GPU:           {gpu_name}")
+        print(f"  Total VRAM:    {total_mb:.0f} MB")
+        print(f"  Models:        {', '.join(models)}")
+        print(f"  Precisions:    {', '.join(dtypes)}")
+        print(f"  Warmup steps:  {args.warmup}")
+        print(f"  Measure steps: {args.steps}")
+        print(f"{'='*55}\n")
 
-    print("-" * 28)
+    # --- Run calibration ---
+    results: Dict[str, Dict[str, List[Tuple[int, float]]]] = {}
+
+    for model_name in models:
+        results[model_name] = {}
+        for dt in dtypes:
+            if dt == "BF16" and not bf16_ok:
+                if not args.json:
+                    print(f"  [{model_name}/{dt}] Skipped — BF16 not supported on this GPU.")
+                continue
+
+            batch_sizes = (
+                [int(x) for x in args.batch_sizes.split(",")]
+                if args.batch_sizes
+                else DEFAULT_BATCH_SIZES.get(model_name, [32, 64, 128, 256])
+            )
+
+            entries = []
+            if not args.json:
+                print(f"  [{model_name}/{dt}]")
+
+            for bs in sorted(batch_sizes):
+                if not args.json:
+                    print(f"    bs={bs:<6} ", end="", flush=True)
+                peak = calibrate_one(
+                    model_name, dt, bs, gpu_id, handle,
+                    warmup_steps=args.warmup,
+                    measure_steps=args.steps,
+                )
+                if peak is None:
+                    if not args.json:
+                        print("OOM — skipping larger sizes.")
+                    break
+                entries.append((bs, round(peak, 1)))
+                if not args.json:
+                    print(f"peak = {peak:.1f} MB")
+
+            results[model_name][dt] = entries
+            if not args.json:
+                print()
+
+    # --- Output ---
+    if args.json:
+        json_out = {
+            "gpu": gpu_name,
+            "total_memory_mb": round(total_mb, 1),
+            "results": {
+                model: {
+                    dt: [[bs, mem] for bs, mem in entries]
+                    for dt, entries in dt_data.items()
+                }
+                for model, dt_data in results.items()
+            },
+        }
+        print(json.dumps(json_out, indent=2))
+    else:
+        # Print copy-paste-ready Python dict for calibration.py
+        print(f"\n{'='*55}")
+        print(f"  Calibration Complete")
+        print(f"{'='*55}")
+        print(f"\nPaste the following into benchmark/calibration.py CALIBRATION_TABLE:\n")
+        print("CALIBRATION_TABLE = {")
+        for model_name, dt_data in results.items():
+            for dt, entries in dt_data.items():
+                if entries:
+                    items = ", ".join(f"({bs}, {mem})" for bs, mem in entries)
+                    print(f'    ("{model_name}", "{dt}"): [{items}],')
+        print("}")
+        print()
+
+    # --- Cleanup NVML ---
+    import pynvml
+    pynvml.nvmlShutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
