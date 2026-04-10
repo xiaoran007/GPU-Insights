@@ -98,7 +98,7 @@ class SingleRunner(BenchRunner):
 
         # ---- Model creation ----
         model = self.model_spec.create_model(num_classes=num_classes).to(main_device)
-        if self.model_spec.use_channels_last:
+        if self.model_spec.use_channels_last and self.backend.supports_channels_last():
             model = model.to(memory_format=torch.channels_last)
 
         # DataParallel for multi-GPU (non-DDP)
@@ -131,7 +131,7 @@ class SingleRunner(BenchRunner):
 
         # ---- Pre-load data ----
         pre_load_start = time.time()
-        cl = self.model_spec.use_channels_last
+        cl = self.model_spec.use_channels_last and self.backend.supports_channels_last()
         data_preloaded = [
             (
                 images.to(main_device, memory_format=torch.channels_last, non_blocking=True)

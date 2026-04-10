@@ -79,6 +79,14 @@ class DeviceBackend(ABC):
         """Whether BF16 is natively supported on *device*."""
         return False
 
+    def supports_channels_last(self) -> bool:
+        """Whether channels_last memory format is fully supported.
+
+        Enabled by default on CUDA (tensor core benefit).  Disabled on
+        MPS where backward-pass failures occur with some architectures.
+        """
+        return False
+
     # -------------------------------------------------------- optimizer
 
     def get_optimizer_kwargs(self) -> Dict[str, Any]:

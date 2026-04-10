@@ -80,6 +80,9 @@ class CudaDeviceBackend(DeviceBackend):
         except Exception:
             return False
 
+    def supports_channels_last(self) -> bool:
+        return True
+
     def get_optimizer_kwargs(self) -> Dict[str, Any]:
         if TORCH_2_PLUS:
             return {"fused": True}
