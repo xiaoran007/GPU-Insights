@@ -1,49 +1,28 @@
-.PHONY: smart run help abs ddp ddp-abs tpu tpu-multi vit unet ddpm docs docs-dev calibrate
+.PHONY: smart tpu tpu-multi calibrate docs docs-dev help
 
-# Number of processes for DDP (default: 2)
-GPU ?= 2
 MODEL ?= resnet50
+SIZE ?= 1024
+EPOCHS ?= 5
+
+SMART_ARGS ?=
+
+TPU_DTYPE ?= BF16
+TPU_CORES ?= 8
+TPU_ARGS ?=
+
+CALIBRATE_ARGS ?= --json
 
 smart:
-	python3 main_auto.py -mt $(MODEL)
-
-run:
-	python main.py -s 512 -e 2 -mt resnet50 -dt FP16
-	python main.py -s 512 -e 2 -mt resnet50 -dt FP32
-
-abs:
-	python main.py -s 512 -e 2 -mt resnet50 -abs -dt FP16
-	python main.py -s 512 -e 2 -mt resnet50 -abs -dt FP32
-
-vit:
-	python main.py -s 512 -e 2 -mt vit -dt FP16
-	python main.py -s 512 -e 2 -mt vit -dt FP32
-
-unet:
-	python main.py -s 512 -e 2 -mt unet -dt FP16
-	python main.py -s 512 -e 2 -mt unet -dt FP32
-
-ddpm:
-	python main.py -s 512 -e 2 -mt ddpm -dt FP16
-	python main.py -s 512 -e 2 -mt ddpm -dt FP32
-
-ddp:
-	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -dt FP16
-	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -dt FP32
-
-ddp-abs:
-	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -abs -dt FP16
-	torchrun --nproc_per_node=$(GPU) main_ddp.py -s 512 -e 2 -mt resnet50 -abs -dt FP32
+	python3 main_auto.py -mt $(MODEL) -s $(SIZE) -e $(EPOCHS) $(SMART_ARGS)
 
 tpu:
-	python main_tpu.py -s 512 -e 2 -mt resnet50 -dt BF16
-	python main_tpu.py -s 512 -e 2 -mt resnet50 -dt FP32
+	python3 main_tpu.py -mt $(MODEL) -s $(SIZE) -e $(EPOCHS) -dt $(TPU_DTYPE) $(TPU_ARGS)
 
 tpu-multi:
-	python main_tpu.py -s 512 -e 2 -mt resnet50 -dt BF16 --num_cores 8
+	python3 main_tpu.py -mt $(MODEL) -s $(SIZE) -e $(EPOCHS) -dt $(TPU_DTYPE) --num_cores $(TPU_CORES) $(TPU_ARGS)
 
 calibrate:
-	python calibrate_memory.py --json
+	python3 calibrate_memory.py $(CALIBRATE_ARGS)
 
 docs:
 	cd docs-src && npm ci && npm run build
@@ -52,38 +31,35 @@ docs-dev:
 	cd docs-src && npm run dev
 
 help:
-	@echo "==================================================================="
-	@echo "GPU-Insights Benchmark Makefile"
-	@echo "==================================================================="
+	@echo "==============================================================="
+	@echo "GPU-Insights Makefile"
+	@echo "==============================================================="
 	@echo ""
 	@echo "Available models: cnn, resnet50, vit, unet, ddpm"
 	@echo ""
 	@echo "Targets:"
-	@echo "  make smart     - Smart launcher (MODEL=resnet50 by default)"
-	@echo "  make run       - ResNet50 benchmarks (FP16 + FP32)"
-	@echo "  make abs       - ResNet50 with auto batch size"
-	@echo "  make vit       - ViT-Base benchmarks (FP16 + FP32)"
-	@echo "  make unet      - UNet segmentation benchmarks (FP16 + FP32)"
-	@echo "  make ddpm      - DDPM diffusion benchmarks (FP16 + FP32)"
-	@echo "  make ddp       - ResNet50 DDP (default: 2 GPUs)"
-	@echo "  make ddp-abs   - ResNet50 DDP with auto batch size"
-	@echo "  make tpu       - ResNet50 on TPU single-core"
-	@echo "  make tpu-multi - ResNet50 on TPU multi-core (8 cores)"
-	@echo "  make calibrate - Run NVML memory calibration (JSON output)"
-	@echo "  make docs      - Build visualization website to docs/"
-	@echo "  make docs-dev  - Start docs dev server with hot reload"
-	@echo "  make help      - Show this help"
+	@echo "  make smart      - Smart launcher (default entrypoint)"
+	@echo "  make tpu        - TPU single-core benchmark"
+	@echo "  make tpu-multi  - TPU multi-core benchmark"
+	@echo "  make calibrate  - Run memory calibration"
+	@echo "  make docs       - Build visualization website to docs/"
+	@echo "  make docs-dev   - Start docs dev server with hot reload"
+	@echo "  make help       - Show this help"
 	@echo ""
-	@echo "DDP Parameters:"
-	@echo "  GPU=<num>   - Number of processes/GPUs (default: 2)"
+	@echo "Common variables:"
+	@echo "  MODEL=<name>         Benchmark model (default: resnet50)"
+	@echo "  SIZE=<mb>            Dataset size in MB (default: 1024)"
+	@echo "  EPOCHS=<n>           Training epochs (default: 5)"
+	@echo "  SMART_ARGS='...'     Extra args passed to main_auto.py"
+	@echo "  TPU_DTYPE=<dtype>    TPU dtype (default: BF16)"
+	@echo "  TPU_CORES=<n>        TPU core count for tpu-multi (default: 8)"
+	@echo "  TPU_ARGS='...'       Extra args passed to main_tpu.py"
+	@echo "  CALIBRATE_ARGS='...' Extra args passed to calibrate_memory.py"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make smart MODEL=vit"
-	@echo "  python3 main_auto.py -mt resnet50"
-	@echo "  python main.py -mt vit -s 512 -e 2 -dt FP16"
-	@echo "  python main.py -mt unet -s 512 -e 2 -dt FP32"
-	@echo "  python main.py -mt ddpm -s 512 -e 2 -dt FP16"
-	@echo "  python main.py -mt resnet50 -s 512 -e 2 -abs -dt FP16"
-	@echo "  python main.py -mt resnet50 -d npu -s 512 -e 2 -bs 64 -dt FP16"
-	@echo "  torchrun --nproc_per_node=4 main_ddp.py -mt vit -s 512 -e 2 -dt FP16"
-	@echo "  python calibrate_memory.py -mt resnet50 -dt FP16"
+	@echo "  make smart"
+	@echo "  make smart MODEL=vit SMART_ARGS='--dry-run'"
+	@echo "  make smart MODEL=unet SIZE=512 EPOCHS=2"
+	@echo "  make tpu MODEL=resnet50"
+	@echo "  make tpu-multi MODEL=vit TPU_CORES=8"
+	@echo "  make calibrate CALIBRATE_ARGS='-mt resnet50 -dt FP16'"
