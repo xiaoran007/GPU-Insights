@@ -34,7 +34,7 @@ python main.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
 | ResNet50 | 23.5M | 3×32×32 | Classification | `resnet50`, `resnet` |
 | ViT-Base/16 | 85.8M | 3×224×224 | Classification | `vit`, `vit-base` |
 | UNet | 31.0M | 3×256×256 | Segmentation | `unet` |
-| DDPM | 29.9M | 3×64×64 | Diffusion (noise prediction) | `ddpm` |
+| DDPM | 62.3M | 3×64×64 | Diffusion (noise prediction) | `ddpm` |
 
 ## CLI Arguments
 
@@ -181,7 +181,7 @@ python3 scripts/manage-data.py migrate-version
 │   │   ├── resnet50.py  # ResNet50 (23.5M params)
 │   │   ├── vit.py       # ViT-Base/16 (85.8M params)
 │   │   ├── unet.py      # UNet segmentation (31.0M params)
-│   │   └── ddpm.py      # DDPM diffusion (29.9M params)
+│   │   └── ddpm.py      # DDPM diffusion (62.3M params)
 │   ├── devices/         # DeviceBackend implementations
 │   │   ├── base.py      # DeviceBackend ABC
 │   │   ├── cuda_device.py

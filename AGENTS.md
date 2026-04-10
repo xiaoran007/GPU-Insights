@@ -131,12 +131,18 @@ main.py  →  cli.py (parse args)  →  Bench.__init__()
 
 These are applied conditionally based on model + backend capabilities:
 
-1. **channels_last memory format** — applied when `model.use_channels_last and backend.supports_channels_last()` (CUDA only; MPS backward pass fails for BatchNorm models)
-2. **cudnn.benchmark** — enabled by default (`Bench.py`)
-3. **float32 matmul precision** — set to `'high'` on CUDA (`cuda_device.py`)
-4. **Non-blocking data preload** — `non_blocking=True` on `.to(device)` with post-transfer sync
-5. **Reduced loss.item() sync** — logged every ~10 steps, not every step
-6. **torch.compile** — attempted on CUDA for models with `supports_compile=True`
+1. **AMP autocast** — FP16 with GradScaler, BF16 without scaler (`runners/common.py`)
+2. **channels_last memory format** — applied when `model.use_channels_last and backend.supports_channels_last()` (CUDA only; MPS backward pass fails for BatchNorm models)
+3. **cudnn.benchmark** — off by default in CLI; enable with `-cudnn` flag (`Bench.py`)
+4. **TF32 / matmul precision** — `float32_matmul_precision='high'` + `allow_tf32=True` on CUDA CC≥8.0 (`cuda_device.py`)
+5. **Non-blocking data preload** — `non_blocking=True` on `.to(device)` for images and labels
+6. **Data pre-loading to GPU** — entire dataset transferred before timing starts, eliminates DataLoader overhead from benchmark
+7. **Reduced loss.item() sync** — logged ~10 times per epoch, not every step
+8. **torch.compile** — attempted on CUDA (`default` mode) and TPU (`openxla`) for models with `supports_compile=True`
+9. **Fused SGD optimizer** — `fused=True` on CUDA PyTorch 2.0+ (`cuda_device.py`)
+10. **`optimizer.zero_grad(set_to_none=True)`** — avoids zeroing memory, saves allocation
+11. **DataLoader tuning** — `pin_memory=True`, `persistent_workers=True`, `prefetch_factor=2` (PyTorch 2.0+)
+12. **DDP gradient contiguity hooks** — ensures contiguous gradients for efficient all-reduce (`ddp_runner.py`)
 
 ## CLI Usage
 

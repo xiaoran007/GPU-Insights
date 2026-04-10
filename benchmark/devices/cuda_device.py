@@ -125,7 +125,7 @@ class CudaDeviceBackend(DeviceBackend):
             return model
 
         try:
-            model = torch.compile(model, mode='default')
+            model = torch.compile(model, mode='reduce-overhead')
             if is_main_process:
                 print(f"✓ Model compiled with torch.compile (PyTorch {torch.__version__})")
         except Exception as e:

@@ -133,9 +133,10 @@ class DDPRunner(BenchRunner):
             model,
             device_ids=[device_id],
             output_device=device_id,
-            gradient_as_bucket_view=False,
+            gradient_as_bucket_view=True,
             broadcast_buffers=True,
             find_unused_parameters=False,
+            static_graph=True,
             bucket_cap_mb=25,
         )
         if self.is_main_process:
