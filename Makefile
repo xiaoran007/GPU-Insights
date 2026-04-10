@@ -1,7 +1,11 @@
-.PHONY: run help abs ddp ddp-abs tpu tpu-multi vit unet ddpm docs docs-dev calibrate
+.PHONY: smart run help abs ddp ddp-abs tpu tpu-multi vit unet ddpm docs docs-dev calibrate
 
 # Number of processes for DDP (default: 2)
 GPU ?= 2
+MODEL ?= resnet50
+
+smart:
+	python3 main_auto.py -mt $(MODEL)
 
 run:
 	python main.py -s 512 -e 2 -mt resnet50 -dt FP16
@@ -55,6 +59,7 @@ help:
 	@echo "Available models: cnn, resnet50, vit, unet, ddpm"
 	@echo ""
 	@echo "Targets:"
+	@echo "  make smart     - Smart launcher (MODEL=resnet50 by default)"
 	@echo "  make run       - ResNet50 benchmarks (FP16 + FP32)"
 	@echo "  make abs       - ResNet50 with auto batch size"
 	@echo "  make vit       - ViT-Base benchmarks (FP16 + FP32)"
@@ -73,6 +78,8 @@ help:
 	@echo "  GPU=<num>   - Number of processes/GPUs (default: 2)"
 	@echo ""
 	@echo "Examples:"
+	@echo "  make smart MODEL=vit"
+	@echo "  python3 main_auto.py -mt resnet50"
 	@echo "  python main.py -mt vit -s 512 -e 2 -dt FP16"
 	@echo "  python main.py -mt unet -s 512 -e 2 -dt FP32"
 	@echo "  python main.py -mt ddpm -s 512 -e 2 -dt FP16"

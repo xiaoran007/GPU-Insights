@@ -4,6 +4,7 @@ Multi-model GPU/NPU training performance benchmark suite. Measures compute throu
 
 ## Features
 
+- **Smart Launcher** — One command auto-selects device, precision, ABS, and CUDA DDP
 - **5 Benchmark Models** — CNN, ResNet50, ViT, UNet, DDPM covering classification, segmentation, and diffusion
 - **6 Device Backends** — CUDA, MPS, NPU (Huawei Ascend), MUSA (Moore Threads), TPU, auto-detection
 - **DDP Multi-GPU** — Distributed data-parallel training via `torchrun`
@@ -16,14 +17,23 @@ Multi-model GPU/NPU training performance benchmark suite. Measures compute throu
 # Install dependencies
 pip install torch torchvision
 
-# Run default benchmark (ResNet50, auto-detect device)
+# Run the smart launcher (auto device, auto ABS, auto precision, auto DDP on multi-GPU CUDA)
+python3 main_auto.py -mt resnet50
+
+# Preview what the smart launcher will do
+python3 main_auto.py -mt vit --dry-run
+
+# Force a single precision or batch size when needed
+python3 main_auto.py -mt unet --dtype FP32
+python3 main_auto.py -mt ddpm -bs 32
+```
+
+Legacy expert entrypoints remain available:
+
+```shell
 python main.py -mt resnet50 -s 512 -e 2 -dt FP32
-
-# Run with auto batch size
-python main.py -mt resnet50 -s 512 -e 2 -abs -dt FP16
-
-# Run ViT benchmark
-python main.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
+torchrun --nproc_per_node=2 main_ddp.py -mt resnet50 -s 512 -e 2 -abs -dt FP16
+python main_tpu.py -mt resnet50 -s 512 -e 2 -dt BF16
 ```
 
 ## Models
@@ -37,6 +47,30 @@ python main.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
 | DDPM | 62.3M | 3×64×64 | Diffusion (noise prediction) | `ddpm` |
 
 ## CLI Arguments
+
+### Smart launcher (`main_auto.py`)
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-mt`, `--model` | Model to benchmark | required |
+| `-s`, `--size` | Data size in MB | `1024` |
+| `-e`, `--epochs` | Training epochs | `5` |
+| `-d`, `--device` | Device: `auto`, `cuda`, `mps`, `npu`, `musa`, `tpu` | `auto` |
+| `-gpu`, `--gpu_id` | CUDA GPU ids, e.g. `all` or `0,1` | `all` |
+| `-dt`, `--dtype` | Run a single precision instead of auto-selection | auto |
+| `--no-abs` | Disable auto batch size | off |
+| `-bs`, `--batch` | Batch size override | `0` |
+| `--single-process` | Disable automatic CUDA DDP | off |
+| `--dry-run` | Print launch plan without running | off |
+
+Default smart-launch behavior:
+
+- Auto-detects the backend using the existing backend priority.
+- Enables ABS by default unless `-bs` or `--no-abs` is provided.
+- Runs `BF16 + FP32` on BF16-capable devices, otherwise `FP16 + FP32` when AMP is supported.
+- Automatically switches to CUDA DDP when multiple CUDA GPUs are visible and the model supports DDP.
+
+### Legacy entrypoints (`main.py`, `main_ddp.py`, `main_tpu.py`)
 
 | Flag | Description | Default |
 |------|-------------|---------|
@@ -53,6 +87,7 @@ python main.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
 ## Makefile Targets
 
 ```shell
+make smart      # Smart launcher (set MODEL=vit, MODEL=unet, etc.)
 make run        # ResNet50 FP16 + FP32
 make abs        # ResNet50 with auto batch size
 make vit        # ViT-Base FP16 + FP32
@@ -84,6 +119,10 @@ Use `--device` to select a specific backend, or leave as `auto` (default).
 ## DDP Multi-GPU Training
 
 ```shell
+# Smart launcher
+make smart MODEL=vit
+python3 main_auto.py -mt resnet50
+
 # 2 GPUs (default)
 torchrun --nproc_per_node=2 main_ddp.py -mt resnet50 -s 512 -e 2 -abs -dt FP16
 
@@ -165,6 +204,7 @@ python3 scripts/manage-data.py migrate-version
 ## Project Structure
 
 ```
+├── main_auto.py         # Smart launcher with auto device / precision / DDP planning
 ├── main.py              # Single-device entry point
 ├── main_ddp.py          # DDP multi-GPU entry point
 ├── main_tpu.py          # TPU entry point

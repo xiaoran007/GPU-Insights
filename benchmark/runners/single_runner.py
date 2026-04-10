@@ -220,6 +220,7 @@ class SingleRunner(BenchRunner):
         return BenchResult(
             time_usage=bench_score.time_total,
             score=bench_score.score,
+            throughput=bench_score.throughput,
             data_size=actual_data_size,
             total_data_size=total_data_size,
             batch_size=batch_size,

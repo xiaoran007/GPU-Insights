@@ -1,3 +1,7 @@
+import json
+import os
+from dataclasses import asdict
+
 import torch
 
 from benchmark.models import get_model
@@ -39,6 +43,7 @@ class Bench(object):
             gpu_ids = [0]
 
         self.device_request = device
+        self.data_type = data_type
         self.use_ddp = use_ddp
         self.ddp_rank = ddp_rank
         self.ddp_world_size = ddp_world_size
@@ -57,7 +62,20 @@ class Bench(object):
         )
 
     def start(self):
-        self.runner.run()
+        result = self.runner.run()
+        result.extra.update({
+            "dtype": self._get_effective_data_type(),
+            "backend": self.device_backend.name if self.device_backend is not None else "none",
+            "mode": "ddp" if self.use_ddp else "single",
+            "world_size": self.ddp_world_size if self.use_ddp else len([d for d in self.gpu_devices if d is not None]),
+        })
+
+        result_path = os.environ.get("GPU_INSIGHTS_RESULT_JSON")
+        if result_path and self.is_main_process:
+            with open(result_path, "w", encoding="utf-8") as f:
+                json.dump(asdict(result), f, indent=2)
+
+        return result
 
     # ------------------------------------------------------------------ private
 
@@ -135,8 +153,16 @@ class Bench(object):
                 is_main_process=self.is_main_process,
             )
 
+    def _get_effective_data_type(self):
+        if self.data_type == "BF16" and self.device_backend is not None and self.device_backend.name == "cuda":
+            main_device = self.gpu_devices[0]
+            if main_device is not None and not self.device_backend.supports_bf16(main_device):
+                return "FP16"
+        return self.data_type
+
 
 class _NoOpRunner:
     """Placeholder when no GPU is available."""
     def run(self):
-        pass
+        from benchmark.runners.base import BenchResult
+        return BenchResult()
