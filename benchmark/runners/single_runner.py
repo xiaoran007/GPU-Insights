@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 import time
-from typing import List, Optional
+from typing import List
 
 from benchmark.runners.base import BenchRunner, BenchResult
 from benchmark.runners.common import train_step

@@ -1,9 +1,7 @@
 import torch
-import sys
 
 from benchmark.models import get_model
 from benchmark.devices import auto_detect_backend
-from benchmark.devices.base import DeviceBackend
 from benchmark.runners.single_runner import SingleRunner
 from benchmark.runners.ddp_runner import DDPRunner
 

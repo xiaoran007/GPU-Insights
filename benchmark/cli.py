@@ -1,7 +1,6 @@
 """Unified CLI argument parsing for GPU-Insights benchmark entry points."""
 
 import argparse
-from typing import Tuple
 
 from benchmark.models import resolve_model_name, list_models
 
