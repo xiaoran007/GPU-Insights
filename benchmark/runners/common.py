@@ -36,8 +36,7 @@ def train_step(
         scaler.scale(loss).backward()
         backend.optimizer_step(optimizer, scaler=scaler, use_amp=True)
     else:
-        with backend.get_autocast_context(device, torch.float16, False):
-            loss = model_spec.compute_loss(model, images, labels, criterion, device)
+        loss = model_spec.compute_loss(model, images, labels, criterion, device)
         loss.backward()
         backend.optimizer_step(optimizer, scaler=scaler, use_amp=False)
     return loss
