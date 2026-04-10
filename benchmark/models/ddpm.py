@@ -1,7 +1,13 @@
 """DDPM (Denoising Diffusion Probabilistic Model) benchmark model.
 
-Simplified DDPM with a small UNet backbone for noise prediction.
-Input size: (3, 64, 64) — typical DDPM training resolution.
+UNet backbone with timestep conditioning and self-attention for noise
+prediction.  Architecture follows Improved DDPM / ADM conventions:
+
+- 4 encoder/decoder levels with channel mult [1, 2, 3, 4]
+- Self-attention at 16×16 resolution and in the bottleneck
+- Sinusoidal timestep embedding projected to 512-d
+
+Input size: (3, 64, 64) — standard DDPM training resolution.
 
 The training step is non-standard: instead of classification, we add
 noise to images and train the model to predict the noise.
@@ -41,7 +47,13 @@ class DDPMModel(BenchModel):
         return True
 
     def create_model(self, num_classes: int = 10) -> nn.Module:
-        return DiffusionUNet(in_channels=3, base_channels=128, time_embed_dim=256)
+        return DiffusionUNet(
+            in_channels=3,
+            base_channels=128,
+            channel_mult=(1, 2, 3, 4),
+            attention_resolutions=(16,),
+            time_embed_dim=512,
+        )
 
     def get_image_size(self) -> Tuple[int, ...]:
         return (3, 64, 64)
@@ -102,6 +114,25 @@ class SinusoidalPositionEmbedding(nn.Module):
         return torch.cat([emb.sin(), emb.cos()], dim=-1)
 
 
+class SelfAttention(nn.Module):
+    """Self-attention with GroupNorm and residual connection."""
+
+    def __init__(self, channels: int, num_heads: int = 4):
+        super().__init__()
+        self.norm = nn.GroupNorm(8, channels)
+        self.attn = nn.MultiheadAttention(
+            channels, num_heads, batch_first=True,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B, C, H, W = x.shape
+        h = self.norm(x)
+        h = h.view(B, C, H * W).transpose(1, 2)           # (B, HW, C)
+        h, _ = self.attn(h, h, h, need_weights=False)
+        h = h.transpose(1, 2).view(B, C, H, W)
+        return x + h
+
+
 class ResBlock(nn.Module):
     """Residual block with timestep conditioning."""
 
@@ -152,17 +183,35 @@ class Upsample(nn.Module):
 
 
 class DiffusionUNet(nn.Module):
-    """Simplified UNet for DDPM noise prediction.
+    """UNet for DDPM noise prediction.
 
-    Architecture: 3 levels, each with 2 ResBlocks.
-    Channel progression: base → 2×base → 4×base.
+    4 encoder/decoder levels with configurable channel multipliers and
+    self-attention at specified spatial resolutions.  Follows the design
+    of Improved DDPM (Nichol & Dhariwal, 2021).
+
+    Default config at 64×64 input (~60M params):
+        channel_mult=(1, 2, 3, 4)  →  [128, 256, 384, 512]
+        attention at 16×16 and bottleneck
     """
 
-    def __init__(self, in_channels: int = 3, base_channels: int = 128, time_embed_dim: int = 256):
+    def __init__(
+        self,
+        in_channels: int = 3,
+        base_channels: int = 128,
+        channel_mult: Tuple[int, ...] = (1, 2, 3, 4),
+        attention_resolutions: Tuple[int, ...] = (16,),
+        time_embed_dim: int = 512,
+        num_heads: int = 4,
+    ):
         super().__init__()
         C = base_channels
+        channels = [C * m for m in channel_mult]    # e.g. [128, 256, 384, 512]
+        num_levels = len(channel_mult)
+        # Spatial resolution halves at each downsample: 64 → 32 → 16 → 8
+        # The resolution *entering* each level (after the preceding downsample)
+        input_res = 64  # assumes 64×64 input
 
-        # Time embedding
+        # ---- Time embedding ----
         self.time_embed = nn.Sequential(
             SinusoidalPositionEmbedding(C),
             nn.Linear(C, time_embed_dim),
@@ -170,62 +219,98 @@ class DiffusionUNet(nn.Module):
             nn.Linear(time_embed_dim, time_embed_dim),
         )
 
-        # Encoder
-        self.conv_in = nn.Conv2d(in_channels, C, 3, padding=1)
-        self.enc1a = ResBlock(C, C, time_embed_dim)
-        self.enc1b = ResBlock(C, C, time_embed_dim)
-        self.down1 = Downsample(C)
+        # ---- Encoder ----
+        self.conv_in = nn.Conv2d(in_channels, channels[0], 3, padding=1)
 
-        self.enc2a = ResBlock(C, 2 * C, time_embed_dim)
-        self.enc2b = ResBlock(2 * C, 2 * C, time_embed_dim)
-        self.down2 = Downsample(2 * C)
+        self.enc_blocks = nn.ModuleList()
+        self.enc_attns = nn.ModuleList()
+        self.downsamples = nn.ModuleList()
 
-        self.enc3a = ResBlock(2 * C, 4 * C, time_embed_dim)
-        self.enc3b = ResBlock(4 * C, 4 * C, time_embed_dim)
+        prev_ch = channels[0]
+        res = input_res
+        for i, ch in enumerate(channels):
+            # Two ResBlocks per level
+            self.enc_blocks.append(ResBlock(prev_ch, ch, time_embed_dim))
+            self.enc_blocks.append(ResBlock(ch, ch, time_embed_dim))
+            # Attention if resolution matches
+            if res in attention_resolutions:
+                self.enc_attns.append(SelfAttention(ch, num_heads))
+            else:
+                self.enc_attns.append(nn.Identity())
+            # Downsample (except the last level feeds into bottleneck directly)
+            if i < num_levels - 1:
+                self.downsamples.append(Downsample(ch))
+                res //= 2
+            prev_ch = ch
 
-        # Bottleneck
-        self.mid1 = ResBlock(4 * C, 4 * C, time_embed_dim)
-        self.mid2 = ResBlock(4 * C, 4 * C, time_embed_dim)
+        # ---- Bottleneck ----
+        self.mid1 = ResBlock(channels[-1], channels[-1], time_embed_dim)
+        self.mid_attn = SelfAttention(channels[-1], num_heads)
+        self.mid2 = ResBlock(channels[-1], channels[-1], time_embed_dim)
 
-        # Decoder
-        self.up2 = Upsample(4 * C)
-        self.dec2a = ResBlock(4 * C + 2 * C, 2 * C, time_embed_dim)
-        self.dec2b = ResBlock(2 * C, 2 * C, time_embed_dim)
+        # ---- Decoder ----
+        self.upsamples = nn.ModuleList()
+        self.dec_blocks = nn.ModuleList()
+        self.dec_attns = nn.ModuleList()
 
-        self.up1 = Upsample(2 * C)
-        self.dec1a = ResBlock(2 * C + C, C, time_embed_dim)
-        self.dec1b = ResBlock(C, C, time_embed_dim)
+        for i in reversed(range(num_levels)):
+            ch = channels[i]
+            # Input channels: current level channels + skip connection
+            skip_ch = ch
+            if i < num_levels - 1:
+                self.upsamples.append(Upsample(prev_ch))
+                res *= 2
+            in_ch = prev_ch + skip_ch if i < num_levels - 1 else channels[-1] + skip_ch
+            self.dec_blocks.append(ResBlock(in_ch, ch, time_embed_dim))
+            self.dec_blocks.append(ResBlock(ch, ch, time_embed_dim))
+            if res in attention_resolutions:
+                self.dec_attns.append(SelfAttention(ch, num_heads))
+            else:
+                self.dec_attns.append(nn.Identity())
+            prev_ch = ch
 
-        # Output
+        # ---- Output ----
         self.conv_out = nn.Sequential(
-            nn.GroupNorm(8, C),
+            nn.GroupNorm(8, channels[0]),
             nn.SiLU(),
-            nn.Conv2d(C, in_channels, 3, padding=1),
+            nn.Conv2d(channels[0], in_channels, 3, padding=1),
         )
+
+        self.num_levels = num_levels
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         t_emb = self.time_embed(t)
 
         # Encoder
         h = self.conv_in(x)
-        h1 = self.enc1b(self.enc1a(h, t_emb), t_emb)
-        h = self.down1(h1)
-
-        h2 = self.enc2b(self.enc2a(h, t_emb), t_emb)
-        h = self.down2(h2)
-
-        h = self.enc3b(self.enc3a(h, t_emb), t_emb)
+        skips = []
+        block_idx = 0
+        for i in range(self.num_levels):
+            h = self.enc_blocks[block_idx](h, t_emb)
+            block_idx += 1
+            h = self.enc_blocks[block_idx](h, t_emb)
+            block_idx += 1
+            h = self.enc_attns[i](h)
+            skips.append(h)
+            if i < self.num_levels - 1:
+                h = self.downsamples[i](h)
 
         # Bottleneck
-        h = self.mid2(self.mid1(h, t_emb), t_emb)
+        h = self.mid1(h, t_emb)
+        h = self.mid_attn(h)
+        h = self.mid2(h, t_emb)
 
         # Decoder
-        h = self.up2(h)
-        h = torch.cat([h, h2], dim=1)
-        h = self.dec2b(self.dec2a(h, t_emb), t_emb)
-
-        h = self.up1(h)
-        h = torch.cat([h, h1], dim=1)
-        h = self.dec1b(self.dec1a(h, t_emb), t_emb)
+        block_idx = 0
+        for i, level in enumerate(reversed(range(self.num_levels))):
+            skip = skips[level]
+            if i > 0:
+                h = self.upsamples[i - 1](h)
+            h = torch.cat([h, skip], dim=1)
+            h = self.dec_blocks[block_idx](h, t_emb)
+            block_idx += 1
+            h = self.dec_blocks[block_idx](h, t_emb)
+            block_idx += 1
+            h = self.dec_attns[i](h)
 
         return self.conv_out(h)
