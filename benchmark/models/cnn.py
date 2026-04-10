@@ -26,6 +26,10 @@ class CNNModel(BenchModel):
     def supports_compile(self) -> bool:
         return False
 
+    @property
+    def use_channels_last(self) -> bool:
+        return True
+
     def create_model(self, num_classes: int = 10) -> nn.Module:
         return CNN(num_classes=num_classes)
 

@@ -44,6 +44,16 @@ class BenchModel(ABC):
         """Whether torch.compile should be attempted for this model."""
         return True
 
+    @property
+    def use_channels_last(self) -> bool:
+        """Whether to use channels_last memory format.
+
+        Enable for conv-heavy models (UNet, DDPM, ResNet, CNN) — provides
+        10–30 % speedup on modern GPUs with tensor cores.  Disable for
+        models dominated by attention / linear layers (ViT).
+        """
+        return False
+
     # ------------------------------------------------------- model / data
 
     @abstractmethod

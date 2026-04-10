@@ -46,6 +46,10 @@ class DDPMModel(BenchModel):
     def supports_compile(self) -> bool:
         return True
 
+    @property
+    def use_channels_last(self) -> bool:
+        return True
+
     def create_model(self, num_classes: int = 10) -> nn.Module:
         return DiffusionUNet(
             in_channels=3,
