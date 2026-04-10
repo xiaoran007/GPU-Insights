@@ -88,16 +88,19 @@ class CudaDeviceBackend(DeviceBackend):
     def setup_precision(self, device: torch.device, is_main_process: bool = True) -> None:
         if not TORCH_2_PLUS:
             return
+
+        torch.set_float32_matmul_precision('high')
+
         props = torch.cuda.get_device_properties(device)
         compute_capability = props.major + props.minor / 10.0
         if compute_capability >= 8.0:
             torch.backends.cuda.matmul.allow_tf32 = True
             torch.backends.cudnn.allow_tf32 = True
             if is_main_process:
-                print(f"✓ Enabled TF32 for {props.name} (Compute Capability {props.major}.{props.minor})")
+                print(f"✓ Enabled TF32 + high matmul precision for {props.name} (CC {props.major}.{props.minor})")
         else:
             if is_main_process:
-                print(f"ℹ TF32 not available for {props.name} (Compute Capability {props.major}.{props.minor}, requires 8.0+)")
+                print(f"ℹ TF32 not available for {props.name} (CC {props.major}.{props.minor}, requires 8.0+)")
 
     def print_device_info(self, devices: List[torch.device]) -> int:
         total_memory = 0

@@ -30,7 +30,7 @@ class Bench(object):
         size=1024,
         epochs=10,
         batch_size=0,
-        cudnn_benchmark=False,
+        cudnn_benchmark=True,
         data_type="FP32",
         gpu_ids=None,
         auto_batch_size=False,
