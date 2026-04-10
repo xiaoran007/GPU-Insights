@@ -181,3 +181,4 @@ Primary metric is `throughput` (samples/sec). The `score` field exists for backw
 - **Testing models locally:** `python main.py -m -mt <model> -s 16 -e 1 -dt FP32` for a quick smoke test.
 - **Registries are import-time:** Models and devices auto-register when their `__init__.py` is imported.
 - **Do not create doc or script files** unless explicitly instructed (see `.github/copilot-instructions.md`).
+- **Commit every small changes:** Commit every small changes with meaningful commit message. 
