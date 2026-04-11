@@ -5,7 +5,7 @@ Multi-model GPU/NPU training performance benchmark suite. Measures compute throu
 ## Features
 
 - **Smart Launcher** — One command auto-selects device, precision, ABS, and CUDA DDP
-- **5 Benchmark Models** — CNN, ResNet50, ViT, UNet, DDPM covering classification, segmentation, and diffusion
+- **5 Benchmark Models** — CNN, ResNet-50, ViT, UNet, DDPM covering classification, segmentation, and diffusion
 - **6 Device Backends** — CUDA, MPS, NPU (Huawei Ascend), MUSA (Moore Threads), TPU, auto-detection
 - **DDP Multi-GPU** — Distributed data-parallel training via `torchrun`
 - **Auto Batch Size** — Calibration-table-based automatic batch size selection (NVML)
@@ -41,7 +41,7 @@ python main_tpu.py -mt resnet50 -s 512 -e 2 -dt BF16
 | Model | Parameters | Input Size | Task | Aliases |
 |-------|-----------|------------|------|---------|
 | CNN | 62K | 3×32×32 | Classification | `cnn` |
-| ResNet50 | 23.5M | 3×32×32 | Classification | `resnet50`, `resnet` |
+| ResNet-50 | 23.5M | 3×32×32 | Classification | `resnet50`, `ResNet-50`, `ResNet50` |
 | ViT-Base/16 | 85.8M | 3×224×224 | Classification | `vit`, `vit-base` |
 | UNet | 31.0M | 3×256×256 | Segmentation | `unet` |
 | DDPM | 62.3M | 3×64×64 | Diffusion (noise prediction) | `ddpm` |
@@ -88,19 +88,12 @@ Default smart-launch behavior:
 
 ```shell
 make smart      # Smart launcher (set MODEL=vit, MODEL=unet, etc.)
-make run        # ResNet50 FP16 + FP32
-make abs        # ResNet50 with auto batch size
-make vit        # ViT-Base FP16 + FP32
-make unet       # UNet segmentation FP16 + FP32
-make ddpm       # DDPM diffusion FP16 + FP32
-make ddp        # ResNet50 DDP (GPU=2 by default)
-make ddp-abs    # ResNet50 DDP with auto batch size
 make tpu        # ResNet50 on TPU single-core
 make tpu-multi  # ResNet50 on TPU 8-core
-make calibrate  # Run NVML memory calibration (JSON output)
+make calibrate  # Run memory calibration
 make docs       # Build visualization website
 make docs-dev   # Start docs dev server
-make help       # Show all targets
+make help       # Show current targets and variables
 ```
 
 ## Device Backends
@@ -125,9 +118,6 @@ python3 main_auto.py -mt resnet50
 
 # 2 GPUs (default)
 torchrun --nproc_per_node=2 main_ddp.py -mt resnet50 -s 512 -e 2 -abs -dt FP16
-
-# 4 GPUs
-make ddp GPU=4
 
 # DDP with ViT
 torchrun --nproc_per_node=4 main_ddp.py -mt vit -s 512 -e 2 -bs 32 -dt FP16
@@ -209,7 +199,7 @@ python3 scripts/manage-data.py migrate-version
 ├── main_ddp.py          # DDP multi-GPU entry point
 ├── main_tpu.py          # TPU entry point
 ├── calibrate_memory.py  # NVML memory calibration tool
-├── Makefile             # Convenience targets
+├── Makefile             # Smart launcher and developer convenience targets
 ├── benchmark/
 │   ├── Bench.py         # Orchestrator
 │   ├── cli.py           # Unified CLI parsing
@@ -225,6 +215,7 @@ python3 scripts/manage-data.py migrate-version
 │   ├── devices/         # DeviceBackend implementations
 │   │   ├── base.py      # DeviceBackend ABC
 │   │   ├── cuda_device.py
+│   │   ├── macos_info.py
 │   │   ├── mps_device.py
 │   │   ├── npu_device.py
 │   │   ├── musa_device.py

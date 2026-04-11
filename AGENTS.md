@@ -11,14 +11,14 @@ GPU-Insights is a **cross-platform GPU training benchmark** that measures comput
 
 ```
 GPU-Insights/
+├── main_auto.py             # Smart launcher with auto device / precision / CUDA DDP planning
 ├── main.py                  # Single-device entry point
 ├── main_ddp.py              # DDP (multi-GPU) entry point via torchrun
 ├── main_tpu.py              # TPU entry point (xla_spawn)
-├── Makefile                 # Convenience targets for all modes
+├── Makefile                 # Smart launcher and developer convenience targets
 ├── calibrate_memory.py      # NVML-based memory calibration tool
 ├── check_env.py             # Environment diagnostic tool
 ├── helper.py                # Misc utilities
-├── macos_hw_detector.py     # Apple hardware detection
 │
 ├── benchmark/               # Core benchmark framework
 │   ├── Bench.py             # Orchestrator: wires device + model + runner
@@ -27,16 +27,16 @@ GPU-Insights/
 │   ├── calibration.py       # Calibration table + auto batch size logic
 │   ├── data/                # Synthetic dataset (FakeDataset)
 │   ├── models/              # Model specs (see below)
-│   ├── devices/             # Device backends (see below)
+│   ├── devices/             # Device backends + platform-specific device helpers
 │   └── runners/             # Training runners (see below)
 │
 ├── docs-src/                # React + Vite + TypeScript dashboard source
 │   ├── src/
 │   │   ├── components/      # React components (Layout, Charts, Tables, etc.)
-│   │   ├── data/            # JSON benchmark result data
 │   │   ├── hooks/           # Data loading hooks
 │   │   ├── types/           # TypeScript type definitions
 │   │   └── utils/           # Helper utilities
+│   └── public/data/         # JSON benchmark result data
 │   └── package.json
 │
 ├── docs/                    # Built dashboard (GitHub Pages deployment)
@@ -57,7 +57,7 @@ Each model spec defines **what** to benchmark — model architecture, input shap
 | Model | File | Params | Input | Task |
 |-------|------|--------|-------|------|
 | CNN | `cnn.py` | 62K | 3×32×32 | Classification (archived baseline) |
-| ResNet50 | `resnet50.py` | 23.5M | 3×32×32 | Classification |
+| ResNet-50 | `resnet50.py` | 23.5M | 3×32×32 | Classification |
 | ViT | `vit.py` | 85.8M | 3×224×224 | Classification (ViT-Base/16) |
 | UNet | `unet.py` | 31M | 3×256×256 | Segmentation |
 | DDPM | `ddpm.py` | 62.3M | 3×64×64 | Diffusion noise prediction |
@@ -147,25 +147,28 @@ These are applied conditionally based on model + backend capabilities:
 ## CLI Usage
 
 ```bash
-# Single-device benchmark
+# Recommended: smart launcher
+python3 main_auto.py -mt <model>
+
+# Preview smart-launch decisions
+python3 main_auto.py -mt <model> --dry-run
+
+# Expert single-device benchmark
 python main.py -mt <model> -s <size_mb> -e <epochs> -dt <FP32|FP16|BF16>
 
-# With auto batch size (uses calibration table)
-python main.py -mt <model> -s <size_mb> -e <epochs> -abs -dt <type>
-
-# DDP multi-GPU
+# Expert DDP multi-GPU benchmark
 torchrun --nproc_per_node=N main_ddp.py -mt <model> -s <size_mb> -e <epochs> -dt <type>
 
-# TPU
+# TPU benchmark
 python main_tpu.py -mt <model> -s <size_mb> -e <epochs> -dt BF16
 
 # Memory calibration (NVML)
-python calibrate_memory.py                        # all models, all dtypes
-python calibrate_memory.py -mt resnet50 -dt FP16  # targeted
-python calibrate_memory.py --json                  # machine-readable output
+python calibrate_memory.py
+python calibrate_memory.py -mt resnet50 -dt FP16
+python calibrate_memory.py --json
 
 # Available models: cnn, resnet50, vit, unet, ddpm
-# Makefile targets: run, abs, vit, unet, ddpm, ddp, ddp-abs, tpu, tpu-multi, calibrate, docs, docs-dev
+# Makefile targets: smart, tpu, tpu-multi, calibrate, docs, docs-dev, help
 ```
 
 ## Scoring
@@ -184,7 +187,7 @@ Primary metric is `throughput` (samples/sec). The `score` field exists for backw
 - **Build:** `make docs` (output to `docs/`)
 - **Dev:** `make docs-dev` (hot reload)
 - **Deploy:** GitHub Pages via `.github/workflows/pages.yml`
-- **Data:** Benchmark results stored as JSON in `docs-src/src/data/`
+- **Data:** Benchmark results stored as JSON in `docs-src/public/data/benchmark-data.json`
 
 ## Known Constraints
 
@@ -196,6 +199,7 @@ Primary metric is `throughput` (samples/sec). The `score` field exists for backw
 ## Development Notes
 
 - **Python environment:** Requires PyTorch 2.x+. Optional: `torch_xla` (TPU), `torch_npu` (NPU), `torch_musa` (MUSA). `pynvml` for calibration.
+- **Preferred entrypoint:** `python3 main_auto.py -mt <model>` for the default benchmark workflow.
 - **Testing models locally:** `python main.py -mt <model> -s 16 -e 1 -dt FP32` for a quick smoke test.
 - **Registries are import-time:** Models and devices auto-register when their `__init__.py` is imported.
 - **Calibration workflow:** Run `python calibrate_memory.py` on a CUDA machine, then paste output into `benchmark/calibration.py` `CALIBRATION_TABLE`.
