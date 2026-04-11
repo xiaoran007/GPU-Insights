@@ -4,8 +4,8 @@
 
 GPU-Insights is a **cross-platform GPU training benchmark** that measures compute throughput across multiple deep learning models, precisions, and device backends. It generates a standardised score and throughput (samples/sec) metric.
 
-**Active branch:** `dev/deep-refactor` — major architecture overhaul in progress.
-**Main branch:** `main` — legacy codebase, will be replaced once refactor merges.
+**Active branch:** `main`
+**Main branch:** `main`
 
 ## Repository Structure
 
