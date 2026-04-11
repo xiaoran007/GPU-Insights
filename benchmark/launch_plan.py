@@ -87,6 +87,7 @@ def build_launch_plan(
     batch: int = 0,
     no_abs: bool = False,
     single_process: bool = False,
+    allow_unavailable: bool = False,
 ) -> LaunchPlan:
     """Build the smart launcher plan from user intent plus device capabilities."""
     model_name = resolve_model_name(model)
@@ -94,7 +95,29 @@ def build_launch_plan(
 
     backend = auto_detect_backend(device=device)
     if backend is None:
-        raise RuntimeError(f"No available device backend matched request '{device}'.")
+        if not allow_unavailable:
+            raise RuntimeError(f"No available device backend matched request '{device}'.")
+
+        backend_name = device if device != "auto" else "auto"
+        fallback_device_ids = [0]
+        precisions = resolve_precisions(
+            model_name=model_name,
+            backend_name=backend_name,
+            device_ids=fallback_device_ids,
+            requested_dtype=requested_dtype,
+        )
+        return LaunchPlan(
+            model=model_name,
+            backend=backend_name,
+            device_ids=fallback_device_ids,
+            use_ddp=False,
+            world_size=1,
+            auto_batch_size=batch <= 0 and not no_abs,
+            batch_size_override=batch if batch > 0 else None,
+            precisions=precisions,
+            data_size_mb=size,
+            epochs=epochs,
+        )
 
     device_ids = parse_gpu_ids(gpu_id, backend.name)
     use_ddp = (
