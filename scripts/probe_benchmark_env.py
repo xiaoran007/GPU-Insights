@@ -5,8 +5,9 @@ import json
 import platform
 import subprocess
 import sys
+from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -16,6 +17,11 @@ try:
     import torch
 except ImportError:
     torch = None
+
+try:
+    import pynvml
+except ImportError:
+    pynvml = None
 
 try:
     from benchmark.devices import auto_detect_backend
@@ -57,21 +63,136 @@ def _normalize_platform_label() -> str:
     return f"{system} {platform.release()}"
 
 
-def _infer_nvidia_architecture(name: str, compute_capability: Optional[str]) -> str:
-    lowered = name.lower()
-    if any(token in lowered for token in ("5090", "5080", "5070", "5060", "blackwell")):
-        return "Blackwell"
-    if any(token in lowered for token in ("4090", "4080", "4070", "4060", "ada", "l40", "l4", "rtx 6000 ada")):
-        return "Ada"
-    if any(token in lowered for token in ("h100", "h200", "hopper")):
-        return "Hopper"
-    if any(token in lowered for token in ("a100", "a30", "3090", "3080", "3070", "3060", "ampere")):
-        return "Ampere"
-    if any(token in lowered for token in ("v100", "t4", "titan rtx", "turing", "volta")):
-        return "Volta/Turing"
-    if compute_capability:
-        return f"CUDA CC {compute_capability}"
-    return "NVIDIA GPU"
+_NVIDIA_CC_ARCH_MAP: Dict[Tuple[int, int], str] = {
+    (12, 1): "Blackwell",
+    (12, 0): "Blackwell",
+    (11, 0): "Thor",
+    (10, 3): "Blackwell",
+    (10, 1): "Blackwell",
+    (10, 0): "Blackwell",
+    (9, 0): "Hopper",
+    (8, 9): "Ada",
+    (8, 7): "Ampere",
+    (8, 6): "Ampere",
+    (8, 0): "Ampere",
+    (7, 5): "Turing",
+    (7, 2): "Volta",
+    (7, 0): "Volta",
+    (6, 2): "Pascal",
+    (6, 1): "Pascal",
+    (6, 0): "Pascal",
+    (5, 3): "Maxwell",
+    (5, 2): "Maxwell",
+    (5, 0): "Maxwell",
+    (3, 7): "Kepler",
+    (3, 5): "Kepler",
+    (3, 2): "Kepler",
+    (3, 0): "Kepler",
+    (2, 1): "Fermi",
+    (2, 0): "Fermi",
+    (1, 3): "Tesla",
+    (1, 2): "Tesla",
+    (1, 1): "Tesla",
+    (1, 0): "Tesla",
+}
+
+
+def _format_compute_capability(major: int, minor: int) -> str:
+    return f"{major}.{minor}"
+
+
+def _map_nvidia_architecture_from_cc(major: Optional[int], minor: Optional[int]) -> str:
+    if major is None or minor is None:
+        return "NVIDIA GPU"
+    architecture = _NVIDIA_CC_ARCH_MAP.get((major, minor))
+    if architecture:
+        return architecture
+    return f"CUDA CC {_format_compute_capability(major, minor)}"
+
+
+def _decode_nvml_string(value: Any) -> str:
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _collect_cuda_compute_capabilities(device_ids: List[int]) -> List[Tuple[Optional[int], Optional[int]]]:
+    if torch is None or not torch.cuda.is_available():
+        return []
+
+    capabilities: List[Tuple[Optional[int], Optional[int]]] = []
+    for device_id in device_ids or [0]:
+        with suppress(Exception):
+            props = torch.cuda.get_device_properties(device_id)
+            capabilities.append((props.major, props.minor))
+            continue
+        capabilities.append((None, None))
+    return capabilities
+
+
+def _probe_cuda_with_nvml(device_ids: List[int]) -> Dict[str, Any]:
+    if pynvml is None:
+        return {}
+
+    handles = []
+    initialized = False
+    try:
+        pynvml.nvmlInit()
+        initialized = True
+        for device_id in device_ids or [0]:
+            handles.append(pynvml.nvmlDeviceGetHandleByIndex(device_id))
+
+        names = [_decode_nvml_string(pynvml.nvmlDeviceGetName(handle)) for handle in handles]
+        unique_names = sorted(set(names))
+        device_name = unique_names[0] if len(unique_names) == 1 else ", ".join(unique_names)
+        if len(handles) > 1:
+            device_name = f"{len(handles)}x {device_name}"
+
+        memory_bytes = 0
+        with suppress(Exception):
+            memory_bytes = pynvml.nvmlDeviceGetMemoryInfo(handles[0]).total
+
+        driver_version = ""
+        with suppress(Exception):
+            driver_version = _decode_nvml_string(pynvml.nvmlSystemGetDriverVersion())
+
+        capabilities = _collect_cuda_compute_capabilities(device_ids)
+        primary_major, primary_minor = capabilities[0] if capabilities else (None, None)
+        architecture = _map_nvidia_architecture_from_cc(primary_major, primary_minor)
+
+        note_parts = []
+        if primary_major is not None and primary_minor is not None:
+            note_parts.append(f"CUDA CC {_format_compute_capability(primary_major, primary_minor)}")
+        if len({cap for cap in capabilities if cap != (None, None)}) > 1:
+            cc_labels = sorted(
+                {_format_compute_capability(major, minor) for major, minor in capabilities if major is not None and minor is not None}
+            )
+            note_parts.append(f"Mixed compute capability GPUs: {', '.join(cc_labels)}")
+
+        runtime_parts = []
+        if driver_version:
+            runtime_parts.append(f"Driver {driver_version}")
+        cuda_runtime = getattr(torch.version, "cuda", None) if torch is not None else None
+        if cuda_runtime:
+            runtime_parts.append(f"CUDA {cuda_runtime}")
+        if torch is not None:
+            runtime_parts.append(f"PyTorch {torch.__version__}")
+
+        return {
+            "vendor": "nvidia",
+            "architecture": architecture,
+            "device": device_name,
+            "memory": _format_memory_bytes(memory_bytes),
+            "platform": _normalize_platform_label(),
+            "driver_runtime": ", ".join(runtime_parts),
+            "note": "; ".join(note_parts),
+        }
+    except Exception:
+        return {}
+    finally:
+        if initialized:
+            with suppress(Exception):
+                pynvml.nvmlShutdown()
 
 
 def _safe_import(module_name: str):
@@ -97,6 +218,10 @@ def _probe_cuda(device_ids: List[int]) -> Dict[str, Any]:
     if not device_ids:
         device_ids = [0]
 
+    nvml_payload = _probe_cuda_with_nvml(device_ids)
+    if nvml_payload:
+        return nvml_payload
+
     props = [torch.cuda.get_device_properties(idx) for idx in device_ids]
     names = [item.name for item in props]
     unique_names = sorted(set(names))
@@ -105,7 +230,13 @@ def _probe_cuda(device_ids: List[int]) -> Dict[str, Any]:
     if len(device_ids) > 1:
         device = f"{len(device_ids)}x {device}"
 
-    compute_capability = f"{props[0].major}.{props[0].minor}" if props else None
+    primary_major = props[0].major if props else None
+    primary_minor = props[0].minor if props else None
+    compute_capability = (
+        _format_compute_capability(primary_major, primary_minor)
+        if primary_major is not None and primary_minor is not None
+        else None
+    )
     driver_version = _run_command(
         ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"]
     )
@@ -119,12 +250,12 @@ def _probe_cuda(device_ids: List[int]) -> Dict[str, Any]:
 
     return {
         "vendor": "nvidia",
-        "architecture": _infer_nvidia_architecture(unique_names[0], compute_capability),
+        "architecture": _map_nvidia_architecture_from_cc(primary_major, primary_minor),
         "device": device,
         "memory": _format_memory_bytes(per_gpu_memory_bytes),
         "platform": _normalize_platform_label(),
         "driver_runtime": ", ".join(runtime_parts),
-        "note": "",
+        "note": f"CUDA CC {compute_capability}" if compute_capability else "",
     }
 
 
