@@ -1,15 +1,18 @@
 import argparse
 import base64
+import gc
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import torch
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
 from benchmark.Bench import Bench
+from benchmark.devices import auto_detect_backend
 from benchmark.launch_plan import LaunchPlan, build_launch_plan
 from benchmark.models import list_models, resolve_model_name
 from scripts.probe_benchmark_env import probe_benchmark_env
@@ -147,26 +150,64 @@ def make_record_from_result(model: str, requested_dtype: str, result_dict: dict)
     )
 
 
+def _plan_devices(plan: LaunchPlan) -> list[torch.device]:
+    if plan.backend == "mps":
+        return [torch.device("mps")]
+    if plan.backend == "tpu":
+        return [torch.device("xla")]
+    if plan.backend in {"cuda", "npu", "musa"}:
+        return [torch.device(f"{plan.backend}:{device_id}") for device_id in plan.device_ids]
+    return []
+
+
+def release_plan_memory(plan: LaunchPlan) -> None:
+    gc.collect()
+    backend = auto_detect_backend(device=plan.backend)
+    if backend is None:
+        return
+
+    for device in _plan_devices(plan):
+        try:
+            backend.synchronize(device)
+        except Exception:
+            continue
+        try:
+            backend.release_cached_memory(device)
+        except Exception:
+            continue
+
+    gc.collect()
+
+
 def run_single_precision(plan: LaunchPlan, args, dtype: str) -> RunRecord:
-    bench = Bench(
-        device=plan.backend,
-        size=plan.data_size_mb,
-        epochs=plan.epochs,
-        method=plan.model,
-        batch_size=plan.batch_size_override or 0,
-        cudnn_benchmark=args.cudnn_benchmark,
-        data_type=dtype,
-        gpu_ids=plan.device_ids,
-        auto_batch_size=plan.auto_batch_size,
-    )
-    result = bench.start()
-    return make_record_from_result(plan.model, dtype, {
-        "score": result.score,
-        "throughput": result.throughput,
-        "batch_size": result.batch_size,
-        "device_name": result.device_name,
-        "extra": result.extra,
-    })
+    bench = None
+    result = None
+    try:
+        bench = Bench(
+            device=plan.backend,
+            size=plan.data_size_mb,
+            epochs=plan.epochs,
+            method=plan.model,
+            batch_size=plan.batch_size_override or 0,
+            cudnn_benchmark=args.cudnn_benchmark,
+            data_type=dtype,
+            gpu_ids=plan.device_ids,
+            auto_batch_size=plan.auto_batch_size,
+        )
+        result = bench.start()
+        return make_record_from_result(plan.model, dtype, {
+            "score": result.score,
+            "throughput": result.throughput,
+            "batch_size": result.batch_size,
+            "device_name": result.device_name,
+            "extra": result.extra,
+        })
+    finally:
+        if result is not None:
+            del result
+        if bench is not None:
+            del bench
+        release_plan_memory(plan)
 
 
 def build_ddp_command(plan: LaunchPlan, dtype: str, cudnn_benchmark: bool = False) -> list[str]:
@@ -242,6 +283,7 @@ def run_ddp_precision(plan: LaunchPlan, dtype: str, args) -> RunRecord:
     finally:
         if os.path.exists(result_path):
             os.remove(result_path)
+        release_plan_memory(plan)
 
 
 def print_dry_run_command(plan: LaunchPlan, dtype: str, args) -> None:

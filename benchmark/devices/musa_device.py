@@ -123,3 +123,10 @@ class MUSADeviceBackend(DeviceBackend):
             torch.musa.empty_cache()
         except Exception:
             pass
+
+    def release_cached_memory(self, device: torch.device) -> None:
+        self._lazy_import()
+        try:
+            torch.musa.empty_cache()
+        except Exception:
+            pass

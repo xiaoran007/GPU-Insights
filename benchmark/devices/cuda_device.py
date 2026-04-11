@@ -147,3 +147,11 @@ class CudaDeviceBackend(DeviceBackend):
     def reset_peak_memory(self, device: torch.device) -> None:
         torch.cuda.reset_peak_memory_stats(device)
         torch.cuda.empty_cache()
+
+    def release_cached_memory(self, device: torch.device) -> None:
+        try:
+            torch.cuda.empty_cache()
+            if hasattr(torch.cuda, "ipc_collect"):
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass

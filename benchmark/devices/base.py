@@ -145,6 +145,10 @@ class DeviceBackend(ABC):
         """Reset peak memory tracking.  No-op by default."""
         pass
 
+    def release_cached_memory(self, device: torch.device) -> None:
+        """Release backend-managed cached memory for *device* when possible."""
+        pass
+
     # -------------------------------------------------------- logging hint
 
     @property

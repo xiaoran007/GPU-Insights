@@ -85,3 +85,10 @@ class MPSDeviceBackend(DeviceBackend):
             print(f"⚠ torch.compile not supported on MPS")
             print(f"  → Continuing with standard (eager) mode...")
         return model
+
+    def release_cached_memory(self, device: torch.device) -> None:
+        try:
+            if hasattr(torch.mps, "empty_cache"):
+                torch.mps.empty_cache()
+        except Exception:
+            pass
