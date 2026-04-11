@@ -47,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Data size in MB.",
     )
     parser.add_argument(
-        "-e", "--epochs", type=int, default=5,
+        "-e", "--epochs", type=int, default=2,
         help="Number of training epochs.",
     )
     parser.add_argument(
