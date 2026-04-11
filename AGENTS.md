@@ -180,6 +180,11 @@ python calibrate_memory.py --json
 - the launcher prints a final `RESULT_PAYLOAD_B64=...` line after the summary for script-friendly result export
 - payload benchmark entries are normalized to the current dashboard schema, with BF16 intentionally mapped into the existing `fp16` / `fp16bs` fields
 
+Payload update workflow:
+- use `python3 scripts/manage-data.py import-payload 'RESULT_PAYLOAD_B64=...'` to append normalized benchmark entries into `docs-src/public/data/benchmark-data.json`
+- use `python3 scripts/manage-data.py decode-payload 'RESULT_PAYLOAD_B64=...' --pretty` to inspect the envelope before import
+- `import-payload` skips failed model entries with no successful precision result and skips exact duplicate normalized entries by default
+
 ## Scoring
 
 Defined in `benchmark/scoring.py`. The score formula:

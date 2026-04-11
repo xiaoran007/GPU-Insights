@@ -212,6 +212,12 @@ For a visual dashboard, visit the [GPU-Insights Dashboard](https://xiaoran007.gi
 ## Data Management
 
 ```shell
+# Import the final smart-launcher payload directly into the dashboard data
+python3 scripts/manage-data.py import-payload 'RESULT_PAYLOAD_B64=...'
+
+# Decode a payload for inspection
+python3 scripts/manage-data.py decode-payload 'RESULT_PAYLOAD_B64=...' --pretty
+
 # Validate benchmark data
 python3 scripts/manage-data.py validate
 
@@ -229,11 +235,14 @@ python3 scripts/manage-data.py add \
 python3 scripts/manage-data.py migrate-version
 ```
 
-The smart launcher payload is designed to be script-friendly. A follow-up updater can consume the final line directly, for example:
+The smart launcher payload is designed to be script-friendly. The recommended update flow is:
 
 ```shell
-python3 new_data.py '<paste RESULT_PAYLOAD_B64 value here>'
+python3 main_auto.py
+python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value here>'
 ```
+
+`import-payload` accepts either the full `RESULT_PAYLOAD_B64=...` line or the raw Base64 value. Failed models with no successful precision result are skipped automatically, and exact duplicate normalized entries are skipped by default.
 
 ## Project Structure
 
