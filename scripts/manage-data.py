@@ -529,6 +529,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     import_parser = subparsers.add_parser(
         "import-payload",
+        aliases=["i"],
         help="Import a RESULT_PAYLOAD_B64 payload emitted by main_auto.py",
     )
     import_parser.add_argument("payload", nargs="?", help="Raw Base64 payload or full RESULT_PAYLOAD_B64=... line")
@@ -572,7 +573,7 @@ def main() -> int:
         return 0
     if args.command == "add":
         return 0 if add_benchmark(args) else 1
-    if args.command == "import-payload":
+    if args.command in {"import-payload", "i"}:
         return 0 if import_payload(args) else 1
     if args.command == "decode-payload":
         return 0 if decode_payload_command(args) else 1
