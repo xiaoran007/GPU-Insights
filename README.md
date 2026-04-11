@@ -17,8 +17,11 @@ Multi-model GPU/NPU training performance benchmark suite. Measures compute throu
 # Install dependencies
 pip install torch torchvision
 
-# Run the smart launcher (auto device, auto ABS, auto precision, auto DDP on multi-GPU CUDA)
+# Run one model with the smart launcher
 python3 main_auto.py -mt resnet50
+
+# Omit --model to run the major model set: resnet50, vit, unet, ddpm
+python3 main_auto.py
 
 # Preview what the smart launcher will do
 python3 main_auto.py -mt vit --dry-run
@@ -52,7 +55,7 @@ python main_tpu.py -mt resnet50 -s 512 -e 2 -dt BF16
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-mt`, `--model` | Model to benchmark | required |
+| `-mt`, `--model` | Model to benchmark. Omit to run `resnet50`, `vit`, `unet`, `ddpm` | all four major models |
 | `-s`, `--size` | Data size in MB | `1024` |
 | `-e`, `--epochs` | Training epochs | `5` |
 | `-d`, `--device` | Device: `auto`, `cuda`, `mps`, `npu`, `musa`, `tpu` | `auto` |
@@ -69,6 +72,30 @@ Default smart-launch behavior:
 - Enables ABS by default unless `-bs` or `--no-abs` is provided.
 - Runs `BF16 + FP32` on BF16-capable devices, otherwise `FP16 + FP32` when AMP is supported.
 - Automatically switches to CUDA DDP when multiple CUDA GPUs are visible and the model supports DDP.
+- Runs `resnet50`, `vit`, `unet`, and `ddpm` in order when `--model` is omitted.
+- Prints a final `RESULT_PAYLOAD_B64=...` line after the human summary so benchmark results can be copied into an update script.
+
+### Smart launcher output payload
+
+At the end of a real `main_auto.py` run, the launcher prints one machine-readable line:
+
+```text
+RESULT_PAYLOAD_B64=<base64-json>
+```
+
+The decoded JSON includes:
+
+- `schema_version` and `generated_at`
+- `source` launcher metadata
+- `host` metadata such as `vendor`, `architecture`, `device`, `memory`, `platform`, and `driver_runtime`
+- `benchmarks`, one normalized entry per model
+
+Payload compatibility notes:
+
+- `FP32` fills `fp32` / `fp32bs`
+- `FP16` fills `fp16` / `fp16bs`
+- `BF16` is intentionally exported into `fp16` / `fp16bs` for compatibility with the current dashboard data schema
+- per-precision status metadata is preserved in the payload for downstream tooling
 
 ### Legacy entrypoints (`main.py`, `main_ddp.py`, `main_tpu.py`)
 
@@ -108,6 +135,17 @@ make help       # Show current targets and variables
 | `auto` | Auto-detect | Tries CUDA → NPU → MUSA → MPS |
 
 Use `--device` to select a specific backend, or leave as `auto` (default).
+
+## Environment Probe Script
+
+Use the dedicated probe helper to inspect the normalized host metadata used by the smart launcher payload:
+
+```shell
+python3 scripts/probe_benchmark_env.py --pretty
+python3 scripts/probe_benchmark_env.py -d cuda -gpu 0
+```
+
+On NVIDIA systems, the script prefers NVML (`pynvml`) for device name, total memory, and driver version, then combines that with CUDA compute capability from PyTorch to map the GPU architecture name.
 
 ## DDP Multi-GPU Training
 
@@ -191,6 +229,12 @@ python3 scripts/manage-data.py add \
 python3 scripts/manage-data.py migrate-version
 ```
 
+The smart launcher payload is designed to be script-friendly. A follow-up updater can consume the final line directly, for example:
+
+```shell
+python3 new_data.py '<paste RESULT_PAYLOAD_B64 value here>'
+```
+
 ## Project Structure
 
 ```
@@ -199,6 +243,9 @@ python3 scripts/manage-data.py migrate-version
 ├── main_ddp.py          # DDP multi-GPU entry point
 ├── main_tpu.py          # TPU entry point
 ├── calibrate_memory.py  # NVML memory calibration tool
+├── scripts/
+│   ├── probe_benchmark_env.py  # Host/device metadata probe used by main_auto.py payload export
+│   └── manage-data.py          # Benchmark data management
 ├── Makefile             # Smart launcher and developer convenience targets
 ├── benchmark/
 │   ├── Bench.py         # Orchestrator
@@ -225,8 +272,6 @@ python3 scripts/manage-data.py migrate-version
 │   │   ├── single_runner.py
 │   │   └── ddp_runner.py
 │   └── data/            # Dataset utilities
-├── scripts/
-│   └── manage-data.py   # Benchmark data management
 └── docs/                # GitHub Pages dashboard
 ```
 

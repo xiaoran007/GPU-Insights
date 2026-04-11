@@ -40,6 +40,7 @@ GPU-Insights/
 │   └── package.json
 │
 ├── docs/                    # Built dashboard (GitHub Pages deployment)
+├── scripts/probe_benchmark_env.py  # Normalized host/device metadata probe for launcher result export
 ├── scripts/manage-data.py   # Data management for benchmark results
 └── .github/workflows/       # CI: pages.yml (GitHub Pages)
 ```
@@ -150,6 +151,9 @@ These are applied conditionally based on model + backend capabilities:
 # Recommended: smart launcher
 python3 main_auto.py -mt <model>
 
+# Run the major model set (resnet50, vit, unet, ddpm)
+python3 main_auto.py
+
 # Preview smart-launch decisions
 python3 main_auto.py -mt <model> --dry-run
 
@@ -170,6 +174,11 @@ python calibrate_memory.py --json
 # Available models: cnn, resnet50, vit, unet, ddpm
 # Makefile targets: smart, tpu, tpu-multi, calibrate, docs, docs-dev, help
 ```
+
+`main_auto.py` behavior notes:
+- `--model` is optional; omitting it runs `resnet50`, `vit`, `unet`, and `ddpm` in order
+- the launcher prints a final `RESULT_PAYLOAD_B64=...` line after the summary for script-friendly result export
+- payload benchmark entries are normalized to the current dashboard schema, with BF16 intentionally mapped into the existing `fp16` / `fp16bs` fields
 
 ## Scoring
 
@@ -193,6 +202,7 @@ Primary metric is `throughput` (samples/sec). The `score` field exists for backw
 
 - **channels_last + MPS:** Backward pass fails for models using BatchNorm (ResNet50, UNet) due to PyTorch MPS backend limitation. DDPM (GroupNorm) works. Guard: `supports_channels_last()` returns False on MPS.
 - **Auto Batch Size (ABS):** Based on NVML-calibrated memory profile table in `benchmark/calibration.py`. Requires `pynvml` for calibration. CUDA is the primary target; NPU/MUSA use CUDA data as proxy; MPS/TPU fall back to model defaults.
+- **Launcher metadata probe:** `scripts/probe_benchmark_env.py` is the canonical source for exported host/device metadata. On NVIDIA systems it prefers NVML for device facts and maps CUDA compute capability to architecture names explicitly.
 - **torch.compile + MPS:** Not supported; `MPSDeviceBackend.supports_compile()` returns False.
 - **TPU/NPU/MUSA backends:** Functional but less tested than CUDA and MPS.
 
@@ -200,6 +210,7 @@ Primary metric is `throughput` (samples/sec). The `score` field exists for backw
 
 - **Python environment:** Requires PyTorch 2.x+. Optional: `torch_xla` (TPU), `torch_npu` (NPU), `torch_musa` (MUSA). `pynvml` for calibration.
 - **Preferred entrypoint:** `python3 main_auto.py -mt <model>` for the default benchmark workflow.
+- **Batch benchmark workflow:** `python3 main_auto.py` is the default way to run the major model set and capture one copy-pasteable result payload for downstream JSON update scripts.
 - **Testing models locally:** `python main.py -mt <model> -s 16 -e 1 -dt FP32` for a quick smoke test.
 - **Registries are import-time:** Models and devices auto-register when their `__init__.py` is imported.
 - **Calibration workflow:** Run `python calibrate_memory.py` on a CUDA machine, then paste output into `benchmark/calibration.py` `CALIBRATION_TABLE`.
