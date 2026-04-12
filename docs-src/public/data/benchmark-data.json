@@ -841,6 +841,51 @@
       "note": "main_auto ver.2; Driver 580.82.07, CUDA 12.8, PyTorch 2.10.0+cu128; BF16; CUDA CC 8.0",
       "date": "2026.4.12",
       "version": "ver2"
+    },
+    {
+      "model": "vit",
+      "vendor": "nvidia",
+      "architecture": "Ampere",
+      "device": "NVIDIA GeForce RTX 3090",
+      "memory": "24GB",
+      "platform": "Linux 5.14.0-570.62.1.0.1.el9_6.x86_64",
+      "fp32": 4243,
+      "fp32bs": 128,
+      "fp16": 9654,
+      "fp16bs": 256,
+      "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.6",
+      "date": "2026.4.12",
+      "version": "ver2"
+    },
+    {
+      "model": "unet",
+      "vendor": "nvidia",
+      "architecture": "Ampere",
+      "device": "NVIDIA GeForce RTX 3090",
+      "memory": "24GB",
+      "platform": "Linux 5.14.0-570.62.1.0.1.el9_6.x86_64",
+      "fp32": 1622,
+      "fp32bs": 32,
+      "fp16": 3539,
+      "fp16bs": 64,
+      "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.6",
+      "date": "2026.4.12",
+      "version": "ver2"
+    },
+    {
+      "model": "ddpm",
+      "vendor": "nvidia",
+      "architecture": "Ampere",
+      "device": "NVIDIA GeForce RTX 3090",
+      "memory": "24GB",
+      "platform": "Linux 5.14.0-570.62.1.0.1.el9_6.x86_64",
+      "fp32": 3446,
+      "fp32bs": 64,
+      "fp16": 7032,
+      "fp16bs": 128,
+      "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.6",
+      "date": "2026.4.12",
+      "version": "ver2"
     }
   ]
 }
