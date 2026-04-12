@@ -347,13 +347,13 @@ def build_identity_key(entry: dict) -> tuple:
         entry["architecture"],
         entry["device"],
         entry["memory"],
+        entry["platform"],
     )
 
 
 def build_entry_key(entry: dict) -> tuple:
     return (
         *build_identity_key(entry),
-        entry["platform"],
         entry["fp32"],
         entry["fp32bs"],
         entry["fp16"],
