@@ -181,9 +181,11 @@ python calibrate_memory.py --json
 - payload benchmark entries are normalized to the current dashboard schema, with BF16 intentionally mapped into the existing `fp16` / `fp16bs` fields
 
 Payload update workflow:
-- use `python3 scripts/manage-data.py import-payload 'RESULT_PAYLOAD_B64=...'` to append normalized benchmark entries into `docs-src/public/data/benchmark-data.json`
+- use `python3 scripts/manage-data.py import-payload 'RESULT_PAYLOAD_B64=...'` to merge normalized benchmark entries into `docs-src/public/data/benchmark-data.json`
 - use `python3 scripts/manage-data.py decode-payload 'RESULT_PAYLOAD_B64=...' --pretty` to inspect the envelope before import
-- `import-payload` skips failed model entries with no successful precision result and skips exact duplicate normalized entries by default
+- `import-payload` skips failed model entries with no successful precision result
+- when `model + vendor + architecture + device + memory` match an existing entry, that existing entry is updated; otherwise a new entry is appended
+- exact duplicate normalized entries are treated as no-op updates and skipped
 
 ## Scoring
 

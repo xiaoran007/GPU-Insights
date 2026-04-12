@@ -340,13 +340,19 @@ def decode_payload(raw_payload: str) -> dict:
         raise ValueError(f"Decoded payload is not valid UTF-8 JSON: {exc}") from exc
 
 
-def build_entry_key(entry: dict) -> tuple:
+def build_identity_key(entry: dict) -> tuple:
     return (
         entry["model"],
         entry["vendor"],
         entry["architecture"],
         entry["device"],
         entry["memory"],
+    )
+
+
+def build_entry_key(entry: dict) -> tuple:
+    return (
+        *build_identity_key(entry),
         entry["platform"],
         entry["fp32"],
         entry["fp32bs"],
@@ -468,8 +474,10 @@ def import_payload(args: argparse.Namespace) -> bool:
     if not data:
         return False
 
-    existing_keys = {build_entry_key(entry) for entry in data.get("benchmarks", [])}
+    existing_entries = data.get("benchmarks", [])
+    existing_keys = {build_entry_key(entry) for entry in existing_entries}
     imported = 0
+    updated = 0
     skipped_duplicates = 0
 
     for entry in normalized_entries:
@@ -477,16 +485,32 @@ def import_payload(args: argparse.Namespace) -> bool:
         if not args.allow_duplicates and key in existing_keys:
             skipped_duplicates += 1
             continue
-        data["benchmarks"].append(entry)
+
+        identity_key = build_identity_key(entry)
+        matching_indexes = [
+            index for index, existing_entry in enumerate(existing_entries)
+            if build_identity_key(existing_entry) == identity_key
+        ]
+
+        if matching_indexes and not args.allow_duplicates:
+            target_index = matching_indexes[-1]
+            old_key = build_entry_key(existing_entries[target_index])
+            existing_entries[target_index] = entry
+            existing_keys.discard(old_key)
+            existing_keys.add(key)
+            updated += 1
+            continue
+
+        existing_entries.append(entry)
         existing_keys.add(key)
         imported += 1
 
-    if imported > 0:
+    if imported > 0 or updated > 0:
         data.setdefault("metadata", {})["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
 
     if args.dry_run:
         print("🧪 Dry run complete. No file was modified.")
-    elif imported > 0:
+    elif imported > 0 or updated > 0:
         if not save_data(data_file, data):
             return False
 
@@ -494,6 +518,7 @@ def import_payload(args: argparse.Namespace) -> bool:
     print(f"✅ Import summary for {data_file}:")
     print(f"  Normalized entries: {len(normalized_entries)}")
     print(f"  Imported entries: {imported}")
+    print(f"  Updated entries: {updated}")
     print(f"  Skipped failed entries: {skipped_failed}")
     print(f"  Skipped exact duplicates: {skipped_duplicates}")
 

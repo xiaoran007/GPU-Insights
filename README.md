@@ -242,7 +242,7 @@ python3 main_auto.py
 python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value here>'
 ```
 
-`import-payload` accepts either the full `RESULT_PAYLOAD_B64=...` line or the raw Base64 value. Failed models with no successful precision result are skipped automatically, and exact duplicate normalized entries are skipped by default.
+`import-payload` accepts either the full `RESULT_PAYLOAD_B64=...` line or the raw Base64 value. Failed models with no successful precision result are skipped automatically. When `model + vendor + architecture + device + memory` all match an existing entry, that entry is updated in place; otherwise a new entry is appended. Exact duplicate payload rows are treated as no-op updates and skipped.
 
 ## Project Structure
 
