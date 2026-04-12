@@ -17,7 +17,7 @@ from benchmark.models import list_models, resolve_model_name
 from scripts.probe_benchmark_env import probe_benchmark_env
 
 
-DEFAULT_MAJOR_MODELS = ["resnet50", "vit", "unet", "ddpm"]
+DEFAULT_MAJOR_MODELS = ["vit", "unet", "ddpm"]
 PAYLOAD_PREFIX = "RESULT_PAYLOAD_B64="
 PAYLOAD_SCHEMA_VERSION = "1.0"
 
