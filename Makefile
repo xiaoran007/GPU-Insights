@@ -1,4 +1,4 @@
-.PHONY: smart tpu tpu-multi calibrate docs docs-dev help
+.PHONY: smart tpu tpu-multi calibrate docs docs-dev deps deps-dry-run help
 
 MODEL ?= resnet50
 SIZE ?= 1024
@@ -11,6 +11,7 @@ TPU_CORES ?= 8
 TPU_ARGS ?=
 
 CALIBRATE_ARGS ?= --json
+DEPS_ARGS ?=
 
 smart:
 	python3 main_auto.py -mt $(MODEL) -s $(SIZE) -e $(EPOCHS) $(SMART_ARGS)
@@ -30,6 +31,12 @@ docs:
 docs-dev:
 	cd docs-src && npm run dev
 
+deps:
+	python3 scripts/manage-deps.py $(DEPS_ARGS)
+
+deps-dry-run:
+	python3 scripts/manage-deps.py --dry-run $(DEPS_ARGS)
+
 help:
 	@echo "==============================================================="
 	@echo "GPU-Insights Makefile"
@@ -44,6 +51,8 @@ help:
 	@echo "  make calibrate  - Run memory calibration"
 	@echo "  make docs       - Build visualization website to docs/"
 	@echo "  make docs-dev   - Start docs dev server with hot reload"
+	@echo "  make deps       - Check/install Python deps for the detected backend"
+	@echo "  make deps-dry-run - Preview dependency install commands"
 	@echo "  make help       - Show this help"
 	@echo ""
 	@echo "Common variables:"
@@ -55,6 +64,7 @@ help:
 	@echo "  TPU_CORES=<n>        TPU core count for tpu-multi (default: 8)"
 	@echo "  TPU_ARGS='...'       Extra args passed to main_tpu.py"
 	@echo "  CALIBRATE_ARGS='...' Extra args passed to calibrate_memory.py"
+	@echo "  DEPS_ARGS='...'      Extra args passed to scripts/manage-deps.py"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make smart"
@@ -63,3 +73,4 @@ help:
 	@echo "  make tpu MODEL=resnet50"
 	@echo "  make tpu-multi MODEL=vit TPU_CORES=8"
 	@echo "  make calibrate CALIBRATE_ARGS='-mt resnet50 -dt FP16'"
+	@echo "  make deps-dry-run"
