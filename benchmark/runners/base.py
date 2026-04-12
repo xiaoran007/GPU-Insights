@@ -9,7 +9,7 @@ import torch
 class BenchResult:
     """Benchmark result container."""
     time_usage: float = 0.0
-    score: float = 0.0
+    score: int = 0
     throughput: float = 0.0
     data_size: int = 0
     total_data_size: int = 0

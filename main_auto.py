@@ -31,7 +31,7 @@ class RunRecord:
     mode: str
     batch_size: Optional[int]
     throughput: Optional[float]
-    score: Optional[float]
+    score: Optional[int]
     status: str
     device_name: str
     backend: str

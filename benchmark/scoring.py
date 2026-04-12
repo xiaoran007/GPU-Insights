@@ -12,7 +12,7 @@ class BenchScore:
     throughput: float = 0.0          # samples/sec
 
     # Normalised score (compatible with legacy ResNet50 formula)
-    score: float = 0.0
+    score: int = 0
 
     # Timing breakdown
     time_total: float = 0.0          # total training time (seconds)
@@ -52,7 +52,7 @@ def compute_score(
         time_usage = 1e-9  # avoid division by zero
 
     throughput = total_samples / time_usage
-    score = throughput * (epochs / 10) * 100
+    score = int(round(throughput * (epochs / 10) * 100))
 
     time_per_epoch = time_usage / epochs if epochs > 0 else 0
     time_per_step = time_usage / num_steps if num_steps > 0 else 0
