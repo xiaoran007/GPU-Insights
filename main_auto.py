@@ -378,7 +378,7 @@ def _build_result_note(host_info: dict, precision_records: list[RunRecord]) -> s
     if host_info.get("driver_runtime"):
         note_parts.append(host_info["driver_runtime"])
     if any(record.actual_dtype == "BF16" and record.status == "ok" for record in precision_records):
-        note_parts.append("BF16 stored in fp16 field")
+        note_parts.append("BF16")
     if host_info.get("note"):
         note_parts.append(host_info["note"])
     return "; ".join(part for part in note_parts if part)
