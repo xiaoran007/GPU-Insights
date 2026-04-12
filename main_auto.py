@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from benchmark.Bench import Bench
 from benchmark.devices import auto_detect_backend
 from benchmark.launch_plan import LaunchPlan, build_launch_plan
 from benchmark.models import list_models, resolve_model_name
@@ -179,34 +178,78 @@ def release_plan_memory(plan: LaunchPlan) -> None:
     gc.collect()
 
 
-def run_single_precision(plan: LaunchPlan, args, dtype: str) -> RunRecord:
-    bench = None
-    result = None
+def build_single_command(plan: LaunchPlan, dtype: str, cudnn_benchmark: bool = False) -> list[str]:
+    command = [
+        sys.executable,
+        "main.py",
+        "-mt",
+        plan.model,
+        "-s",
+        str(plan.data_size_mb),
+        "-e",
+        str(plan.epochs),
+        "-dt",
+        dtype,
+        "-d",
+        plan.backend,
+        "-gpu",
+        ",".join(str(device_id) for device_id in plan.device_ids),
+    ]
+    if plan.auto_batch_size:
+        command.append("-abs")
+    if plan.batch_size_override is not None:
+        command.extend(["-bs", str(plan.batch_size_override)])
+    if cudnn_benchmark:
+        command.append("-cudnn")
+    return command
+
+
+def run_single_subprocess_precision(plan: LaunchPlan, args, dtype: str) -> RunRecord:
+    fd, result_path = tempfile.mkstemp(prefix="gpu_insights_", suffix=".json")
+    os.close(fd)
+
+    env = os.environ.copy()
+    env["GPU_INSIGHTS_RESULT_JSON"] = result_path
+    command = build_single_command(plan, dtype, cudnn_benchmark=args.cudnn_benchmark)
+
     try:
-        bench = Bench(
-            device=plan.backend,
-            size=plan.data_size_mb,
-            epochs=plan.epochs,
-            method=plan.model,
-            batch_size=plan.batch_size_override or 0,
-            cudnn_benchmark=args.cudnn_benchmark,
-            data_type=dtype,
-            gpu_ids=plan.device_ids,
-            auto_batch_size=plan.auto_batch_size,
+        completed = subprocess.run(
+            command,
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            env=env,
+            check=False,
         )
-        result = bench.start()
-        return make_record_from_result(plan.model, dtype, {
-            "score": result.score,
-            "throughput": result.throughput,
-            "batch_size": result.batch_size,
-            "device_name": result.device_name,
-            "extra": result.extra,
-        })
+        result_dict = {}
+        if os.path.exists(result_path):
+            with open(result_path, "r", encoding="utf-8") as f:
+                result_dict = json.load(f)
+
+        if completed.returncode == 0 and result_dict:
+            return make_record_from_result(plan.model, dtype, result_dict)
+
+        error = f"Single-process subprocess exited with code {completed.returncode}"
+        if result_dict:
+            record = make_record_from_result(plan.model, dtype, result_dict)
+            record.status = "failed"
+            record.error = error
+            return record
+        return RunRecord(
+            model=plan.model,
+            requested_dtype=dtype,
+            actual_dtype=dtype,
+            mode="single",
+            batch_size=None,
+            throughput=None,
+            score=None,
+            status="failed",
+            device_name="",
+            backend=plan.backend,
+            world_size=1,
+            error=error,
+        )
     finally:
-        if result is not None:
-            del result
-        if bench is not None:
-            del bench
+        if os.path.exists(result_path):
+            os.remove(result_path)
         release_plan_memory(plan)
 
 
@@ -291,7 +334,7 @@ def print_dry_run_command(plan: LaunchPlan, dtype: str, args) -> None:
         print(f"DDP command for {dtype}: {' '.join(build_ddp_command(plan, dtype, cudnn_benchmark=args.cudnn_benchmark))}")
         print(f"CUDA_VISIBLE_DEVICES={','.join(str(i) for i in plan.device_ids)}")
     else:
-        print(f"Single-process run for {dtype}: Bench(device='{plan.backend}', gpu_ids={plan.device_ids})")
+        print(f"Single-process command for {dtype}: {' '.join(build_single_command(plan, dtype, cudnn_benchmark=args.cudnn_benchmark))}")
 
 
 def print_summary(records: list[RunRecord]) -> None:
@@ -461,7 +504,7 @@ def main() -> int:
                 if plan.use_ddp:
                     record = run_ddp_precision(plan, dtype, args)
                 else:
-                    record = run_single_precision(plan, args, dtype)
+                    record = run_single_subprocess_precision(plan, args, dtype)
             except Exception as exc:
                 record = RunRecord(
                     model=plan.model,
