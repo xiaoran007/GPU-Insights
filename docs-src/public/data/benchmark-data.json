@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "lastUpdated": "2026-04-11",
+    "lastUpdated": "2026-04-12",
     "version": "3.1",
     "description": "GPU-Insights benchmark data for multi-model training throughput across GPUs, NPUs, TPUs, and Apple Silicon"
   },
@@ -803,13 +803,13 @@
       "architecture": "Ampere",
       "device": "NVIDIA A100-SXM4-40GB",
       "memory": "40GB",
-      "platform": "Linux 6.6.113+",
-      "fp32": 4058,
+      "platform": "Colab Linux 6.6.113+",
+      "fp32": 4049,
       "fp32bs": 64,
-      "fp16": 9558,
+      "fp16": 9495,
       "fp16bs": 64,
       "note": "main_auto ver.2; Driver 580.82.07, CUDA 12.8, PyTorch 2.10.0+cu128; BF16; CUDA CC 8.0",
-      "date": "2026.4.11",
+      "date": "2026.4.12",
       "version": "ver2"
     },
     {
@@ -818,13 +818,28 @@
       "architecture": "Ampere",
       "device": "NVIDIA A100-SXM4-40GB",
       "memory": "40GB",
-      "platform": "Linux 6.6.113+",
-      "fp32": 8694,
+      "platform": "Colab Linux 6.6.113+",
+      "fp32": 8696,
       "fp32bs": 128,
-      "fp16": 17429,
+      "fp16": 17339,
       "fp16bs": 256,
       "note": "main_auto ver.2; Driver 580.82.07, CUDA 12.8, PyTorch 2.10.0+cu128; BF16; CUDA CC 8.0",
-      "date": "2026.4.11",
+      "date": "2026.4.12",
+      "version": "ver2"
+    },
+    {
+      "model": "vit",
+      "vendor": "nvidia",
+      "architecture": "Ampere",
+      "device": "NVIDIA A100-SXM4-40GB",
+      "memory": "40GB",
+      "platform": "Colab Linux 6.6.113+",
+      "fp32": 12245,
+      "fp32bs": 256,
+      "fp16": 25865,
+      "fp16bs": 256,
+      "note": "main_auto ver.2; Driver 580.82.07, CUDA 12.8, PyTorch 2.10.0+cu128; BF16; CUDA CC 8.0",
+      "date": "2026.4.12",
       "version": "ver2"
     }
   ]
