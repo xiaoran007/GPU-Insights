@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "lastUpdated": "2026-04-13",
+    "lastUpdated": "2026-04-16",
     "version": "3.1",
     "description": "GPU-Insights benchmark data for multi-model training throughput across GPUs, NPUs, TPUs, and Apple Silicon"
   },
@@ -975,6 +975,51 @@
       "fp16bs": 512,
       "note": "main_auto ver.2; Driver 580.82.07, CUDA 12.8, PyTorch 2.10.0+cu128; BF16; CUDA CC 12.0",
       "date": "2026.4.14",
+      "version": "ver2"
+    },
+    {
+      "model": "vit",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4080 SUPER",
+      "memory": "32GB",
+      "platform": "Linux 5.15.0-78-generic",
+      "fp32": 5646,
+      "fp32bs": 128,
+      "fp16": 12045,
+      "fp16bs": 256,
+      "note": "main_auto ver.2; Driver 595.58.03, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
+      "date": "2026.4.17",
+      "version": "ver2"
+    },
+    {
+      "model": "unet",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4080 SUPER",
+      "memory": "32GB",
+      "platform": "Linux 5.15.0-78-generic",
+      "fp32": 1793,
+      "fp32bs": 32,
+      "fp16": 4425,
+      "fp16bs": 64,
+      "note": "main_auto ver.2; Driver 595.58.03, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
+      "date": "2026.4.17",
+      "version": "ver2"
+    },
+    {
+      "model": "ddpm",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4080 SUPER",
+      "memory": "32GB",
+      "platform": "Linux 5.15.0-78-generic",
+      "fp32": 4180,
+      "fp32bs": 128,
+      "fp16": 8648,
+      "fp16bs": 128,
+      "note": "main_auto ver.2; Driver 595.58.03, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
+      "date": "2026.4.17",
       "version": "ver2"
     }
   ]
