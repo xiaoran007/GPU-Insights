@@ -1,0 +1,352 @@
+{
+  "generatedAt": "2026-04-17T03:09:15+00:00",
+  "sources": [
+    {
+      "sourceId": "cc-current",
+      "title": "CUDA GPU Compute Capability",
+      "url": "https://developer.nvidia.com/cuda/gpus",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:05+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-hopper",
+        "arch-turing",
+        "sku-a100",
+        "sku-a40",
+        "sku-b200",
+        "sku-h100",
+        "sku-h200",
+        "sku-l4",
+        "sku-l40s",
+        "sku-quadro-rtx-6000",
+        "sku-rtx-3090",
+        "sku-rtx-4090",
+        "sku-rtx-5090",
+        "sku-rtx-6000-ada",
+        "sku-rtx-a6000",
+        "sku-rtx-pro-6000-blackwell",
+        "sku-t4",
+        "sku-titan-rtx"
+      ]
+    },
+    {
+      "sourceId": "cc-legacy",
+      "title": "Legacy CUDA GPU Compute Capability",
+      "url": "https://developer.nvidia.com/cuda-legacy-gpus",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:05+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-volta",
+        "sku-v100"
+      ]
+    },
+    {
+      "sourceId": "volta-whitepaper",
+      "title": "NVIDIA Tesla V100 GPU Architecture Whitepaper",
+      "url": "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+      "kind": "pdf",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:05+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-volta",
+        "sku-v100"
+      ]
+    },
+    {
+      "sourceId": "turing-whitepaper",
+      "title": "NVIDIA Turing GPU Architecture Whitepaper",
+      "url": "https://images.nvidia.com/aem-dam/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf",
+      "kind": "pdf",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:06+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-turing"
+      ]
+    },
+    {
+      "sourceId": "ampere-ga100-whitepaper",
+      "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+      "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+      "kind": "pdf",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:08+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-ampere",
+        "sku-a100"
+      ]
+    },
+    {
+      "sourceId": "ampere-ga102-whitepaper",
+      "title": "NVIDIA Ampere GA102 GPU Architecture Whitepaper",
+      "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf",
+      "kind": "pdf",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:09+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-a40"
+      ]
+    },
+    {
+      "sourceId": "ampere-architecture-page",
+      "title": "NVIDIA Ampere Architecture",
+      "url": "https://www.nvidia.com/en-us/data-center/nvidia-ampere-gpu-architecture/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:10+00:00",
+      "error": null,
+      "usedByRecords": []
+    },
+    {
+      "sourceId": "ada-whitepaper",
+      "title": "NVIDIA Ada GPU Architecture Whitepaper",
+      "url": "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf",
+      "kind": "pdf",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:10+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-ada"
+      ]
+    },
+    {
+      "sourceId": "hopper-architecture-page",
+      "title": "NVIDIA Hopper Architecture",
+      "url": "https://www.nvidia.com/en-us/data-center/technologies/hopper-architecture/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:11+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-hopper"
+      ]
+    },
+    {
+      "sourceId": "blackwell-architecture-page",
+      "title": "NVIDIA Blackwell Architecture",
+      "url": "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:11+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-blackwell"
+      ]
+    },
+    {
+      "sourceId": "v100-page",
+      "title": "NVIDIA Tesla V100",
+      "url": "https://www.nvidia.com/en-gb/data-center/tesla-v100/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:11+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-volta",
+        "sku-v100"
+      ]
+    },
+    {
+      "sourceId": "t4-page",
+      "title": "NVIDIA T4 Tensor Core GPU",
+      "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:12+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-t4"
+      ]
+    },
+    {
+      "sourceId": "titan-rtx-page",
+      "title": "NVIDIA TITAN RTX",
+      "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:12+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-turing",
+        "sku-titan-rtx"
+      ]
+    },
+    {
+      "sourceId": "quadro-rtx-6000-page",
+      "title": "NVIDIA Quadro RTX 6000",
+      "url": "https://www.nvidia.com/en-eu/products/workstations/quadro/rtx-6000/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:13+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-quadro-rtx-6000"
+      ]
+    },
+    {
+      "sourceId": "a100-page",
+      "title": "NVIDIA A100 Tensor Core GPU",
+      "url": "https://www.nvidia.com/en-in/data-center/a100/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:13+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-ampere",
+        "sku-a100"
+      ]
+    },
+    {
+      "sourceId": "a40-page",
+      "title": "NVIDIA A40",
+      "url": "https://www.nvidia.com/en-eu/data-center/a40/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:13+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-a40"
+      ]
+    },
+    {
+      "sourceId": "rtx-a6000-page",
+      "title": "NVIDIA RTX A6000",
+      "url": "https://www.nvidia.com/en-eu/design-visualization/rtx-a6000/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:13+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-rtx-a6000"
+      ]
+    },
+    {
+      "sourceId": "rtx-3090-page",
+      "title": "GeForce RTX 3090 Family",
+      "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:13+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-rtx-3090"
+      ]
+    },
+    {
+      "sourceId": "l4-page",
+      "title": "NVIDIA L4 Tensor Core GPU",
+      "url": "https://www.nvidia.com/en-us/data-center/l4/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:14+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-ada",
+        "sku-l4"
+      ]
+    },
+    {
+      "sourceId": "l40s-page",
+      "title": "NVIDIA L40S",
+      "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:14+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-ada",
+        "sku-l40s"
+      ]
+    },
+    {
+      "sourceId": "rtx-6000-ada-page",
+      "title": "NVIDIA RTX 6000 Ada Generation",
+      "url": "https://www.nvidia.com/en-us/products/workstations/rtx-6000/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:14+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-ada",
+        "sku-rtx-6000-ada"
+      ]
+    },
+    {
+      "sourceId": "rtx-4090-page",
+      "title": "GeForce RTX 4090",
+      "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:14+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-rtx-4090"
+      ]
+    },
+    {
+      "sourceId": "h100-page",
+      "title": "NVIDIA H100 GPU",
+      "url": "https://www.nvidia.com/en-in/data-center/h100/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:14+00:00",
+      "error": null,
+      "usedByRecords": [
+        "arch-hopper",
+        "sku-h100"
+      ]
+    },
+    {
+      "sourceId": "h200-page",
+      "title": "NVIDIA H200 Tensor Core GPU",
+      "url": "https://www.nvidia.com/es-la/data-center/h200/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:14+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-h200"
+      ]
+    },
+    {
+      "sourceId": "dgx-b200-page",
+      "title": "NVIDIA DGX B200",
+      "url": "https://www.nvidia.com/en-us/data-center/dgx-b200/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:15+00:00",
+      "error": null,
+      "usedByRecords": []
+    },
+    {
+      "sourceId": "rtx-pro-6000-blackwell-page",
+      "title": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+      "url": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:15+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-rtx-pro-6000-blackwell"
+      ]
+    },
+    {
+      "sourceId": "rtx-5090-page",
+      "title": "GeForce RTX 5090",
+      "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
+      "kind": "html",
+      "ok": true,
+      "fetchedAt": "2026-04-17T03:09:15+00:00",
+      "error": null,
+      "usedByRecords": [
+        "sku-rtx-5090"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "generatedAt": "2026-04-17T03:09:15+00:00",
+  "totalRecords": 23,
+  "coverageByField": {
+    "architecture_codename": {
+      "covered": 23,
+      "total": 23,
+      "ratio": 1.0
+    },
+    "compute_capability": {
+      "covered": 22,
+      "total": 23,
+      "ratio": 0.9565
+    },
+    "die_family": {
+      "covered": 6,
+      "total": 23,
+      "ratio": 0.2609
+    },
+    "enabled_units_summary": {
+      "covered": 5,
+      "total": 23,
+      "ratio": 0.2174
+    },
+    "gpc_count": {
+      "covered": 5,
+      "total": 23,
+      "ratio": 0.2174
+    },
+    "official_tensor_throughput": {
+      "covered": 11,
+      "total": 23,
+      "ratio": 0.4783
+    },
+    "rt_core_count": {
+      "covered": 3,
+      "total": 23,
+      "ratio": 0.1304
+    },
+    "sm_count": {
+      "covered": 5,
+      "total": 23,
+      "ratio": 0.2174
+    },
+    "sm_per_tpc": {
+      "covered": 3,
+      "total": 23,
+      "ratio": 0.1304
+    },
+    "tensor_core_count": {
+      "covered": 6,
+      "total": 23,
+      "ratio": 0.2609
+    },
+    "tensor_core_generation": {
+      "covered": 15,
+      "total": 23,
+      "ratio": 0.6522
+    },
+    "tensor_datatypes.bf16": {
+      "covered": 8,
+      "total": 23,
+      "ratio": 0.3478
+    },
+    "tensor_datatypes.fp16": {
+      "covered": 15,
+      "total": 23,
+      "ratio": 0.6522
+    },
+    "tensor_datatypes.fp4": {
+      "covered": 3,
+      "total": 23,
+      "ratio": 0.1304
+    },
+    "tensor_datatypes.fp8": {
+      "covered": 8,
+      "total": 23,
+      "ratio": 0.3478
+    },
+    "tensor_datatypes.int4": {
+      "covered": 5,
+      "total": 23,
+      "ratio": 0.2174
+    },
+    "tensor_datatypes.int8": {
+      "covered": 10,
+      "total": 23,
+      "ratio": 0.4348
+    },
+    "tensor_datatypes.tf32": {
+      "covered": 9,
+      "total": 23,
+      "ratio": 0.3913
+    },
+    "tpc_count": {
+      "covered": 2,
+      "total": 23,
+      "ratio": 0.087
+    },
+    "tpc_per_gpc": {
+      "covered": 2,
+      "total": 23,
+      "ratio": 0.087
+    }
+  },
+  "summary": {
+    "recordsWithThroughput": 11,
+    "recordsUsingSupplementalSources": 0,
+    "architectureRecords": 6,
+    "skuRecords": 17
+  }
+}
