@@ -1021,6 +1021,51 @@
       "note": "main_auto ver.2; Driver 595.58.03, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
       "date": "2026.4.17",
       "version": "ver2"
+    },
+    {
+      "model": "vit",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4080",
+      "memory": "32GB",
+      "platform": "Linux 5.15.0-78-generic",
+      "fp32": 5527,
+      "fp32bs": 128,
+      "fp16": 11724,
+      "fp16bs": 256,
+      "note": "main_auto ver.2; Driver 580.105.08, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
+      "date": "2026.4.17",
+      "version": "ver2"
+    },
+    {
+      "model": "unet",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4080",
+      "memory": "32GB",
+      "platform": "Linux 5.15.0-78-generic",
+      "fp32": 1750,
+      "fp32bs": 32,
+      "fp16": 4320,
+      "fp16bs": 64,
+      "note": "main_auto ver.2; Driver 580.105.08, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
+      "date": "2026.4.17",
+      "version": "ver2"
+    },
+    {
+      "model": "ddpm",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4080",
+      "memory": "32GB",
+      "platform": "Linux 5.15.0-78-generic",
+      "fp32": 4067,
+      "fp32bs": 128,
+      "fp16": 8542,
+      "fp16bs": 128,
+      "note": "main_auto ver.2; Driver 580.105.08, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
+      "date": "2026.4.17",
+      "version": "ver2"
     }
   ]
 }
