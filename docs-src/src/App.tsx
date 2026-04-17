@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ModelKey } from "./types/benchmark";
 import {
   useBenchmarkData,
@@ -6,9 +6,11 @@ import {
   useFilterOptions,
   useFilters,
 } from "./hooks/useBenchmarkData";
+import { useNvidiaSpecsData } from "./hooks/useNvidiaSpecsData";
 
 import Layout from "./components/Layout";
 import Hero from "./components/Hero";
+import PageTabs from "./components/PageTabs";
 import ModelTabs from "./components/ModelTabs";
 import ModelProfile from "./components/ModelProfile";
 import FilterControls from "./components/FilterControls";
@@ -18,13 +20,37 @@ import TopDevicesChart from "./components/TopDevicesChart";
 import VendorChart from "./components/VendorChart";
 import EmptyState from "./components/EmptyState";
 import ArchivePage from "./components/ArchivePage";
+import NvidiaSpecsPage from "./components/NvidiaSpecsPage";
 
 type TabKey = ModelKey | "archive";
+type ViewKey = "benchmarks" | "nvidia-specs";
+
+function parseViewFromHash(hash: string): ViewKey {
+  return hash === "#/nvidia-specs" ? "nvidia-specs" : "benchmarks";
+}
 
 export default function App() {
   const { data, error, loading } = useBenchmarkData();
+  const {
+    data: specsData,
+    coverage: specsCoverage,
+    error: specsError,
+    loading: specsLoading,
+  } = useNvidiaSpecsData();
   const [activeTab, setActiveTab] = useState<TabKey>("vit");
+  const [activeView, setActiveView] = useState<ViewKey>(() =>
+    parseViewFromHash(window.location.hash),
+  );
   const { filters, updateFilter, resetFilters } = useFilters();
+
+  useEffect(() => {
+    const syncFromHash = () => setActiveView(parseViewFromHash(window.location.hash));
+    window.addEventListener("hashchange", syncFromHash);
+    if (!window.location.hash) {
+      window.location.hash = "#/benchmarks";
+    }
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
 
   // Current model key for data hooks (archive falls back to resnet50 for hook compat)
   const modelFilter = activeTab === "archive" ? "resnet50" : activeTab;
@@ -40,9 +66,66 @@ export default function App() {
     resetFilters();
   };
 
+  const handleViewChange = (view: ViewKey) => {
+    window.location.hash = view === "nvidia-specs" ? "#/nvidia-specs" : "#/benchmarks";
+  };
+
+  const heroProps =
+    activeView === "nvidia-specs"
+      ? {
+          lastUpdated: specsData ? formatHeroTimestamp(specsData.metadata.generatedAt) : "—",
+          eyebrow: "Official NVIDIA Reference",
+          title: "NVIDIA GPU Specs",
+          description:
+            "Architecture and SKU evidence extracted from NVIDIA whitepapers, product pages, and CUDA capability listings.",
+          lastUpdatedLabel: "Generated",
+        }
+      : {
+          lastUpdated: data?.metadata.lastUpdated ?? "—",
+        };
+
+  if (activeView === "nvidia-specs") {
+    if (specsLoading) {
+      return (
+        <Layout>
+          <Hero {...heroProps} />
+          <PageTabs activeView={activeView} onViewChange={handleViewChange} />
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <p className="animate-pulse text-[var(--color-muted)]">Loading NVIDIA specs…</p>
+          </div>
+        </Layout>
+      );
+    }
+
+    if (specsError || !specsData) {
+      return (
+        <Layout>
+          <Hero {...heroProps} />
+          <PageTabs activeView={activeView} onViewChange={handleViewChange} />
+          <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+            <p className="text-lg font-semibold text-red-600">Failed to load NVIDIA specs</p>
+            <code className="rounded bg-red-50 px-3 py-1 text-sm text-red-700">
+              {specsError ?? "Unknown error"}
+            </code>
+          </div>
+        </Layout>
+      );
+    }
+
+    return (
+      <Layout>
+        <Hero {...heroProps} />
+        <PageTabs activeView={activeView} onViewChange={handleViewChange} />
+        <NvidiaSpecsPage data={specsData} coverage={specsCoverage} />
+      </Layout>
+    );
+  }
+
   if (loading) {
     return (
       <Layout>
+        <Hero {...heroProps} />
+        <PageTabs activeView={activeView} onViewChange={handleViewChange} />
         <div className="flex min-h-[60vh] items-center justify-center">
           <p className="animate-pulse text-[var(--color-muted)]">Loading benchmark data…</p>
         </div>
@@ -53,6 +136,8 @@ export default function App() {
   if (error) {
     return (
       <Layout>
+        <Hero {...heroProps} />
+        <PageTabs activeView={activeView} onViewChange={handleViewChange} />
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
           <p className="text-lg font-semibold text-red-600">Failed to load data</p>
           <code className="rounded bg-red-50 px-3 py-1 text-sm text-red-700">{error}</code>
@@ -63,9 +148,10 @@ export default function App() {
 
   return (
     <Layout>
-      <Hero lastUpdated={data?.metadata.lastUpdated ?? "—"} />
+      <Hero {...heroProps} />
 
       <div className="flex flex-col gap-4">
+        <PageTabs activeView={activeView} onViewChange={handleViewChange} />
         <ModelTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
         {activeTab === "archive" ? (
@@ -144,4 +230,14 @@ function ModelTabContent({
       <BenchmarkTable entries={filtered} />
     </>
   );
+}
+
+function formatHeroTimestamp(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
 }

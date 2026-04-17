@@ -1,8 +1,18 @@
 interface HeroProps {
   lastUpdated: string;
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  lastUpdatedLabel?: string;
 }
 
-export default function Hero({ lastUpdated }: HeroProps) {
+export default function Hero({
+  lastUpdated,
+  eyebrow = "GitHub Pages Dashboard",
+  title = "GPU Insights",
+  description = "Multi-model training benchmark results across GPUs and NPUs.",
+  lastUpdatedLabel = "Last updated",
+}: HeroProps) {
   return (
     <header
       className="relative overflow-hidden rounded-2xl border-0 p-5 text-[#f8fdff]"
@@ -19,16 +29,16 @@ export default function Hero({ lastUpdated }: HeroProps) {
       />
       <div className="relative z-10">
         <p className="m-0 text-xs uppercase tracking-widest opacity-85">
-          GitHub Pages Dashboard
+          {eyebrow}
         </p>
         <h1 className="my-1.5 font-[var(--font-display)] text-[clamp(2rem,6vw,3rem)] leading-tight tracking-tight">
-          GPU Insights
+          {title}
         </h1>
         <p className="m-0 text-[rgba(245,252,255,0.9)]">
-          Multi-model training benchmark results across GPUs and NPUs.
+          {description}
         </p>
         <p className="mt-1.5 m-0 text-sm text-[rgba(245,252,255,0.9)]">
-          Last updated: {lastUpdated}
+          {lastUpdatedLabel}: {lastUpdated}
         </p>
       </div>
     </header>
