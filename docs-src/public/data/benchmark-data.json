@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "lastUpdated": "2026-04-28",
+    "lastUpdated": "2026-05-07",
     "version": "3.1",
     "description": "GPU-Insights benchmark data for multi-model training throughput across GPUs, NPUs, TPUs, and Apple Silicon"
   },
@@ -1110,6 +1110,51 @@
       "fp16bs": 256,
       "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; BF16; CUDA CC 8.9",
       "date": "2026.4.28",
+      "version": "ver2"
+    },
+    {
+      "model": "vit",
+      "vendor": "nvidia",
+      "architecture": "Turing",
+      "device": "Quadro RTX 6000",
+      "memory": "24GB",
+      "platform": "Linux 5.14.0-570.62.1.0.1.el9_6.x86_64",
+      "fp32": 2005,
+      "fp32bs": 128,
+      "fp16": 9293,
+      "fp16bs": 256,
+      "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.5",
+      "date": "2026.5.7",
+      "version": "ver2"
+    },
+    {
+      "model": "unet",
+      "vendor": "nvidia",
+      "architecture": "Turing",
+      "device": "Quadro RTX 6000",
+      "memory": "24GB",
+      "platform": "Linux 5.14.0-570.62.1.0.1.el9_6.x86_64",
+      "fp32": 936,
+      "fp32bs": 32,
+      "fp16": 3388,
+      "fp16bs": 64,
+      "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.5",
+      "date": "2026.5.7",
+      "version": "ver2"
+    },
+    {
+      "model": "ddpm",
+      "vendor": "nvidia",
+      "architecture": "Turing",
+      "device": "Quadro RTX 6000",
+      "memory": "24GB",
+      "platform": "Linux 5.14.0-570.62.1.0.1.el9_6.x86_64",
+      "fp32": 2098,
+      "fp32bs": 64,
+      "fp16": 6597,
+      "fp16bs": 128,
+      "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.5",
+      "date": "2026.5.7",
       "version": "ver2"
     }
   ]
