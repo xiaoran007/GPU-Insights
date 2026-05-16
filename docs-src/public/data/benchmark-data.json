@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "lastUpdated": "2026-05-07",
+    "lastUpdated": "2026-05-16",
     "version": "3.1",
     "description": "GPU-Insights benchmark data for multi-model training throughput across GPUs, NPUs, TPUs, and Apple Silicon"
   },
@@ -1155,6 +1155,51 @@
       "fp16bs": 128,
       "note": "main_auto ver.2; Driver 575.57.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.5",
       "date": "2026.5.7",
+      "version": "ver2"
+    },
+    {
+      "model": "vit",
+      "vendor": "nvidia",
+      "architecture": "Volta",
+      "device": "4x Tesla V100-PCIE-32GB",
+      "memory": "32GB",
+      "platform": "Linux 5.4.0-136-generic",
+      "fp32": 7860,
+      "fp32bs": 128,
+      "fp16": 3586,
+      "fp16bs": 256,
+      "note": "main_auto ver.2; Driver 580.105.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.0",
+      "date": "2026.5.17",
+      "version": "ver2"
+    },
+    {
+      "model": "unet",
+      "vendor": "nvidia",
+      "architecture": "Volta",
+      "device": "4x Tesla V100-PCIE-32GB",
+      "memory": "32GB",
+      "platform": "Linux 5.4.0-136-generic",
+      "fp32": 4196,
+      "fp32bs": 32,
+      "fp16": 14294,
+      "fp16bs": 64,
+      "note": "main_auto ver.2; Driver 580.105.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.0",
+      "date": "2026.5.17",
+      "version": "ver2"
+    },
+    {
+      "model": "ddpm",
+      "vendor": "nvidia",
+      "architecture": "Volta",
+      "device": "4x Tesla V100-PCIE-32GB",
+      "memory": "32GB",
+      "platform": "Linux 5.4.0-136-generic",
+      "fp32": 8603,
+      "fp32bs": 128,
+      "fp16": 26191,
+      "fp16bs": 128,
+      "note": "main_auto ver.2; Driver 580.105.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.0",
+      "date": "2026.5.17",
       "version": "ver2"
     }
   ]
