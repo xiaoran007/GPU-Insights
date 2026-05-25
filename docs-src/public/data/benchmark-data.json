@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "lastUpdated": "2026-05-16",
+    "lastUpdated": "2026-05-24",
     "version": "3.1",
     "description": "GPU-Insights benchmark data for multi-model training throughput across GPUs, NPUs, TPUs, and Apple Silicon"
   },
@@ -1200,6 +1200,51 @@
       "fp16bs": 128,
       "note": "main_auto ver.2; Driver 580.105.08, CUDA 12.8, PyTorch 2.8.0+cu128; CUDA CC 7.0",
       "date": "2026.5.17",
+      "version": "ver2"
+    },
+    {
+      "model": "vit",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4070 SUPER",
+      "memory": "12GB",
+      "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
+      "fp32": 4004,
+      "fp32bs": 64,
+      "fp16": 8533,
+      "fp16bs": 64,
+      "note": "main_auto ver.2; Driver 596.49, CUDA 13.2, PyTorch 2.12.0+cu132; BF16; CUDA CC 8.9 WSL2",
+      "date": "2026.5.24",
+      "version": "ver2"
+    },
+    {
+      "model": "unet",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4070 SUPER",
+      "memory": "12GB",
+      "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
+      "fp32": 1239,
+      "fp32bs": 16,
+      "fp16": 2722,
+      "fp16bs": 32,
+      "note": "main_auto ver.2; Driver 596.49, CUDA 13.2, PyTorch 2.12.0+cu132; BF16; CUDA CC 8.9 WSL2",
+      "date": "2026.5.24",
+      "version": "ver2"
+    },
+    {
+      "model": "ddpm",
+      "vendor": "nvidia",
+      "architecture": "Ada",
+      "device": "NVIDIA GeForce RTX 4070 SUPER",
+      "memory": "12GB",
+      "platform": "Linux 6.6.114.1-microsoft-standard-WSL2",
+      "fp32": 2837,
+      "fp32bs": 32,
+      "fp16": 5993,
+      "fp16bs": 64,
+      "note": "main_auto ver.2; Driver 596.49, CUDA 13.2, PyTorch 2.12.0+cu132; BF16; CUDA CC 8.9 WSL2",
+      "date": "2026.5.24",
       "version": "ver2"
     }
   ]
