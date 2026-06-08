@@ -6,6 +6,7 @@ import {
   useFilterOptions,
   useFilters,
 } from "./hooks/useBenchmarkData";
+import { useLlmInferenceData } from "./hooks/useLlmInferenceData";
 import { useNvidiaSpecsData } from "./hooks/useNvidiaSpecsData";
 
 import Layout from "./components/Layout";
@@ -21,11 +22,13 @@ import VendorChart from "./components/VendorChart";
 import EmptyState from "./components/EmptyState";
 import ArchivePage from "./components/ArchivePage";
 import NvidiaSpecsPage from "./components/NvidiaSpecsPage";
+import LlmInferencePage from "./components/LlmInferencePage";
 
 type TabKey = ModelKey | "archive";
-type ViewKey = "benchmarks" | "nvidia-specs";
+type ViewKey = "benchmarks" | "llm-inference" | "nvidia-specs";
 
 function parseViewFromHash(hash: string): ViewKey {
+  if (hash === "#/llm-inference") return "llm-inference";
   return hash === "#/nvidia-specs" ? "nvidia-specs" : "benchmarks";
 }
 
@@ -37,6 +40,11 @@ export default function App() {
     error: specsError,
     loading: specsLoading,
   } = useNvidiaSpecsData();
+  const {
+    data: llmData,
+    error: llmError,
+    loading: llmLoading,
+  } = useLlmInferenceData();
   const [activeTab, setActiveTab] = useState<TabKey>("vit");
   const [activeView, setActiveView] = useState<ViewKey>(() =>
     parseViewFromHash(window.location.hash),
@@ -67,7 +75,13 @@ export default function App() {
   };
 
   const handleViewChange = (view: ViewKey) => {
-    window.location.hash = view === "nvidia-specs" ? "#/nvidia-specs" : "#/benchmarks";
+    if (view === "nvidia-specs") {
+      window.location.hash = "#/nvidia-specs";
+    } else if (view === "llm-inference") {
+      window.location.hash = "#/llm-inference";
+    } else {
+      window.location.hash = "#/benchmarks";
+    }
   };
 
   const heroProps =
@@ -80,9 +94,54 @@ export default function App() {
             "Architecture and SKU evidence extracted from NVIDIA whitepapers, product pages, and CUDA capability listings.",
           lastUpdatedLabel: "Generated",
         }
+      : activeView === "llm-inference"
+        ? {
+            lastUpdated: llmData?.metadata.lastUpdated ?? "—",
+            eyebrow: "Standalone Inference Track",
+            title: "LLM Inference",
+            description:
+              "Prompt processing and token generation throughput for llama.cpp and future runtime adapters.",
+          }
       : {
           lastUpdated: data?.metadata.lastUpdated ?? "—",
         };
+
+  if (activeView === "llm-inference") {
+    if (llmLoading) {
+      return (
+        <Layout>
+          <Hero {...heroProps} />
+          <PageTabs activeView={activeView} onViewChange={handleViewChange} />
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <p className="animate-pulse text-[var(--color-muted)]">Loading LLM data…</p>
+          </div>
+        </Layout>
+      );
+    }
+
+    if (llmError || !llmData) {
+      return (
+        <Layout>
+          <Hero {...heroProps} />
+          <PageTabs activeView={activeView} onViewChange={handleViewChange} />
+          <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+            <p className="text-lg font-semibold text-red-600">Failed to load LLM data</p>
+            <code className="rounded bg-red-50 px-3 py-1 text-sm text-red-700">
+              {llmError ?? "Unknown error"}
+            </code>
+          </div>
+        </Layout>
+      );
+    }
+
+    return (
+      <Layout>
+        <Hero {...heroProps} />
+        <PageTabs activeView={activeView} onViewChange={handleViewChange} />
+        <LlmInferencePage data={llmData} />
+      </Layout>
+    );
+  }
 
   if (activeView === "nvidia-specs") {
     if (specsLoading) {

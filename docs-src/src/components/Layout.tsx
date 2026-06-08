@@ -14,7 +14,7 @@ export default function Layout({ children }: LayoutProps) {
             "radial-gradient(circle at 15% 5%, #d9ebff, transparent 40%), radial-gradient(circle at 90% 10%, #e7f7f0, transparent 42%)",
         }}
       />
-      <main className="relative z-10 mx-auto grid w-[min(1200px,100%-2rem)] gap-4 py-6 pb-10">
+      <main className="relative z-10 mx-auto grid w-full max-w-[1200px] grid-cols-[minmax(0,1fr)] gap-4 px-4 py-6 pb-10">
         {children}
       </main>
     </div>

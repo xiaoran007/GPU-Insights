@@ -1,0 +1,230 @@
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+import type { LlmBenchmarkEntry, LlmInferenceData } from "../types/llmInference";
+import { formatTps, toTitleCase } from "../utils/format";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
+interface LlmInferencePageProps {
+  data: LlmInferenceData;
+}
+
+export default function LlmInferencePage({ data }: LlmInferencePageProps) {
+  const entries = [...data.benchmarks].sort(
+    (a, b) => (b.tgTps ?? -Infinity) - (a.tgTps ?? -Infinity),
+  );
+  const topTg = entries
+    .map((entry) => entry.tgTps)
+    .filter((value): value is number => typeof value === "number");
+  const topPp = entries
+    .map((entry) => entry.ppTps)
+    .filter((value): value is number => typeof value === "number");
+  const vendors = new Set(entries.map((entry) => entry.vendor));
+  const model = Object.values(data.models)[0];
+
+  return (
+    <div className="grid min-w-0 gap-4">
+      {model && (
+        <section className="min-w-0 rounded-2xl border border-[var(--color-line)] bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+          <div className="grid min-w-0 gap-3 md:grid-cols-[1.2fr_1fr] md:items-end">
+            <div className="min-w-0">
+              <p className="m-0 text-sm font-semibold uppercase tracking-wider text-[var(--color-brand)]">
+                Canonical llama.cpp track
+              </p>
+              <h2 className="m-0 mt-1 font-[var(--font-display)] text-2xl">
+                {model.displayName}
+              </h2>
+              <p className="m-0 mt-1 text-[var(--color-muted)]">
+                {model.baseModel} · {model.artifact} · {model.parameters}
+              </p>
+            </div>
+            <code className="block max-w-full overflow-x-auto rounded-lg bg-[var(--color-surface-soft)] px-3 py-2 text-xs text-[#334155]">
+              {model.defaultCommand}
+            </code>
+          </div>
+        </section>
+      )}
+
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="Visible Entries" value={entries.length.toLocaleString()} />
+        <MetricCard label="Top TG tok/s" value={topTg.length ? formatTps(Math.max(...topTg)) : "N/A"} />
+        <MetricCard label="Top PP tok/s" value={topPp.length ? formatTps(Math.max(...topPp)) : "N/A"} />
+        <MetricCard label="Vendors" value={vendors.size.toLocaleString()} />
+      </div>
+
+      <LlmThroughputChart entries={entries} />
+      <LlmResultTable entries={entries} />
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <article className="min-w-0 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+      <p className="m-0 text-sm text-[var(--color-muted)]">{label}</p>
+      <p className="m-0 mt-1 font-[var(--font-mono)] text-[clamp(1.35rem,4vw,2rem)] font-bold tabular-nums">
+        {value}
+      </p>
+    </article>
+  );
+}
+
+function LlmThroughputChart({ entries }: { entries: LlmBenchmarkEntry[] }) {
+  const top = entries.slice(0, 12);
+  if (!top.length) return null;
+
+  const labels = top.map((entry) =>
+    entry.device.length > 26 ? entry.device.slice(0, 26) + "..." : entry.device,
+  );
+
+  return (
+    <article className="min-w-0 rounded-2xl border border-[var(--color-line)] bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+      <h2 className="m-0 font-[var(--font-display)] text-lg">LLM Throughput</h2>
+      <p className="mt-1 mb-3 text-sm text-[var(--color-muted)]">
+        Token generation and prompt processing for the canonical llama.cpp track
+      </p>
+      <div className="relative h-80 min-w-0 overflow-hidden">
+        <Bar
+          data={{
+            labels,
+            datasets: [
+              {
+                label: "TG tok/s",
+                data: top.map((entry) => entry.tgTps ?? 0),
+                backgroundColor: "rgba(3, 105, 161, 0.72)",
+                borderColor: "rgba(3, 105, 161, 1)",
+                borderWidth: 1,
+              },
+              {
+                label: "PP tok/s",
+                data: top.map((entry) => entry.ppTps ?? 0),
+                backgroundColor: "rgba(15, 118, 110, 0.58)",
+                borderColor: "rgba(15, 118, 110, 1)",
+                borderWidth: 1,
+              },
+            ],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { ticks: { maxRotation: 35, minRotation: 35 } },
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: "Tokens per second" },
+              },
+            },
+            plugins: {
+              legend: { position: "top" },
+              tooltip: {
+                callbacks: {
+                  title(items) {
+                    return top[items[0].dataIndex].device;
+                  },
+                },
+              },
+            },
+          }}
+        />
+      </div>
+    </article>
+  );
+}
+
+function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
+  return (
+    <section className="min-w-0 rounded-2xl border border-[var(--color-line)] bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="m-0 font-[var(--font-display)] text-lg">LLM Inference Results</h2>
+        <p className="m-0 font-[var(--font-mono)] text-sm tabular-nums text-[var(--color-muted)]">
+          {entries.length.toLocaleString()} entries
+        </p>
+      </div>
+
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[1120px] border-collapse">
+          <thead>
+            <tr>
+              {[
+                "Device",
+                "Runtime",
+                "Backend",
+                "Platform",
+                "PP tok/s",
+                "TG tok/s",
+                "Prompt",
+                "Gen",
+                "Batch",
+                "Notes",
+                "Date",
+              ].map((heading) => (
+                <th
+                  key={heading}
+                  className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[#f4f8fc] px-2.5 py-2.5 text-left text-xs uppercase tracking-wider text-[#334155]"
+                >
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry, index) => (
+              <tr key={`${entry.device}-${entry.runtime}-${index}`} className="hover:bg-[#f7fbff]">
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
+                  <div className="font-semibold">{entry.device}</div>
+                  <small className="text-[var(--color-muted)]">
+                    {toTitleCase(entry.vendor)} · {entry.memory || "N/A"}
+                  </small>
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
+                  <div>{entry.runtime}</div>
+                  <small className="text-[var(--color-muted)]">{entry.runtimeVersion || "N/A"}</small>
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
+                  {entry.accelerationBackend || "N/A"}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
+                  {entry.platform || "N/A"}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 font-[var(--font-mono)] font-semibold tabular-nums text-[var(--color-brand)]">
+                  {formatTps(entry.ppTps)}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 font-[var(--font-mono)] font-semibold tabular-nums text-[var(--color-accent)]">
+                  {formatTps(entry.tgTps)}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 font-[var(--font-mono)] tabular-nums">
+                  {entry.promptTokens.toLocaleString()}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 font-[var(--font-mono)] tabular-nums">
+                  {entry.generationTokens.toLocaleString()}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 font-[var(--font-mono)] tabular-nums">
+                  {entry.batchSize.toLocaleString()}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 italic text-[var(--color-muted)]">
+                  {entry.note || "N/A"}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
+                  {entry.date || "N/A"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {entries.length === 0 && (
+        <p className="mt-3 text-[var(--color-muted)]">
+          No LLM inference entries are available.
+        </p>
+      )}
+    </section>
+  );
+}
