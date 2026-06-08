@@ -18,7 +18,9 @@ from typing import Any, Dict, Optional
 
 SCRIPT_DIR = Path(__file__).parent
 DEFAULT_DATA_FILE = SCRIPT_DIR.parent / "docs-src" / "public" / "data" / "benchmark-data.json"
+DEFAULT_LLM_DATA_FILE = SCRIPT_DIR.parent / "docs-src" / "public" / "data" / "llm-inference-data.json"
 PAYLOAD_PREFIX = "RESULT_PAYLOAD_B64="
+LLM_PAYLOAD_PREFIX = "LLM_RESULT_PAYLOAD_B64="
 
 VALID_VENDORS = {"nvidia", "amd", "intel", "apple", "huawei", "mthreads", "google", "unknown"}
 VALID_MODELS = {"resnet50", "cnn", "vit", "unet", "ddpm"}
@@ -311,6 +313,8 @@ def extract_payload_text(raw_payload: str) -> str:
     payload = raw_payload.strip()
     if payload.startswith(PAYLOAD_PREFIX):
         return payload[len(PAYLOAD_PREFIX):].strip()
+    if payload.startswith(LLM_PAYLOAD_PREFIX):
+        return payload[len(LLM_PAYLOAD_PREFIX):].strip()
     return payload
 
 
@@ -364,6 +368,39 @@ def build_entry_key(entry: dict) -> tuple:
     )
 
 
+def build_llm_identity_key(entry: dict) -> tuple:
+    return (
+        entry["model"],
+        entry["runtime"],
+        entry["accelerationBackend"],
+        entry["vendor"],
+        entry["architecture"],
+        entry["device"],
+        entry["memory"],
+        entry["platform"],
+        entry["artifact"],
+        entry["promptTokens"],
+        entry["generationTokens"],
+        entry["batchSize"],
+        entry["nGpuLayers"],
+    )
+
+
+def build_llm_entry_key(entry: dict) -> tuple:
+    return (
+        *build_llm_identity_key(entry),
+        entry["runtimeVersion"],
+        entry["ppTps"],
+        entry["ppStddev"],
+        entry["tgTps"],
+        entry["tgStddev"],
+        entry["repetitions"],
+        entry["threads"],
+        entry["note"],
+        entry["date"],
+    )
+
+
 def _coerce_int(value: Any, default: int = 0) -> int:
     if value is None:
         return default
@@ -406,6 +443,103 @@ def normalize_payload_entry(payload_entry: dict, payload_host: dict) -> Optional
         "version": version,
     }
     return entry
+
+
+def validate_llm_entry(entry: dict) -> list[str]:
+    errors = []
+    required_fields = [
+        "model",
+        "baseModel",
+        "artifact",
+        "runtime",
+        "runtimeVersion",
+        "accelerationBackend",
+        "vendor",
+        "architecture",
+        "device",
+        "memory",
+        "platform",
+        "promptTokens",
+        "generationTokens",
+        "batchSize",
+        "repetitions",
+        "ppTps",
+        "ppStddev",
+        "tgTps",
+        "tgStddev",
+        "nGpuLayers",
+        "threads",
+        "backendRaw",
+        "modelSizeBytes",
+        "modelParams",
+        "note",
+        "date",
+    ]
+
+    for field in required_fields:
+        if field not in entry:
+            errors.append(f"Missing required field: {field}")
+
+    for field in ("promptTokens", "generationTokens", "batchSize", "repetitions", "nGpuLayers"):
+        if field in entry and not isinstance(entry[field], int):
+            errors.append(f"{field} must be an integer")
+
+    for field in ("ppTps", "ppStddev", "tgTps", "tgStddev"):
+        if field in entry and entry[field] is not None and not isinstance(entry[field], (int, float)):
+            errors.append(f"{field} must be a number or null")
+
+    if "vendor" in entry and entry["vendor"] not in VALID_VENDORS:
+        errors.append(f"Invalid vendor '{entry['vendor']}'. Must be one of: {', '.join(sorted(VALID_VENDORS))}")
+
+    if "date" in entry:
+        date_parts = entry["date"].split(".")
+        if len(date_parts) != 3:
+            errors.append("Date must be in YYYY.M.DD format")
+        else:
+            try:
+                year, month, day = map(int, date_parts)
+                if year < 2020 or year > 2035:
+                    errors.append("Year seems unreasonable")
+                if month < 1 or month > 12:
+                    errors.append("Invalid month")
+                if day < 1 or day > 31:
+                    errors.append("Invalid day")
+            except ValueError:
+                errors.append("Date components must be numbers")
+
+    return errors
+
+
+def normalize_llm_payload_entry(payload_entry: dict, payload_host: dict) -> dict:
+    return {
+        "model": payload_entry.get("model", ""),
+        "baseModel": payload_entry.get("baseModel", ""),
+        "artifact": payload_entry.get("artifact", ""),
+        "runtime": payload_entry.get("runtime", ""),
+        "runtimeVersion": payload_entry.get("runtimeVersion", ""),
+        "accelerationBackend": payload_entry.get("accelerationBackend", ""),
+        "vendor": payload_entry.get("vendor") or payload_host.get("vendor", "unknown"),
+        "architecture": payload_entry.get("architecture") or payload_host.get("architecture", ""),
+        "device": payload_entry.get("device") or payload_host.get("device", ""),
+        "memory": payload_entry.get("memory") or payload_host.get("memory", ""),
+        "platform": payload_entry.get("platform") or payload_host.get("platform", ""),
+        "promptTokens": _coerce_int(payload_entry.get("promptTokens"), 0),
+        "generationTokens": _coerce_int(payload_entry.get("generationTokens"), 0),
+        "batchSize": _coerce_int(payload_entry.get("batchSize"), 0),
+        "repetitions": _coerce_int(payload_entry.get("repetitions"), 0),
+        "ppTps": payload_entry.get("ppTps"),
+        "ppStddev": payload_entry.get("ppStddev"),
+        "tgTps": payload_entry.get("tgTps"),
+        "tgStddev": payload_entry.get("tgStddev"),
+        "nGpuLayers": _coerce_int(payload_entry.get("nGpuLayers"), 0),
+        "threads": payload_entry.get("threads"),
+        "backendRaw": payload_entry.get("backendRaw", ""),
+        "modelSizeBytes": payload_entry.get("modelSizeBytes"),
+        "modelParams": payload_entry.get("modelParams"),
+        "note": payload_entry.get("note") or payload_host.get("note", ""),
+        "date": payload_entry.get("date") or current_date_string(),
+        "rawResult": payload_entry.get("rawResult", {}),
+    }
 
 
 def decode_payload_command(args: argparse.Namespace) -> bool:
@@ -525,6 +659,101 @@ def import_payload(args: argparse.Namespace) -> bool:
     return True
 
 
+def import_llm_payload(args: argparse.Namespace) -> bool:
+    data_file = Path(args.llm_data_file).expanduser().resolve()
+    raw_payload = load_payload_text(args)
+    if raw_payload is None:
+        return False
+
+    try:
+        payload = decode_payload(raw_payload)
+    except ValueError as exc:
+        print(f"❌ {exc}")
+        return False
+
+    benchmarks = payload.get("benchmarks")
+    if not isinstance(benchmarks, list):
+        print("❌ Payload is missing a valid 'benchmarks' array.")
+        return False
+
+    payload_host = payload.get("host", {}) if isinstance(payload.get("host"), dict) else {}
+    normalized_entries = []
+    validation_errors = []
+
+    for index, payload_entry in enumerate(benchmarks, start=1):
+        if not isinstance(payload_entry, dict):
+            validation_errors.append(f"Payload benchmark {index} is not an object.")
+            continue
+
+        normalized = normalize_llm_payload_entry(payload_entry, payload_host)
+        entry_errors = validate_llm_entry(normalized)
+        if entry_errors:
+            validation_errors.append(
+                f"LLM payload benchmark {index} ({normalized.get('model', 'unknown')}): {'; '.join(entry_errors)}"
+            )
+            continue
+
+        normalized_entries.append(normalized)
+
+    if validation_errors:
+        print("❌ LLM payload validation failed:")
+        for error in validation_errors:
+            print(f"  • {error}")
+        return False
+
+    data = load_data(data_file)
+    if not data:
+        return False
+
+    existing_entries = data.get("benchmarks", [])
+    existing_keys = {build_llm_entry_key(entry) for entry in existing_entries}
+    imported = 0
+    updated = 0
+    skipped_duplicates = 0
+
+    for entry in normalized_entries:
+        key = build_llm_entry_key(entry)
+        if not args.allow_duplicates and key in existing_keys:
+            skipped_duplicates += 1
+            continue
+
+        identity_key = build_llm_identity_key(entry)
+        matching_indexes = [
+            index for index, existing_entry in enumerate(existing_entries)
+            if build_llm_identity_key(existing_entry) == identity_key
+        ]
+
+        if matching_indexes and not args.allow_duplicates:
+            target_index = matching_indexes[-1]
+            old_key = build_llm_entry_key(existing_entries[target_index])
+            existing_entries[target_index] = entry
+            existing_keys.discard(old_key)
+            existing_keys.add(key)
+            updated += 1
+            continue
+
+        existing_entries.append(entry)
+        existing_keys.add(key)
+        imported += 1
+
+    if imported > 0 or updated > 0:
+        data.setdefault("metadata", {})["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
+
+    if args.dry_run:
+        print("🧪 Dry run complete. No file was modified.")
+    elif imported > 0 or updated > 0:
+        if not save_data(data_file, data):
+            return False
+
+    print(f"📦 LLM payload models: {', '.join(sorted({entry['model'] for entry in normalized_entries})) or 'none'}")
+    print(f"✅ LLM import summary for {data_file}:")
+    print(f"  Normalized entries: {len(normalized_entries)}")
+    print(f"  Imported entries: {imported}")
+    print(f"  Updated entries: {updated}")
+    print(f"  Skipped exact duplicates: {skipped_duplicates}")
+    return True
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="GPU Benchmark Data Management")
     parser.add_argument(
@@ -566,6 +795,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Import even when an identical normalized entry already exists",
     )
 
+    llm_import_parser = subparsers.add_parser(
+        "import-llm-payload",
+        help="Import an LLM_RESULT_PAYLOAD_B64 payload emitted by llm_bench.cli",
+    )
+    llm_import_parser.add_argument("payload", nargs="?", help="Raw Base64 payload or full LLM_RESULT_PAYLOAD_B64=... line")
+    llm_import_parser.add_argument("--payload-file", help="Read payload text from a file")
+    llm_import_parser.add_argument("--dry-run", action="store_true", help="Normalize and validate without writing")
+    llm_import_parser.add_argument(
+        "--allow-duplicates",
+        action="store_true",
+        help="Import even when an identical normalized entry already exists",
+    )
+    llm_import_parser.add_argument(
+        "--llm-data-file",
+        default=str(DEFAULT_LLM_DATA_FILE),
+        help=f"LLM inference data JSON file. Default: {DEFAULT_LLM_DATA_FILE}",
+    )
+
     decode_parser = subparsers.add_parser(
         "decode-payload",
         help="Decode a RESULT_PAYLOAD_B64 payload and print the JSON envelope",
@@ -600,6 +847,8 @@ def main() -> int:
         return 0 if add_benchmark(args) else 1
     if args.command in {"import-payload", "i"}:
         return 0 if import_payload(args) else 1
+    if args.command == "import-llm-payload":
+        return 0 if import_llm_payload(args) else 1
     if args.command == "decode-payload":
         return 0 if decode_payload_command(args) else 1
     if args.command == "migrate-version":
