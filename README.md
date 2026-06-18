@@ -221,7 +221,9 @@ python3 -m llm_bench.cli --list-cases
 By default the launcher looks for `llama-bench` in the bootstrap build output
 under `third_party/llama.cpp/build/bin/` before falling back to `PATH`. During a
 run it prints the selected runtime, model path, per-case progress, PP/TG
-throughput results, a summary, and finally the import payload:
+throughput results, a summary, and finally the import payload. `llama-bench`
+stderr is streamed live with a `llama-bench |` prefix so backend/debug messages
+remain visible while stdout is still parsed as JSON:
 
 ```text
 LLM_RESULT_PAYLOAD_B64=<base64-json>

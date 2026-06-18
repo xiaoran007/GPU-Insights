@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
+import threading
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -77,17 +79,14 @@ class LlamaCppRuntime:
         if config.threads is not None:
             command.extend(["-t", str(config.threads)])
 
+        stdout = _run_llama_bench(command)
         try:
-            completed = subprocess.run(
-                command,
-                check=True,
-                text=True,
-                capture_output=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            message = (exc.stderr or exc.stdout or str(exc)).strip()
-            raise RuntimeError(message) from exc
-        payload = json.loads(completed.stdout)
+            payload = json.loads(stdout)
+        except json.JSONDecodeError as exc:
+            preview = stdout.strip()
+            if len(preview) > 1000:
+                preview = preview[:1000] + "..."
+            raise ValueError(f"Failed to parse llama-bench JSON output: {preview}") from exc
         if not isinstance(payload, list):
             raise ValueError("llama-bench JSON output must be an array.")
         return payload
@@ -132,6 +131,39 @@ def _select_pp_row(rows: List[Dict[str, Any]], prompt_tokens: int) -> Dict[str, 
         if int(row.get("n_prompt") or 0) == prompt_tokens and int(row.get("n_gen") or 0) == 0:
             return row
     return None
+
+
+def _run_llama_bench(command: List[str]) -> str:
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    )
+    stderr_lines: List[str] = []
+
+    def stream_stderr() -> None:
+        assert process.stderr is not None
+        for line in process.stderr:
+            stderr_lines.append(line)
+            sys.stderr.write(f"  llama-bench | {line}")
+            sys.stderr.flush()
+
+    stderr_thread = threading.Thread(target=stream_stderr, daemon=True)
+    stderr_thread.start()
+
+    assert process.stdout is not None
+    stdout = process.stdout.read()
+    returncode = process.wait()
+    stderr_thread.join()
+
+    if returncode != 0:
+        stderr_tail = "".join(stderr_lines[-20:]).strip()
+        message = stderr_tail or stdout.strip() or f"llama-bench exited with code {returncode}"
+        raise RuntimeError(message)
+
+    return stdout
 
 
 def _select_tg_row(rows: List[Dict[str, Any]], generation_tokens: int) -> Dict[str, Any] | None:
