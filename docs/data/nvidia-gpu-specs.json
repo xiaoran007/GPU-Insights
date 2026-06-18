@@ -1,0 +1,2379 @@
+{
+  "metadata": {
+    "generatedAt": "2026-04-17T03:09:15+00:00",
+    "description": "Official NVIDIA architecture and SKU reference data for AI-oriented GPU specs.",
+    "officialSourceDomains": [
+      "developer.nvidia.com",
+      "nvidia.com",
+      "images.nvidia.com"
+    ],
+    "nullPolicy": "Unknown or unconfirmed fields are null. Values are not inferred."
+  },
+  "records": [
+    {
+      "record_id": "arch-ada",
+      "record_type": "architecture",
+      "generation": "Ada",
+      "product_name": "Ada",
+      "architecture_codename": "Ada Lovelace",
+      "die_family": null,
+      "compute_capability": "8.9",
+      "sm_count": 576,
+      "tensor_core_count": null,
+      "rt_core_count": 144,
+      "gpc_count": 6,
+      "tpc_count": null,
+      "sm_per_tpc": 2,
+      "tpc_per_gpc": 6,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": true,
+        "fp8": true,
+        "fp4": null,
+        "int8": true,
+        "int4": true
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "Tensor Performance",
+          "dtype": "fp8",
+          "value": 1457,
+          "unit": "TOPS",
+          "sparsity": "sparse",
+          "source_id": "rtx-6000-ada-page"
+        }
+      ],
+      "source_urls": [
+        "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf",
+        "https://www.nvidia.com/en-us/data-center/l4/",
+        "https://www.nvidia.com/en-us/products/workstations/rtx-6000/",
+        "https://www.nvidia.com/es-es/data-center/l40s/"
+      ],
+      "field_evidence": {
+        "gpc_count": [
+          {
+            "source_id": "ada-whitepaper",
+            "title": "NVIDIA Ada GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf",
+            "locator": "Ada GPC block diagram",
+            "excerpt": "ull AD102 GPU includes: \n● 18432 CUDA Cores \n● 144 RT Cores \n● 576 Tensor Cores \n● 576 Texture Units \n \n\n[PAGE 8]\n Ada GPU Architecture In-Depth \n8 \nNVIDIA Ada GPU Architecture \n \nAda GPC with Raster Engine, 6 TPCs, 12 SMs, and 16 ROPs (8 per ROP partition). \n \nFigure 2. Ada GPC Block Diagram \nThe GPC is the dominant high-level hardware block within all AD1…"
+          }
+        ],
+        "sm_count": [
+          {
+            "source_id": "ada-whitepaper",
+            "title": "NVIDIA Ada GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf",
+            "locator": "Ada full-chip bullet list",
+            "excerpt": "programs with FP64 code operate correctly, including FP64 Tensor Core code. \n \nFigure 1. AD102 GPU Full-Chip Block Diagram. \n \nThe full AD102 GPU includes: \n● 18432 CUDA Cores \n● 144 RT Cores \n● 576 Tensor Cores \n● 576 Texture Units \n \n\n[PAGE 8]\n Ada GPU Architecture In-Depth \n8 \nNVIDIA Ada GPU Architecture \n \nAda GPC with Raster Engine, 6 TPCs, 12 SMs, and…"
+          }
+        ],
+        "rt_core_count": [
+          {
+            "source_id": "ada-whitepaper",
+            "title": "NVIDIA Ada GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf",
+            "locator": "Ada full-chip bullet list",
+            "excerpt": "programs with FP64 code operate correctly, including FP64 Tensor Core code. \n \nFigure 1. AD102 GPU Full-Chip Block Diagram. \n \nThe full AD102 GPU includes: \n● 18432 CUDA Cores \n● 144 RT Cores \n● 576 Tensor Cores \n● 576 Texture Units \n \n\n[PAGE 8]\n Ada GPU Architecture In-Depth \n8 \nNVIDIA Ada GPU Architecture \n \nAda GPC with Raster Engine, 6 TPCs, 12 SMs, and…"
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:FP8 Tensor Core",
+            "excerpt": "FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU memory\n \n 24GB\n \n \n \n \n GPU memory bandwidth\n \n 300GB/s\n \n \n \n \n NVENC | NVDEC | JPEG decoders\n \n 2 | 4 |…"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:TF32 Tensor Core",
+            "excerpt": "Product Specifications\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:FP16 Tensor Core",
+            "excerpt": "ifications\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU m…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:BFLOAT16 Tensor Core",
+            "excerpt": "Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU memory\n \n 24GB\n \n \n \n \n GPU memory bandwidth\n \n 300GB/s\n \n \n \n \n N"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:INT8",
+            "excerpt": "TFLOPS de Tensor Core de BFLOAT16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP8\n \n 733 I 1466*\n \n \n \n \n TOPS de Tensor Core de INT8\n TOPS de Tensor Core de INT4\n \n 733 I 1466*\n 733 I 1466*\n \n \n \n \n Formato\n \n Ranura doble, 11,17 cm (A) × 26,67 cm (L)\n \n \n \n \n Puertos Display Port\n \n 4 puertos DisplayPort 1.4a"
+          }
+        ],
+        "tensor_datatypes.int4": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:INT4",
+            "excerpt": "de BFLOAT16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP8\n \n 733 I 1466*\n \n \n \n \n TOPS de Tensor Core de INT8\n TOPS de Tensor Core de INT4\n \n 733 I 1466*\n 733 I 1466*\n \n \n \n \n Formato\n \n Ranura doble, 11,17 cm (A) × 26,67 cm (L)\n \n \n \n \n Puertos Display Port\n \n 4 puertos DisplayPort 1.4a\n \n \n \n \n Consumo máximo…"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "rtx-6000-ada-page",
+            "title": "NVIDIA RTX 6000 Ada Generation",
+            "url": "https://www.nvidia.com/en-us/products/workstations/rtx-6000/",
+            "locator": "RTX 6000 Ada highlights",
+            "excerpt": "RT Core Performance\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n \n \n \n \n \n 210.6 TFLOPS 1 \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n \n\n \n\n \n \n \n\n \n\n \n\n \n \n \n\n \n \n\n \n\n \n \n\n \n \n \n \n \n \n \n \n \n Tensor Performance\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n \n \n \n \n \n 1457 AI TOPS 1, 2 \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n \n\n \n\n \n \n \n\n \n\n \n \n\n \n \n\n \n \n\n \n\n \n \n \n \n \n \n 1 Peak rates based on GPU Boost Clock.…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [
+        "Topology/count summary is anchored to AD102 in the Ada whitepaper."
+      ],
+      "missing_fields": [
+        "die_family",
+        "tensor_core_count",
+        "tpc_count",
+        "enabled_units_summary"
+      ]
+    },
+    {
+      "record_id": "sku-rtx-4090",
+      "record_type": "sku",
+      "generation": "Ada",
+      "product_name": "GeForce RTX 4090",
+      "architecture_codename": "Ada Lovelace",
+      "die_family": null,
+      "compute_capability": "8.9",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": "16,384 CUDA cores",
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": null,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "AI TOPS",
+          "dtype": null,
+          "value": 1321,
+          "unit": "TOPS",
+          "sparsity": null,
+          "source_id": "rtx-4090-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:GeForce RTX 4090",
+            "excerpt": "NVIDIA H100\n8.9\nNVIDIA L4\nNVIDIA L40\nNVIDIA L40S\nNVIDIA RTX 6000 Ada\nNVIDIA RTX 5000 Ada\nNVIDIA RTX 4500 Ada\nNVIDIA RTX 4000 Ada\nNVIDIA RTX 4000 SFF Ada\nNVIDIA RTX 2000 Ada\nGeForce RTX 4090\nGeForce RTX 4080"
+          }
+        ],
+        "enabled_units_summary": [
+          {
+            "source_id": "rtx-4090-page",
+            "title": "GeForce RTX 4090",
+            "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/",
+            "locator": "RTX 4090 specs",
+            "excerpt": "Specs\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n\n \n \n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n \n \n \n \n RTX 4090 \n \n \n \n \n \n \n \n \n NVIDIA CUDA Cores\n \n 16384\n \n \n \n \n \n \n Boost Clock (GHz)\n \n 2.52\n \n \n \n \n \n \n Memory Size\n \n 24 GB\n \n \n \n \n \n \n Memory Type\n \n GDDR6X\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n \n\n \n\n \n \n \n \n \n \n\n View Full Specs"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "rtx-4090-page",
+            "title": "GeForce RTX 4090",
+            "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/",
+            "locator": "RTX 4090 specs",
+            "excerpt": "GPU Engine Specs:\n \n NVIDIA CUDA ® Cores\n \n 16384\n \n \n \n \n \n \n Shader Cores\n \n Ada Lovelace \n83 TFLOPS\n \n \n \n \n \n \n Ray Tracing Cores\n \n 3rd Generation \n191 TFLOPS\n \n \n \n \n \n \n Tensor Cores (AI)\n \n 4th Generation \n1321 AI TOPS\n \n \n \n \n \n \n Boost Clock (GHz)\n \n 2.52\n \n \n \n \n \n \n Base Clock (GHz)\n \n 2.23\n \n \n \n \n \n \n \n \n \n \n \n \n \n Memory Specs:\n \n Standard Me…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "tensor_datatypes"
+      ]
+    },
+    {
+      "record_id": "sku-l4",
+      "record_type": "sku",
+      "generation": "Ada",
+      "product_name": "L4",
+      "architecture_codename": "Ada Lovelace",
+      "die_family": null,
+      "compute_capability": "8.9",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": true,
+        "fp8": true,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "TF32 Tensor Core",
+          "dtype": "tf32",
+          "value": 120,
+          "unit": "TFLOPS",
+          "sparsity": "sparse",
+          "source_id": "l4-page"
+        },
+        {
+          "label": "FP16 Tensor Core",
+          "dtype": "fp16",
+          "value": 242,
+          "unit": "TFLOPS",
+          "sparsity": "sparse",
+          "source_id": "l4-page"
+        },
+        {
+          "label": "BFLOAT16 Tensor Core",
+          "dtype": "bf16",
+          "value": 242,
+          "unit": "TFLOPS",
+          "sparsity": "sparse",
+          "source_id": "l4-page"
+        },
+        {
+          "label": "FP8 Tensor Core",
+          "dtype": "fp8",
+          "value": 485,
+          "unit": "TFLOPS",
+          "sparsity": "sparse",
+          "source_id": "l4-page"
+        },
+        {
+          "label": "INT8 Tensor Core",
+          "dtype": "int8",
+          "value": 485,
+          "unit": "TOPS",
+          "sparsity": "sparse",
+          "source_id": "l4-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/data-center/l4/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA L4",
+            "excerpt": "NVIDIA H100\n8.9\nNVIDIA L4\nNVIDIA L40"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:TF32 Tensor Core",
+            "excerpt": "Product Specifications\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:FP16 Tensor Core",
+            "excerpt": "ifications\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU m…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:BFLOAT16 Tensor Core",
+            "excerpt": "Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU memory\n \n 24GB\n \n \n \n \n GPU memory bandwidth\n \n 300GB/s\n \n \n \n \n N"
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "regex:FP8 Tensor Core",
+            "excerpt": "FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU memory\n \n 24GB\n \n \n \n \n GPU memory bandwidth\n \n 300GB/s\n \n \n \n \n NVENC | NVDEC | JPEG decoders\n \n 2 | 4 |…"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "L4 product specs",
+            "excerpt": "Product Specifications\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*"
+          },
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "L4 product specs",
+            "excerpt": "ifications\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU m…"
+          },
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "L4 product specs",
+            "excerpt": "Form Factor\n \n L4\n \n \n \n \n \n \n FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU memory\n \n 24GB\n \n \n \n \n GPU memory bandwidth\n \n 300GB/s\n \n \n \n \n NVENC | N…"
+          },
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "L4 product specs",
+            "excerpt": "FP32\n \n 30.3 teraFLOPs\n \n \n \n \n TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU memory\n \n 24GB\n \n \n \n \n GPU memory bandwidth\n \n 300GB/s\n \n \n \n \n NVENC | NVDEC | JPEG decoders\n \n 2 | 4 |…"
+          },
+          {
+            "source_id": "l4-page",
+            "title": "NVIDIA L4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/l4/",
+            "locator": "L4 product specs",
+            "excerpt": "TF32 Tensor Core\n \n 120 teraFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 242 teraFLOPS*\n \n \n \n \n FP8 Tensor Core\n \n 485 teraFLOPs*\n \n \n \n \n INT8 Tensor Core\n \n 485 TOPs*\n \n \n \n \n GPU memory\n \n 24GB\n \n \n \n \n GPU memory bandwidth\n \n 300GB/s\n \n \n \n \n NVENC | NVDEC | JPEG decoders\n \n 2 | 4 | 4\n \n \n \n \n Max thermal design p…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary"
+      ]
+    },
+    {
+      "record_id": "sku-l40s",
+      "record_type": "sku",
+      "generation": "Ada",
+      "product_name": "L40S",
+      "architecture_codename": "Ada Lovelace",
+      "die_family": null,
+      "compute_capability": "8.9",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": true,
+        "fp8": true,
+        "fp4": null,
+        "int8": true,
+        "int4": true
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/es-es/data-center/l40s/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA L40S",
+            "excerpt": "NVIDIA H100\n8.9\nNVIDIA L4\nNVIDIA L40\nNVIDIA L40S\nNVIDIA RTX 6000 Ada"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:Tensor Core de TF32",
+            "excerpt": "Especificaciones\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n \n GPU NVIDIA L40S\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n FP32\n \n 91,6 teraFLOPS\n \n \n \n \n Tensor Core de TF32\n \n 366 teraFLOPS\n \n \n \n \n FP16\n \n 733 teraFLOPS\n \n \n \n \n FP8\n \n 1466 teraFLOPS*\n \n \n \n \n Rendimiento del núcleo RT\n \n 212 teraFLOPS\n \n \n \n \n Consumo máximo\n \n 350 W…"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:Tensor Core de FP16",
+            "excerpt": "miento del núcleo RT\n \n 212 \n \n \n \n \n FP32 TFLOPS\n \n 91,6\n \n \n \n \n TFLOPS de Tensor Core de TF32\n \n 183 I 366*\n \n \n \n \n TFLOPS de Tensor Core de BFLOAT16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP8\n \n 733 I 1466*\n \n \n \n \n TOPS de Tensor Core de INT8\n TOPS de Tensor Core de INT4\n \n 733 I 1466*\n 733 I 1466*…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:BFLOAT16",
+            "excerpt": "DIA\n \n 568\n \n \n \n \n TFLOPS de rendimiento del núcleo RT\n \n 212 \n \n \n \n \n FP32 TFLOPS\n \n 91,6\n \n \n \n \n TFLOPS de Tensor Core de TF32\n \n 183 I 366*\n \n \n \n \n TFLOPS de Tensor Core de BFLOAT16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP8\n \n 733 I 1466*\n \n \n \n \n TOPS de Tensor Core de INT8\n TOPS de Tensor Core de INT…"
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:Tensor Core de FP8",
+            "excerpt": "OPS\n \n 91,6\n \n \n \n \n TFLOPS de Tensor Core de TF32\n \n 183 I 366*\n \n \n \n \n TFLOPS de Tensor Core de BFLOAT16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP8\n \n 733 I 1466*\n \n \n \n \n TOPS de Tensor Core de INT8\n TOPS de Tensor Core de INT4\n \n 733 I 1466*\n 733 I 1466*\n \n \n \n \n Formato\n \n Ranura doble, 11,17 cm (A) × 26…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:TOPS de Tensor Core de INT8",
+            "excerpt": "de TF32\n \n 183 I 366*\n \n \n \n \n TFLOPS de Tensor Core de BFLOAT16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP8\n \n 733 I 1466*\n \n \n \n \n TOPS de Tensor Core de INT8\n TOPS de Tensor Core de INT4\n \n 733 I 1466*\n 733 I 1466*\n \n \n \n \n Formato\n \n Ranura doble, 11,17 cm (A) × 26,67 cm (L)\n \n \n \n \n Puertos Display Port…"
+          }
+        ],
+        "tensor_datatypes.int4": [
+          {
+            "source_id": "l40s-page",
+            "title": "NVIDIA L40S",
+            "url": "https://www.nvidia.com/es-es/data-center/l40s/",
+            "locator": "regex:Tensor Core de INT4",
+            "excerpt": "de Tensor Core de BFLOAT16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP16\n \n 362,05 I 733*\n \n \n \n \n Tensor Core de FP8\n \n 733 I 1466*\n \n \n \n \n TOPS de Tensor Core de INT8\n TOPS de Tensor Core de INT4\n \n 733 I 1466*\n 733 I 1466*\n \n \n \n \n Formato\n \n Ranura doble, 11,17 cm (A) × 26,67 cm (L)\n \n \n \n \n Puertos Display Port\n \n 4 puertos DisplayPort 1.4a\n \n \n \n \n C…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-rtx-6000-ada",
+      "record_type": "sku",
+      "generation": "Ada",
+      "product_name": "RTX 6000 Ada",
+      "architecture_codename": "Ada Lovelace",
+      "die_family": null,
+      "compute_capability": "8.9",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": null,
+        "bf16": null,
+        "fp8": true,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "Tensor Performance",
+          "dtype": "fp8",
+          "value": 1457,
+          "unit": "TOPS",
+          "sparsity": "sparse",
+          "source_id": "rtx-6000-ada-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/products/workstations/rtx-6000/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA RTX 6000 Ada",
+            "excerpt": "NVIDIA H100\n8.9\nNVIDIA L4\nNVIDIA L40\nNVIDIA L40S\nNVIDIA RTX 6000 Ada\nNVIDIA RTX 5000 Ada"
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "rtx-6000-ada-page",
+            "title": "NVIDIA RTX 6000 Ada Generation",
+            "url": "https://www.nvidia.com/en-us/products/workstations/rtx-6000/",
+            "locator": "regex:FP8 data format",
+            "excerpt": "Fourth-Generation Tensor Cores\n \n\n \n \n \n Fourth-generation Tensor Cores, using the FP8 data format, deliver more than 2X the AI performance of the previous generation, enabling rapid model training and inferencing directly on RTX-powered AI workstations ."
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "rtx-6000-ada-page",
+            "title": "NVIDIA RTX 6000 Ada Generation",
+            "url": "https://www.nvidia.com/en-us/products/workstations/rtx-6000/",
+            "locator": "RTX 6000 Ada highlights",
+            "excerpt": "RT Core Performance\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n \n \n \n \n \n 210.6 TFLOPS 1 \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n \n\n \n\n \n \n \n\n \n\n \n\n \n \n \n\n \n \n\n \n\n \n \n\n \n \n \n \n \n \n \n \n \n Tensor Performance\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n\n \n\n \n \n \n \n \n \n 1457 AI TOPS 1, 2 \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n \n\n \n\n \n \n \n\n \n\n \n \n\n \n \n\n \n \n\n \n\n \n \n \n \n \n \n 1 Peak rates based on GPU Boost Clock.…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary"
+      ]
+    },
+    {
+      "record_id": "arch-ampere",
+      "record_type": "architecture",
+      "generation": "Ampere",
+      "product_name": "Ampere",
+      "architecture_codename": "Ampere",
+      "die_family": "GA100",
+      "compute_capability": "8.0 / 8.6",
+      "sm_count": 128,
+      "tensor_core_count": 512,
+      "rt_core_count": null,
+      "gpc_count": 8,
+      "tpc_count": null,
+      "sm_per_tpc": 2,
+      "tpc_per_gpc": 8,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "3rd generation",
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": null,
+        "bf16": true,
+        "fp8": null,
+        "fp4": null,
+        "int8": true,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+        "https://www.nvidia.com/en-in/data-center/a100/"
+      ],
+      "field_evidence": {
+        "die_family": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "A100 whitepaper GA100 implementation",
+            "excerpt": "8192 FP32 CUDA Cores per full GPU \n● 4 Third-generation Tensor Cores/SM, 512 Third-generation Tensor Cores per full GPU \n● 6 HBM2 stacks, 12 512-bit Memory Controllers \nThe NVIDIA A100 Tensor Core GPU implementation of the GA100 GPU includes the \nfollowing units: \n● 7 GPCs, 7 or 8 TPCs/GPC, 2 SMs/TPC, up to 16 SMs/GPC, 108 SMs \n● 64 FP32 CUDA Cores/SM, 6912…"
+          }
+        ],
+        "gpc_count": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "GA100 full GPU topology",
+            "excerpt": "PCs), Texture \nProcessing Clusters (TPCs), Streaming Multiprocessors (SMs), and HBM2 memory controllers. \nThe full implementation of the GA100 GPU includes the following units: \n● 8 GPCs, 8 TPCs/GPC, 2 SMs/TPC, 16 SMs/GPC, 128 SMs per full GPU \n● 64 FP32 CUDA Cores/SM, 8192 FP32 CUDA Cores per full GPU \n● 4 Third-generation Tensor Cores/SM, 512 Third-genera…"
+          }
+        ],
+        "sm_count": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "GA100 full GPU topology",
+            "excerpt": "Streaming Multiprocessors (SMs), and HBM2 memory controllers. \nThe full implementation of the GA100 GPU includes the following units: \n● 8 GPCs, 8 TPCs/GPC, 2 SMs/TPC, 16 SMs/GPC, 128 SMs per full GPU \n● 64 FP32 CUDA Cores/SM, 8192 FP32 CUDA Cores per full GPU \n● 4 Third-generation Tensor Cores/SM, 512 Third-generation Tensor Cores per full GPU \n● 6 HBM2 st…"
+          }
+        ],
+        "tensor_core_count": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "GA100 full GPU Tensor Core count",
+            "excerpt": "lowing units: \n● 8 GPCs, 8 TPCs/GPC, 2 SMs/TPC, 16 SMs/GPC, 128 SMs per full GPU \n● 64 FP32 CUDA Cores/SM, 8192 FP32 CUDA Cores per full GPU \n● 4 Third-generation Tensor Cores/SM, 512 Third-generation Tensor Cores per full GPU \n● 6 HBM2 stacks, 12 512-bit Memory Controllers \nThe NVIDIA A100 Tensor Core GPU implementation of the GA100 GPU includes the \nfollo…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "a100-page",
+            "title": "NVIDIA A100 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/a100/",
+            "locator": "regex:BFLOAT16 Tensor Core",
+            "excerpt": "80GB SXM\n \n \n \n \n \n \n FP64\n \n 9.7 TFLOPS\n \n \n \n \n FP64 Tensor Core\n \n 19.5 TFLOPS\n \n \n \n \n FP32\n \n 19.5 TFLOPS\n \n \n \n \n Tensor Float 32 (TF32)\n \n 156 TFLOPS | 312 TFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n INT8 Tensor Core\n \n 624 TOPS | 1248 TOPS*\n \n \n \n \n GPU Memory\n \n 80…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "a100-page",
+            "title": "NVIDIA A100 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/a100/",
+            "locator": "regex:INT8 Tensor Core",
+            "excerpt": "Tensor Float 32 (TF32)\n \n 156 TFLOPS | 312 TFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n INT8 Tensor Core\n \n 624 TOPS | 1248 TOPS*\n \n \n \n \n GPU Memory\n \n 80GB HBM2e\n \n 80GB HBM2e\n \n \n \n \n GPU Memory Bandwidth\n \n 1,935 GB/s\n \n 2,039 GB/s\n \n \n \n \n Max Thermal Design Power (TDP)…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [
+        "Architecture summary uses GA100/A100 because it is the official AI-first Ampere whitepaper."
+      ],
+      "missing_fields": [
+        "rt_core_count",
+        "tpc_count",
+        "enabled_units_summary",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-a100",
+      "record_type": "sku",
+      "generation": "Ampere",
+      "product_name": "A100",
+      "architecture_codename": "Ampere",
+      "die_family": "GA100",
+      "compute_capability": "8.0",
+      "sm_count": 108,
+      "tensor_core_count": 432,
+      "rt_core_count": null,
+      "gpc_count": 7,
+      "tpc_count": null,
+      "sm_per_tpc": 2,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": "7 GPCs; 7-8 TPCs/GPC; 108 SM enabled",
+      "tensor_core_generation": "3rd generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": true,
+        "fp8": null,
+        "fp4": null,
+        "int8": true,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+        "https://www.nvidia.com/en-in/data-center/a100/"
+      ],
+      "field_evidence": {
+        "die_family": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "A100 whitepaper",
+            "excerpt": "8192 FP32 CUDA Cores per full GPU \n● 4 Third-generation Tensor Cores/SM, 512 Third-generation Tensor Cores per full GPU \n● 6 HBM2 stacks, 12 512-bit Memory Controllers \nThe NVIDIA A100 Tensor Core GPU implementation of the GA100 GPU includes the \nfollowing units: \n● 7 GPCs, 7 or 8 TPCs/GPC, 2 SMs/TPC, up to 16 SMs/GPC, 108 SMs \n● 64 FP32 CUDA Cores/SM, 6912…"
+          }
+        ],
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA A100",
+            "excerpt": "GeForce RTX 3050\n8.0\nNVIDIA A100\nNVIDIA A30"
+          }
+        ],
+        "gpc_count": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "A100 implementation topology",
+            "excerpt": "neration Tensor Cores per full GPU \n● 6 HBM2 stacks, 12 512-bit Memory Controllers \nThe NVIDIA A100 Tensor Core GPU implementation of the GA100 GPU includes the \nfollowing units: \n● 7 GPCs, 7 or 8 TPCs/GPC, 2 SMs/TPC, up to 16 SMs/GPC, 108 SMs \n● 64 FP32 CUDA Cores/SM, 6912 FP32 CUDA Cores per GPU \n● 4 Third-generation Tensor Cores/SM, 432 Third-generation…"
+          }
+        ],
+        "sm_count": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "A100 implementation topology",
+            "excerpt": "................. 13 \nFigure 5. A100 GPU HPC application speedups compared to NVIDIA Tesla V100 ............... 14 \nFigure 6. GA100 Full GPU with 128 SMs (A100 Tensor Core GPU has 108 SMs) ................ 20 \nFigure 7. GA100 Streaming Multiprocessor (SM) ................................................................. 22 \nFigure 8. A100 vs V100 Tensor Cor…"
+          }
+        ],
+        "sm_per_tpc": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "A100 implementation topology",
+            "excerpt": "ssing Clusters (TPCs), Streaming Multiprocessors (SMs), and HBM2 memory controllers. \nThe full implementation of the GA100 GPU includes the following units: \n● 8 GPCs, 8 TPCs/GPC, 2 SMs/TPC, 16 SMs/GPC, 128 SMs per full GPU \n● 64 FP32 CUDA Cores/SM, 8192 FP32 CUDA Cores per full GPU \n● 4 Third-generation Tensor Cores/SM, 512 Third-generation Tensor Cores pe…"
+          }
+        ],
+        "tensor_core_count": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "A100 implementation Tensor Core count",
+            "excerpt": "he \nfollowing units: \n● 7 GPCs, 7 or 8 TPCs/GPC, 2 SMs/TPC, up to 16 SMs/GPC, 108 SMs \n● 64 FP32 CUDA Cores/SM, 6912 FP32 CUDA Cores per GPU \n● 4 Third-generation Tensor Cores/SM, 432 Third-generation Tensor Cores per GPU \n● 5 HBM2 stacks, 10 512-bit Memory Controllers \nThe TSMC 7nm N7 process used to build the GA100 GPU allows many more GPCs, TPCs, and \nSM…"
+          }
+        ],
+        "enabled_units_summary": [
+          {
+            "source_id": "ampere-ga100-whitepaper",
+            "title": "NVIDIA A100 Tensor Core GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf",
+            "locator": "A100 implementation topology",
+            "excerpt": "ration Tensor Cores per full GPU \n● 6 HBM2 stacks, 12 512-bit Memory Controllers \nThe NVIDIA A100 Tensor Core GPU implementation of the GA100 GPU includes the \nfollowing units: \n● 7 GPCs, 7 or 8 TPCs/GPC, 2 SMs/TPC, up to 16 SMs/GPC, 108 SMs \n● 64 FP32 CUDA Cores/SM, 6912 FP32 CUDA Cores per GPU \n● 4 Third-generation Tensor Cores/SM, 432 Third-generation Te…"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "a100-page",
+            "title": "NVIDIA A100 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/a100/",
+            "locator": "regex:Tensor Float 32 \\(TF32\\)",
+            "excerpt": "A100 80GB PCIe\n \n A100 80GB SXM\n \n \n \n \n \n \n FP64\n \n 9.7 TFLOPS\n \n \n \n \n FP64 Tensor Core\n \n 19.5 TFLOPS\n \n \n \n \n FP32\n \n 19.5 TFLOPS\n \n \n \n \n Tensor Float 32 (TF32)\n \n 156 TFLOPS | 312 TFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n INT8 Tensor Core\n \n 624 TOPS |"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "a100-page",
+            "title": "NVIDIA A100 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/a100/",
+            "locator": "regex:FP16 Tensor Core",
+            "excerpt": "sor Core\n \n 19.5 TFLOPS\n \n \n \n \n FP32\n \n 19.5 TFLOPS\n \n \n \n \n Tensor Float 32 (TF32)\n \n 156 TFLOPS | 312 TFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n INT8 Tensor Core\n \n 624 TOPS | 1248 TOPS*\n \n \n \n \n GPU Memory\n \n 80GB HBM2e\n \n 80GB HBM2e\n \n \n \n \n GPU Memory Bandwidth\n \n 1,…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "a100-page",
+            "title": "NVIDIA A100 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/a100/",
+            "locator": "regex:BFLOAT16 Tensor Core",
+            "excerpt": "80GB SXM\n \n \n \n \n \n \n FP64\n \n 9.7 TFLOPS\n \n \n \n \n FP64 Tensor Core\n \n 19.5 TFLOPS\n \n \n \n \n FP32\n \n 19.5 TFLOPS\n \n \n \n \n Tensor Float 32 (TF32)\n \n 156 TFLOPS | 312 TFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n INT8 Tensor Core\n \n 624 TOPS | 1248 TOPS*\n \n \n \n \n GPU Memory\n \n 80…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "a100-page",
+            "title": "NVIDIA A100 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/a100/",
+            "locator": "regex:INT8 Tensor Core",
+            "excerpt": "Tensor Float 32 (TF32)\n \n 156 TFLOPS | 312 TFLOPS*\n \n \n \n \n BFLOAT16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n FP16 Tensor Core\n \n 312 TFLOPS | 624 TFLOPS*\n \n \n \n \n INT8 Tensor Core\n \n 624 TOPS | 1248 TOPS*\n \n \n \n \n GPU Memory\n \n 80GB HBM2e\n \n 80GB HBM2e\n \n \n \n \n GPU Memory Bandwidth\n \n 1,935 GB/s\n \n 2,039 GB/s\n \n \n \n \n Max Thermal Design Power (TDP)…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "rt_core_count",
+        "tpc_count",
+        "tpc_per_gpc",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-a40",
+      "record_type": "sku",
+      "generation": "Ampere",
+      "product_name": "A40",
+      "architecture_codename": "Ampere",
+      "die_family": "GA102",
+      "compute_capability": "8.6",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": null,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://images.nvidia.com/aem-dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf",
+        "https://www.nvidia.com/en-eu/data-center/a40/"
+      ],
+      "field_evidence": {
+        "die_family": [
+          {
+            "source_id": "ampere-ga102-whitepaper",
+            "title": "NVIDIA Ampere GA102 GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf",
+            "locator": "GA102 whitepaper A40 mention",
+            "excerpt": "oads. Compared to the Turing GPU Architecture, the NVIDIA Ampere Architecture \nis up to 1.7x faster in traditional raster graphics workloads and up to 2x faster in ray tracing. \n \nGA102 is the most powerful Ampere architecture GPU in the GA10x lineup and is used in the \nGeForce RTX 3090, GeForce RTX 3080, NVIDIA RTX A6000, and the NVIDIA A40 data center \nGP…"
+          }
+        ],
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA A40",
+            "excerpt": "Jetson Orin Nano\n8.6\nNVIDIA A40\nNVIDIA A10"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "a40-page",
+            "title": "NVIDIA A40",
+            "url": "https://www.nvidia.com/en-eu/data-center/a40/",
+            "locator": "regex:Tensor Float 32 \\(TF32\\)",
+            "excerpt": "Third-Generation Tensor Cores\n\n \n \n \n \n\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n\n New Tensor Float 32 (TF32) precision provides up to 5X the training throughput over the previous generation to accelerate AI and data science model training without requiring any code changes. Hardware supp"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-rtx-3090",
+      "record_type": "sku",
+      "generation": "Ampere",
+      "product_name": "GeForce RTX 3090",
+      "architecture_codename": "Ampere",
+      "die_family": null,
+      "compute_capability": "8.6",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "3rd generation",
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:GeForce RTX 3090",
+            "excerpt": "Jetson Orin Nano\n8.6\nNVIDIA A40\nNVIDIA A10\nNVIDIA A16\nNVIDIA A2\nNVIDIA RTX A6000\nNVIDIA RTX A5000\nNVIDIA RTX A4000\nNVIDIA RTX A3000\nNVIDIA RTX A2000\nGeForce RTX 3090 Ti\nGeForce RTX 3090\nGeForce RTX 3080 Ti"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "rtx-3090-page",
+            "title": "GeForce RTX 3090 Family",
+            "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090/",
+            "locator": "regex:3rd Generation",
+            "excerpt": "g\n \n 24 GB GDDR6X\n \n \n \n \n \n \n Memory Interface Width\n \n 384-bit\n \n \n \n \n \n \n \n \n \n \n \n \n \n Technology Support:\n \n Ray Tracing Cores\n \n 2nd Generation\n \n \n \n \n \n \n Tensor Cores\n \n 3rd Generation\n \n \n \n \n \n \n NVIDIA Architecture\n \n Ampere\n \n \n \n \n \n \n Microsoft DirectX ® 12 Ultimate \n \n Yes\n \n \n \n \n \n \n NVIDIA DLSS \n \n Yes\n \n \n \n \n \n \n NVIDIA Reflex \n \n Yes…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-rtx-a6000",
+      "record_type": "sku",
+      "generation": "Ampere",
+      "product_name": "RTX A6000",
+      "architecture_codename": "Ampere",
+      "die_family": null,
+      "compute_capability": "8.6",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "3rd generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-eu/design-visualization/rtx-a6000/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA RTX A6000",
+            "excerpt": "Jetson Orin Nano\n8.6\nNVIDIA A40\nNVIDIA A10\nNVIDIA A16\nNVIDIA A2\nNVIDIA RTX A6000\nNVIDIA RTX A5000"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "rtx-a6000-page",
+            "title": "NVIDIA RTX A6000",
+            "url": "https://www.nvidia.com/en-eu/design-visualization/rtx-a6000/",
+            "locator": "regex:Tensor Float 32 \\(TF32\\)",
+            "excerpt": "Third-Generation Tensor Cores\n\n \n \n \n \n\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n\n New Tensor Float 32 (TF32) precision provides up to 5X the training throughput over the previous generation to accelerate AI and data science model training without requiring any code changes. Hardware supp"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "rtx-a6000-page",
+            "title": "NVIDIA RTX A6000",
+            "url": "https://www.nvidia.com/en-eu/design-visualization/rtx-a6000/",
+            "locator": "regex:Third-Generation Tensor Cores",
+            "excerpt": "results with greater visual accuracy.\n\n \n \n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n \n \n \n\n \n \n \n \n\n \n \n \n \n\n \n\n \n \n \n \n \n\n \n \n\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n\n \n Third-Generation Tensor Cores\n\n \n \n \n \n\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n\n New Tensor Float 32 (TF32) precision provides up to 5X the training thr…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "arch-blackwell",
+      "record_type": "architecture",
+      "generation": "Blackwell",
+      "product_name": "Blackwell",
+      "architecture_codename": "Blackwell",
+      "die_family": null,
+      "compute_capability": null,
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": "Two reticle-limited dies with 10 TB/s chip-to-chip interconnect",
+      "tensor_core_generation": "5th generation",
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": null,
+        "bf16": null,
+        "fp8": true,
+        "fp4": true,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+      ],
+      "field_evidence": {
+        "enabled_units_summary": [
+          {
+            "source_id": "blackwell-architecture-page",
+            "title": "NVIDIA Blackwell Architecture",
+            "url": "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/",
+            "locator": "Blackwell architecture introduction",
+            "excerpt": "NVIDIA Blackwell-architecture GPUs pack 208 billion transistors and are manufactured using a custom-built TSMC 4NP process. All NVIDIA Blackwell products feature two reticle-limited dies connected by a 10 terabytes per second (TB/s) chip-to-chip interconnect in a unified single GPU.…"
+          }
+        ],
+        "tensor_datatypes.fp4": [
+          {
+            "source_id": "blackwell-architecture-page",
+            "title": "NVIDIA Blackwell Architecture",
+            "url": "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/",
+            "locator": "regex:4-bit floating point \\(FP4\\)",
+            "excerpt": "to NVIDIA Blackwell GPUs. The NVIDIA Blackwell Transformer Engine utilizes fine-grain scaling techniques called micro-tensor scaling, to optimize performance and accuracy enabling 4-bit floating point (FP4) AI. This doubles the performance and size of next-generation models that memory can support while maintaining high accuracy."
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "blackwell-architecture-page",
+            "title": "NVIDIA Blackwell Architecture",
+            "url": "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/",
+            "locator": "regex:larger precisions",
+            "excerpt": "-of-Experts (MoE) models . NVIDIA Blackwell Tensor Cores add new precisions, including new community-defined microscaling formats, giving high accuracy and ease of replacement for larger precisions.\n \n NVIDIA Blackwell Ultra Tensor Cores are supercharged with 2X the attention-layer acceleration and 1.5X more AI compute FLOPS compared to NVIDIA Blackwell GPU…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [
+        "Blackwell public architecture pages emphasize transformer-engine features more than unit topology."
+      ],
+      "missing_fields": [
+        "die_family",
+        "compute_capability",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-b200",
+      "record_type": "sku",
+      "generation": "Blackwell",
+      "product_name": "B200",
+      "architecture_codename": "Blackwell",
+      "die_family": null,
+      "compute_capability": "10.0",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": null,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA B200",
+            "excerpt": "NVIDIA B300\n10.0\nNVIDIA GB200\nNVIDIA B200\n9.0"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [
+        "NVIDIA public pages sampled here expose B200 primarily through DGX/HGX system-level specs; per-GPU unit counts stay null unless explicitly published."
+      ],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "official_tensor_throughput",
+        "tensor_datatypes"
+      ]
+    },
+    {
+      "record_id": "sku-rtx-5090",
+      "record_type": "sku",
+      "generation": "Blackwell",
+      "product_name": "GeForce RTX 5090",
+      "architecture_codename": "Blackwell",
+      "die_family": null,
+      "compute_capability": "12.0",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": "21,760 CUDA cores",
+      "tensor_core_generation": "5th generation",
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": null,
+        "bf16": null,
+        "fp8": null,
+        "fp4": true,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "AI TOPS",
+          "dtype": null,
+          "value": 3352,
+          "unit": "TOPS",
+          "sparsity": null,
+          "source_id": "rtx-5090-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:GeForce RTX 5090",
+            "excerpt": "NVIDIA GB10 (DGX Spark)\n12.0\nNVIDIA RTX PRO 6000 Blackwell Server Edition\nNVIDIA RTX PRO 6000 Blackwell Workstation Edition\nNVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition\nNVIDIA RTX PRO 5000 Blackwell\nNVIDIA RTX PRO 4500 Blackwell\nNVIDIA RTX PRO 4000 Blackwell\nNVIDIA RTX PRO 4000 Blackwell SFF Edition\nNVIDIA RTX PRO 2000 Blackwell\nGeForce RTX 5090…"
+          }
+        ],
+        "enabled_units_summary": [
+          {
+            "source_id": "rtx-5090-page",
+            "title": "GeForce RTX 5090",
+            "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
+            "locator": "RTX 5090 specs",
+            "excerpt": "GeForce RTX 5090\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n GPU Engine Specs:\n \n NVIDIA CUDA® Cores\n \n 21760\n \n \n \n \n \n \n Shader Cores\n \n Blackwell\n \n \n \n \n \n \n Tensor Cores (AI)\n \n 5th Generation\n 3352 AI TOPS\n \n \n \n \n \n \n Ray Tracing Cores\n \n 4th Generation\n 318 TFLOPS\n \n \n \n \n \n \n Boo"
+          }
+        ],
+        "tensor_datatypes.fp4": [
+          {
+            "source_id": "rtx-5090-page",
+            "title": "GeForce RTX 5090",
+            "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
+            "locator": "regex:Max AI performance with FP4",
+            "excerpt": "Fifth-Gen Tensor Cores\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n Max AI performance with FP4 and DLSS 4.5\n\n \n\n \n\n \n\n \n\n \n \n \n \n \n \n \n New Streaming Multiprocessors\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n Optimized for neural shaders\n\n \n\n \n\n \n\n \n\n \n \n \n \n \n \n \n Fourth-Gen Ray Tr"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "rtx-5090-page",
+            "title": "GeForce RTX 5090",
+            "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
+            "locator": "RTX 5090 specs",
+            "excerpt": "GeForce RTX 5090\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n\n \n \n \n \n \n\n \n \n \n \n \n GPU Engine Specs:\n \n NVIDIA CUDA® Cores\n \n 21760\n \n \n \n \n \n \n Shader Cores\n \n Blackwell\n \n \n \n \n \n \n Tensor Cores (AI)\n \n 5th Generation\n 3352 AI TOPS\n \n \n \n \n \n \n Ray Tracing Cores\n \n 4th Generation\n 318 TFLOPS\n \n \n \n \n \n \n Boost Clock (GHz)\n \n 2.41\n \n \n \n \n \n \n Base Clock (GHz)\n \n 2.01…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc"
+      ]
+    },
+    {
+      "record_id": "sku-rtx-pro-6000-blackwell",
+      "record_type": "sku",
+      "generation": "Blackwell",
+      "product_name": "RTX PRO 6000 Blackwell Workstation Edition",
+      "architecture_codename": "Blackwell",
+      "die_family": null,
+      "compute_capability": "12.0",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "5th generation",
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": null,
+        "bf16": null,
+        "fp8": null,
+        "fp4": true,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "AI Performance",
+          "dtype": "fp4",
+          "value": 4000,
+          "unit": "TOPS",
+          "sparsity": "sparse",
+          "source_id": "rtx-pro-6000-blackwell-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+            "excerpt": "NVIDIA GB10 (DGX Spark)\n12.0\nNVIDIA RTX PRO 6000 Blackwell Server Edition\nNVIDIA RTX PRO 6000 Blackwell Workstation Edition\nNVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition"
+          }
+        ],
+        "tensor_datatypes.fp4": [
+          {
+            "source_id": "rtx-pro-6000-blackwell-page",
+            "title": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+            "url": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+            "locator": "regex:Theoretical FP4 TOPS",
+            "excerpt": "Single-Precision Performance\n \n\n \n \n \n 125 TFLOPS 1 \n\n \n \n\n \n \n \n \n \n \n \n \n\n \n\n \n\n \n\n \n\n \n \n\n \n \n\n \n \n\n \n\n \n\n \n \n \n \n \n \n 1. Peak rates based on GPU Boost Clock. I 2. Theoretical FP4 TOPS using sparsity."
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "rtx-pro-6000-blackwell-page",
+            "title": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+            "url": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+            "locator": "RTX PRO 6000 Blackwell highlights",
+            "excerpt": "Highlights\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n \n \n \n \n \n \n Industry-Leading Performance\n \n \n\n \n\n \n\n \n \n\n \n \n\n \n\n \n \n \n \n \n \n \n \n \n \n \n \n\n \n \n \n\n \n \n \n \n \n\n \n\n \n \n \n \n \n\n \n \n AI Performance\n \n\n \n \n \n 4000 TOPS 1,2 \n\n \n \n\n \n \n \n \n \n \n \n \n\n \n\n \n\n \n\n \n\n \n\n \n \n \n\n \n \n \n \n \n\n \n\n \n \n \n \n \n\n \n \n RT Core Performance\n \n\n \n \n \n 380 TFLOPS 1"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary"
+      ]
+    },
+    {
+      "record_id": "arch-hopper",
+      "record_type": "architecture",
+      "generation": "Hopper",
+      "product_name": "Hopper",
+      "architecture_codename": "Hopper",
+      "die_family": null,
+      "compute_capability": "9.0",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": true,
+        "fp8": true,
+        "fp4": null,
+        "int8": true,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-in/data-center/h100/",
+        "https://www.nvidia.com/en-us/data-center/technologies/hopper-architecture/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA H100",
+            "excerpt": "NVIDIA B200\n9.0\nNVIDIA GH200\nNVIDIA H200\nNVIDIA H100\n8.9"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "hopper-architecture-page",
+            "title": "NVIDIA Hopper Architecture",
+            "url": "https://www.nvidia.com/en-us/data-center/technologies/hopper-architecture/",
+            "locator": "regex:TF32",
+            "excerpt": "bility to apply mixed FP8 and FP16 precisions to dramatically accelerate AI calculations for transformers. Hopper also triples the floating-point operations per second (FLOPS) for TF32, FP64, FP16, and INT8 precisions over the prior generation. Combined with Transformer Engine and fourth-generation NVIDIA ® NVLink ® , Hopper Tensor Cores power an order-of-m…"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "hopper-architecture-page",
+            "title": "NVIDIA Hopper Architecture",
+            "url": "https://www.nvidia.com/en-us/data-center/technologies/hopper-architecture/",
+            "locator": "regex:FP16",
+            "excerpt": "cture advances Tensor Core technology with the Transformer Engine, designed to accelerate the training of AI models. Hopper Tensor Cores have the capability to apply mixed FP8 and FP16 precisions to dramatically accelerate AI calculations for transformers. Hopper also triples the floating-point operations per second (FLOPS) for TF32, FP64, FP16, and INT8 pr…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "h100-page",
+            "title": "NVIDIA H100 GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/h100/",
+            "locator": "regex:BFLOAT16 Tensor Core",
+            "excerpt": "FP64 Tensor Core \n \n 67 teraFLOPS \n \n 60 teraFLOPs \n \n \n \n \n FP32 \n \n 67 teraFLOPS \n \n 60 teraFLOPs \n \n \n \n \n TF32 Tensor Core * \n \n 989 teraFLOPS\n \n 835 teraFLOPs\n \n \n \n \n BFLOAT16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP8 Tensor Core * \n \n 3,958 teraFLOPS\n \n 3,341 t…"
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "hopper-architecture-page",
+            "title": "NVIDIA Hopper Architecture",
+            "url": "https://www.nvidia.com/en-us/data-center/technologies/hopper-architecture/",
+            "locator": "regex:FP8",
+            "excerpt": "architecture advances Tensor Core technology with the Transformer Engine, designed to accelerate the training of AI models. Hopper Tensor Cores have the capability to apply mixed FP8 and FP16 precisions to dramatically accelerate AI calculations for transformers. Hopper also triples the floating-point operations per second (FLOPS) for TF32, FP64, FP16, and…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "hopper-architecture-page",
+            "title": "NVIDIA Hopper Architecture",
+            "url": "https://www.nvidia.com/en-us/data-center/technologies/hopper-architecture/",
+            "locator": "regex:INT8",
+            "excerpt": "FP8 and FP16 precisions to dramatically accelerate AI calculations for transformers. Hopper also triples the floating-point operations per second (FLOPS) for TF32, FP64, FP16, and INT8 precisions over the prior generation. Combined with Transformer Engine and fourth-generation NVIDIA ® NVLink ® , Hopper Tensor Cores power an order-of-magnitude speedup on HP…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [
+        "Official Hopper architecture page exposes capabilities more reliably than topology."
+      ],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-h100",
+      "record_type": "sku",
+      "generation": "Hopper",
+      "product_name": "H100",
+      "architecture_codename": "Hopper",
+      "die_family": null,
+      "compute_capability": "9.0",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": true,
+        "fp8": true,
+        "fp4": null,
+        "int8": true,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-in/data-center/h100/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA H100",
+            "excerpt": "NVIDIA B200\n9.0\nNVIDIA GH200\nNVIDIA H200\nNVIDIA H100\n8.9"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "h100-page",
+            "title": "NVIDIA H100 GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/h100/",
+            "locator": "regex:TF32 Tensor Core",
+            "excerpt": "100 NVL\n \n \n \n \n \n \n FP64 \n \n 34 teraFLOPS \n \n 30 teraFLOPs \n \n \n \n \n FP64 Tensor Core \n \n 67 teraFLOPS \n \n 60 teraFLOPs \n \n \n \n \n FP32 \n \n 67 teraFLOPS \n \n 60 teraFLOPs \n \n \n \n \n TF32 Tensor Core * \n \n 989 teraFLOPS\n \n 835 teraFLOPs\n \n \n \n \n BFLOAT16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,6…"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "h100-page",
+            "title": "NVIDIA H100 GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/h100/",
+            "locator": "regex:FP16 Tensor Core",
+            "excerpt": "2 \n \n 67 teraFLOPS \n \n 60 teraFLOPs \n \n \n \n \n TF32 Tensor Core * \n \n 989 teraFLOPS\n \n 835 teraFLOPs\n \n \n \n \n BFLOAT16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP8 Tensor Core * \n \n 3,958 teraFLOPS\n \n 3,341 teraFLOPS\n \n \n \n \n INT8 Tensor Core * \n \n 3,958 TOPS\n \n 3,341 TOP…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "h100-page",
+            "title": "NVIDIA H100 GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/h100/",
+            "locator": "regex:BFLOAT16 Tensor Core",
+            "excerpt": "FP64 Tensor Core \n \n 67 teraFLOPS \n \n 60 teraFLOPs \n \n \n \n \n FP32 \n \n 67 teraFLOPS \n \n 60 teraFLOPs \n \n \n \n \n TF32 Tensor Core * \n \n 989 teraFLOPS\n \n 835 teraFLOPs\n \n \n \n \n BFLOAT16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP8 Tensor Core * \n \n 3,958 teraFLOPS\n \n 3,341 t…"
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "h100-page",
+            "title": "NVIDIA H100 GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/h100/",
+            "locator": "regex:FP8 Tensor Core",
+            "excerpt": "989 teraFLOPS\n \n 835 teraFLOPs\n \n \n \n \n BFLOAT16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP8 Tensor Core * \n \n 3,958 teraFLOPS\n \n 3,341 teraFLOPS\n \n \n \n \n INT8 Tensor Core * \n \n 3,958 TOPS\n \n 3,341 TOPS\n \n \n \n \n GPU Memory \n \n 80GB \n \n 94GB\n \n \n \n \n GPU Memory Bandwidth…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "h100-page",
+            "title": "NVIDIA H100 GPU",
+            "url": "https://www.nvidia.com/en-in/data-center/h100/",
+            "locator": "regex:INT8 Tensor Core",
+            "excerpt": "1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP16 Tensor Core * \n \n 1,979 teraFLOPS\n \n 1,671 teraFLOPS\n \n \n \n \n FP8 Tensor Core * \n \n 3,958 teraFLOPS\n \n 3,341 teraFLOPS\n \n \n \n \n INT8 Tensor Core * \n \n 3,958 TOPS\n \n 3,341 TOPS\n \n \n \n \n GPU Memory \n \n 80GB \n \n 94GB\n \n \n \n \n GPU Memory Bandwidth \n \n 3.35TB/s \n \n 3.9TB/s \n \n \n \n \n Decoders \n \n 7 NVDEC\n 7 JPEG…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-h200",
+      "record_type": "sku",
+      "generation": "Hopper",
+      "product_name": "H200",
+      "architecture_codename": "Hopper",
+      "die_family": null,
+      "compute_capability": "9.0",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": "4th generation",
+      "tensor_datatypes": {
+        "tf32": true,
+        "fp16": true,
+        "bf16": true,
+        "fp8": true,
+        "fp4": null,
+        "int8": true,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/es-la/data-center/h200/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA H200",
+            "excerpt": "NVIDIA B200\n9.0\nNVIDIA GH200\nNVIDIA H200\nNVIDIA H100"
+          }
+        ],
+        "tensor_datatypes.tf32": [
+          {
+            "source_id": "h200-page",
+            "title": "NVIDIA H200 Tensor Core GPU",
+            "url": "https://www.nvidia.com/es-la/data-center/h200/",
+            "locator": "regex:TF32 Tensor Core",
+            "excerpt": "H200 SXM¹\n \n H200 NVL¹\n \n \n \n \n FP64\n \n 34 TFLOPS\n \n 30 TFLOPS\n \n \n \n \n FP64 Tensor Core\n \n 67 TFLOPS\n \n 60 TFLOPS\n \n \n \n \n FP32\n \n 67 TFLOPS\n \n 60 TFLOPS\n \n \n \n \n TF32 Tensor Core²\n \n 989 TFLOPS\n \n 835 TFLOPS\n \n \n \n \n BFLOAT16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP8 Tensor Core²"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "h200-page",
+            "title": "NVIDIA H200 Tensor Core GPU",
+            "url": "https://www.nvidia.com/es-la/data-center/h200/",
+            "locator": "regex:FP16 Tensor Core",
+            "excerpt": "60 TFLOPS\n \n \n \n \n FP32\n \n 67 TFLOPS\n \n 60 TFLOPS\n \n \n \n \n TF32 Tensor Core²\n \n 989 TFLOPS\n \n 835 TFLOPS\n \n \n \n \n BFLOAT16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP8 Tensor Core²\n \n 3,958 TFLOPS\n \n 3,341 TFLOPS\n \n \n \n \n INT8 Tensor Core²\n \n 3,958 TFLOPS\n \n 3,341 TFLOPS\n \n \n \n \n Memori…"
+          }
+        ],
+        "tensor_datatypes.bf16": [
+          {
+            "source_id": "h200-page",
+            "title": "NVIDIA H200 Tensor Core GPU",
+            "url": "https://www.nvidia.com/es-la/data-center/h200/",
+            "locator": "regex:BFLOAT16 Tensor Core",
+            "excerpt": "34 TFLOPS\n \n 30 TFLOPS\n \n \n \n \n FP64 Tensor Core\n \n 67 TFLOPS\n \n 60 TFLOPS\n \n \n \n \n FP32\n \n 67 TFLOPS\n \n 60 TFLOPS\n \n \n \n \n TF32 Tensor Core²\n \n 989 TFLOPS\n \n 835 TFLOPS\n \n \n \n \n BFLOAT16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP8 Tensor Core²\n \n 3,958 TFLOPS\n \n 3,341 TFLOPS…"
+          }
+        ],
+        "tensor_datatypes.fp8": [
+          {
+            "source_id": "h200-page",
+            "title": "NVIDIA H200 Tensor Core GPU",
+            "url": "https://www.nvidia.com/es-la/data-center/h200/",
+            "locator": "regex:FP8 Tensor Core",
+            "excerpt": "TF32 Tensor Core²\n \n 989 TFLOPS\n \n 835 TFLOPS\n \n \n \n \n BFLOAT16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP8 Tensor Core²\n \n 3,958 TFLOPS\n \n 3,341 TFLOPS\n \n \n \n \n INT8 Tensor Core²\n \n 3,958 TFLOPS\n \n 3,341 TFLOPS\n \n \n \n \n Memoria de GPU\n \n 141GB\n \n 141GB\n \n \n \n \n Ancho de Banda de Memor…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "h200-page",
+            "title": "NVIDIA H200 Tensor Core GPU",
+            "url": "https://www.nvidia.com/es-la/data-center/h200/",
+            "locator": "regex:INT8 Tensor Core",
+            "excerpt": "BFLOAT16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP16 Tensor Core²\n \n 1,979 TFLOPS\n \n 1,671 TFLOPS\n \n \n \n \n FP8 Tensor Core²\n \n 3,958 TFLOPS\n \n 3,341 TFLOPS\n \n \n \n \n INT8 Tensor Core²\n \n 3,958 TFLOPS\n \n 3,341 TFLOPS\n \n \n \n \n Memoria de GPU\n \n 141GB\n \n 141GB\n \n \n \n \n Ancho de Banda de Memoria de GPU\n \n 4.8TB/s\n \n 4.8TB/s\n \n \n \n \n Decodificadore…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "arch-turing",
+      "record_type": "architecture",
+      "generation": "Turing",
+      "product_name": "Turing",
+      "architecture_codename": "Turing",
+      "die_family": "TU102",
+      "compute_capability": "7.5",
+      "sm_count": 72,
+      "tensor_core_count": 576,
+      "rt_core_count": 72,
+      "gpc_count": 6,
+      "tpc_count": 36,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": true,
+        "int4": true
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "Tensor TFLOPS",
+          "dtype": null,
+          "value": 130,
+          "unit": "TFLOPS",
+          "sparsity": null,
+          "source_id": "titan-rtx-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://images.nvidia.com/aem-dam/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf",
+        "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html"
+      ],
+      "field_evidence": {
+        "die_family": [
+          {
+            "source_id": "turing-whitepaper",
+            "title": "NVIDIA Turing GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf",
+            "locator": "Turing whitepaper TU102 mention",
+            "excerpt": "IA GeForce® and NVIDIA Quadro™ GPU products will be powered by \nTuring GPUs. In this paper we focus on the architecture and capabilities of NVIDIA’s flagship \nTuring GPU, which is codenamed TU102 and will be shipping in the GeForce RTX 2080 Ti and \nQuadro RTX 6000. Technical details, including product specifications for TU104 and TU106 Turing \nGPUs, are loc…"
+          }
+        ],
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA TITAN RTX",
+            "excerpt": "NVIDIA A30\n7.5\nNVIDIA T4\nQUADRO RTX 8000\nQUADRO RTX 6000\nQUADRO RTX 5000\nQUADRO RTX 4000\nQUADRO RTX 3000\nQUADRO T2000\nNVIDIA T1200\nNVIDIA T1000\nNVIDIA T600\nNVIDIA T500\nNVIDIA T400\nGeForce GTX 1650 Ti\nNVIDIA TITAN RTX\nGeForce RTX 2080 Ti"
+          }
+        ],
+        "gpc_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX full specs",
+            "excerpt": "NVIDIA TITAN RTX \n \n \n \n \n \n \n \n GPU Engine Specs:\n --> \n \n 6 \n Graphics Processing Clusters \n \n \n \n \n \n \n \n 36 \n Texture Processing Clusters \n \n \n \n \n \n \n \n 72 \n Streaming Multiprocessors \n \n \n \n \n \n \n \n 4608 \n CUDA Cores (single precision) \n \n \n \n \n \n \n \n 576 \n Tensor C"
+          }
+        ],
+        "tpc_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX full specs",
+            "excerpt": "NVIDIA TITAN RTX \n \n \n \n \n \n \n \n GPU Engine Specs:\n --> \n \n 6 \n Graphics Processing Clusters \n \n \n \n \n \n \n \n 36 \n Texture Processing Clusters \n \n \n \n \n \n \n \n 72 \n Streaming Multiprocessors \n \n \n \n \n \n \n \n 4608 \n CUDA Cores (single precision) \n \n \n \n \n \n \n \n 576 \n Tensor Cores \n \n \n \n \n \n \n \n 72 \n RT Cores"
+          }
+        ],
+        "sm_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX full specs",
+            "excerpt": "NVIDIA TITAN RTX \n \n \n \n \n \n \n \n GPU Engine Specs:\n --> \n \n 6 \n Graphics Processing Clusters \n \n \n \n \n \n \n \n 36 \n Texture Processing Clusters \n \n \n \n \n \n \n \n 72 \n Streaming Multiprocessors \n \n \n \n \n \n \n \n 4608 \n CUDA Cores (single precision) \n \n \n \n \n \n \n \n 576 \n Tensor Cores \n \n \n \n \n \n \n \n 72 \n RT Cores \n \n \n \n \n \n \n \n 1350 MHz \n Base Clock (MHz)…"
+          }
+        ],
+        "tensor_core_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX full specs",
+            "excerpt": "NVIDIA ® TITAN RTX ™ is designed for researchers, developers and creators. It’s powered by Turing ™ architecture, bringing 130 Tensor TFLOPs of performance, 576 tensor cores, and 24 GB of ultra-fast GDDR6 memory to your PC.\n\n \n \n \n \n\n \n\n \n \n \n \n Add to Cart"
+          }
+        ],
+        "rt_core_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX full specs",
+            "excerpt": "ides up to 672 GB/s of memory bandwidth for greater throughput and to handle larger datasets. \n \n \n \n NVIDIA Turing GPU \n \n \n TITAN RTX accelerates photorealistic ray-tracing with 72 RT Cores, AI workflows with 576 Tensor Cores, and parallel computing with 4608 NVIDIA CUDA ® cores for developers, researchers, creators, and enthusiasts. \n \n \n VirtualLink ™…"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "turing-whitepaper",
+            "title": "NVIDIA Turing GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf",
+            "locator": "regex:FP16",
+            "excerpt": "ders Edition GPU delivers the following exceptional computational \nperformance: \n 14.2 TFLOPS1 of peak single precision (FP32) performance \n 28.5 TFLOPS1 of peak half precision (FP16) performance \n 14.2 TIPS1 concurrent with FP, through independent integer execution units \n 113.8 Tensor TFLOPS1,2 \n 10 Giga Rays/sec \n 78 Tera RTX-OPS3 \nThe Quadro RTX 6…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "turing-whitepaper",
+            "title": "NVIDIA Turing GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf",
+            "locator": "regex:INT8",
+            "excerpt": "ural network training and inferencing operations. Turing GPUs \ninclude a new version of the Tensor Core design that has been enhanced for inferencing. Turing \nTensor Cores add new INT8 and INT4 precision modes for inferencing workloads that can tolerate \nquantization and don’t require FP16 precision. Turing Tensor Cores bring new deep learning-\nbased AI cap…"
+          }
+        ],
+        "tensor_datatypes.int4": [
+          {
+            "source_id": "turing-whitepaper",
+            "title": "NVIDIA Turing GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/aem-dam/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf",
+            "locator": "regex:INT4",
+            "excerpt": "ork training and inferencing operations. Turing GPUs \ninclude a new version of the Tensor Core design that has been enhanced for inferencing. Turing \nTensor Cores add new INT8 and INT4 precision modes for inferencing workloads that can tolerate \nquantization and don’t require FP16 precision. Turing Tensor Cores bring new deep learning-\nbased AI capabilities…"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX hero copy",
+            "excerpt": "NVIDIA ® TITAN RTX ™ is designed for researchers, developers and creators. It’s powered by Turing ™ architecture, bringing 130 Tensor TFLOPs of performance, 576 tensor cores, and 24 GB of ultra-fast GDDR6 memory to your PC.\n\n \n \n \n \n\n \n\n \n \n \n \n Add to Cart"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [
+        "Topology fields are sourced from TITAN RTX because NVIDIA publishes TU102 block activation there."
+      ],
+      "missing_fields": [
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation"
+      ]
+    },
+    {
+      "record_id": "sku-quadro-rtx-6000",
+      "record_type": "sku",
+      "generation": "Turing",
+      "product_name": "Quadro RTX 6000",
+      "architecture_codename": "Turing",
+      "die_family": null,
+      "compute_capability": "7.5",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": null,
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-eu/products/workstations/quadro/rtx-6000/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:QUADRO RTX 6000",
+            "excerpt": "NVIDIA A30\n7.5\nNVIDIA T4\nQUADRO RTX 8000\nQUADRO RTX 6000\nQUADRO RTX 5000"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "quadro-rtx-6000-page",
+            "title": "NVIDIA Quadro RTX 6000",
+            "url": "https://www.nvidia.com/en-eu/products/workstations/quadro/rtx-6000/",
+            "locator": "regex:Tensor Cores",
+            "excerpt": "BUILT FOR PROFESSIONALS\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n NVIDIA Turing GPU Architecture \n \n \n World's most advanced GPU with the all-new RT Cores for ray tracing, 576 Tensor Cores for deep learning, and 4,608 NVIDIA CUDA® cores for parallel computing. \n \n \n \n Next-Gen Memory \n \n \n Equipped with industry-first 24 GB of ultra-fast GDDR6 memory to…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "official_tensor_throughput"
+      ]
+    },
+    {
+      "record_id": "sku-titan-rtx",
+      "record_type": "sku",
+      "generation": "Turing",
+      "product_name": "TITAN RTX",
+      "architecture_codename": "Turing",
+      "die_family": null,
+      "compute_capability": "7.5",
+      "sm_count": 72,
+      "tensor_core_count": 576,
+      "rt_core_count": 72,
+      "gpc_count": 6,
+      "tpc_count": 36,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": "6 GPC / 36 TPC / 72 SM",
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": true,
+        "int4": true
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "Tensor TFLOPS",
+          "dtype": null,
+          "value": 130,
+          "unit": "TFLOPS",
+          "sparsity": null,
+          "source_id": "titan-rtx-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA TITAN RTX",
+            "excerpt": "NVIDIA A30\n7.5\nNVIDIA T4\nQUADRO RTX 8000\nQUADRO RTX 6000\nQUADRO RTX 5000\nQUADRO RTX 4000\nQUADRO RTX 3000\nQUADRO T2000\nNVIDIA T1200\nNVIDIA T1000\nNVIDIA T600\nNVIDIA T500\nNVIDIA T400\nGeForce GTX 1650 Ti\nNVIDIA TITAN RTX\nGeForce RTX 2080 Ti"
+          }
+        ],
+        "gpc_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX specs",
+            "excerpt": "NVIDIA TITAN RTX \n \n \n \n \n \n \n \n GPU Engine Specs:\n --> \n \n 6 \n Graphics Processing Clusters \n \n \n \n \n \n \n \n 36 \n Texture Processing Clusters \n \n \n \n \n \n \n \n 72 \n Streaming Multiprocessors \n \n \n \n \n \n \n \n 4608 \n CUDA Cores (single precision) \n \n \n \n \n \n \n \n 576 \n Tensor C"
+          }
+        ],
+        "tpc_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX specs",
+            "excerpt": "NVIDIA TITAN RTX \n \n \n \n \n \n \n \n GPU Engine Specs:\n --> \n \n 6 \n Graphics Processing Clusters \n \n \n \n \n \n \n \n 36 \n Texture Processing Clusters \n \n \n \n \n \n \n \n 72 \n Streaming Multiprocessors \n \n \n \n \n \n \n \n 4608 \n CUDA Cores (single precision) \n \n \n \n \n \n \n \n 576 \n Tensor Cores \n \n \n \n \n \n \n \n 72 \n RT Cores"
+          }
+        ],
+        "sm_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX specs",
+            "excerpt": "NVIDIA TITAN RTX \n \n \n \n \n \n \n \n GPU Engine Specs:\n --> \n \n 6 \n Graphics Processing Clusters \n \n \n \n \n \n \n \n 36 \n Texture Processing Clusters \n \n \n \n \n \n \n \n 72 \n Streaming Multiprocessors \n \n \n \n \n \n \n \n 4608 \n CUDA Cores (single precision) \n \n \n \n \n \n \n \n 576 \n Tensor Cores \n \n \n \n \n \n \n \n 72 \n RT Cores \n \n \n \n \n \n \n \n 1350 MHz \n Base Clock (MHz)…"
+          }
+        ],
+        "tensor_core_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX specs",
+            "excerpt": "NVIDIA ® TITAN RTX ™ is designed for researchers, developers and creators. It’s powered by Turing ™ architecture, bringing 130 Tensor TFLOPs of performance, 576 tensor cores, and 24 GB of ultra-fast GDDR6 memory to your PC.\n\n \n \n \n \n\n \n\n \n \n \n \n Add to Cart"
+          }
+        ],
+        "rt_core_count": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX specs",
+            "excerpt": "ides up to 672 GB/s of memory bandwidth for greater throughput and to handle larger datasets. \n \n \n \n NVIDIA Turing GPU \n \n \n TITAN RTX accelerates photorealistic ray-tracing with 72 RT Cores, AI workflows with 576 Tensor Cores, and parallel computing with 4608 NVIDIA CUDA ® cores for developers, researchers, creators, and enthusiasts. \n \n \n VirtualLink ™…"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "regex:FP16",
+            "excerpt": "4X faster than Titan Xp. And RAPIDS trains models up to 3X faster than CPUs. Built with multi-precision Turing Tensor Cores, TITAN RTX delivers breakthrough performance from FP32, FP16, INT8, and INT4, allowing faster training and inferencing of neural networks. Equipped with twice the memory capacity of previous-generation TITAN GPUs and NVIDIA NVLink ™ ,…"
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "regex:INT8",
+            "excerpt": "ter than Titan Xp. And RAPIDS trains models up to 3X faster than CPUs. Built with multi-precision Turing Tensor Cores, TITAN RTX delivers breakthrough performance from FP32, FP16, INT8, and INT4, allowing faster training and inferencing of neural networks. Equipped with twice the memory capacity of previous-generation TITAN GPUs and NVIDIA NVLink ™ , TITAN…"
+          }
+        ],
+        "tensor_datatypes.int4": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "regex:INT4",
+            "excerpt": "itan Xp. And RAPIDS trains models up to 3X faster than CPUs. Built with multi-precision Turing Tensor Cores, TITAN RTX delivers breakthrough performance from FP32, FP16, INT8, and INT4, allowing faster training and inferencing of neural networks. Equipped with twice the memory capacity of previous-generation TITAN GPUs and NVIDIA NVLink ™ , TITAN RTX enable…"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "titan-rtx-page",
+            "title": "NVIDIA TITAN RTX",
+            "url": "https://www.nvidia.com/en-us/deep-learning-ai/products/titan-rtx.html",
+            "locator": "TITAN RTX overview",
+            "excerpt": "NVIDIA ® TITAN RTX ™ is designed for researchers, developers and creators. It’s powered by Turing ™ architecture, bringing 130 Tensor TFLOPs of performance, 576 tensor cores, and 24 GB of ultra-fast GDDR6 memory to your PC.\n\n \n \n \n \n\n \n\n \n \n \n \n Add to Cart"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "tensor_core_generation"
+      ]
+    },
+    {
+      "record_id": "sku-t4",
+      "record_type": "sku",
+      "generation": "Turing",
+      "product_name": "Tesla T4",
+      "architecture_codename": "Turing",
+      "die_family": null,
+      "compute_capability": "7.5",
+      "sm_count": null,
+      "tensor_core_count": 320,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": true,
+        "int4": true
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "Mixed Precision",
+          "dtype": "fp16",
+          "value": 65,
+          "unit": "TFLOPS",
+          "sparsity": null,
+          "source_id": "t4-page"
+        },
+        {
+          "label": "INT8 Precision",
+          "dtype": "int8",
+          "value": 130,
+          "unit": "TOPS",
+          "sparsity": null,
+          "source_id": "t4-page"
+        },
+        {
+          "label": "INT4 Precision",
+          "dtype": "int4",
+          "value": 260,
+          "unit": "TOPS",
+          "sparsity": null,
+          "source_id": "t4-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda/gpus",
+        "https://www.nvidia.com/en-us/data-center/tesla-t4/"
+      ],
+      "field_evidence": {
+        "compute_capability": [
+          {
+            "source_id": "cc-current",
+            "title": "CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda/gpus",
+            "locator": "listing:NVIDIA T4",
+            "excerpt": "NVIDIA A30\n7.5\nNVIDIA T4\nQUADRO RTX 8000"
+          }
+        ],
+        "tensor_core_count": [
+          {
+            "source_id": "t4-page",
+            "title": "NVIDIA T4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+            "locator": "T4 specifications",
+            "excerpt": "NVIDIA T4 Specifications\n\n \n \n \n \n \n \n \n \n \n\n \n \n \n \n\n \n\n \n \n \n \n\n \n\n \n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n\n \n \n \n \n \n \n \n \n Performance\n \n \n \n \n \n \n \n \n Turing Tensor Cores \n 320 \n \n NVIDIA CUDA ® cores \n 2,560 \n \n Single Precision Performance (FP32) \n 8.1 TFLOPS\n \n Mixed Precision (FP16/FP32) \n 65 FP16 TFLOPS\n \n INT8 Precision \n 130 INT8 TOP…"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "t4-page",
+            "title": "NVIDIA T4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+            "locator": "regex:FP16",
+            "excerpt": "T4 introduces the revolutionary Turing Tensor Core technology with multi-precision computing to handle diverse workloads. Powering extraordinary performance from FP32 to FP16 to INT8, as well as INT4 precisions, T4 delivers up to 40X higher performance than CPUs."
+          }
+        ],
+        "tensor_datatypes.int8": [
+          {
+            "source_id": "t4-page",
+            "title": "NVIDIA T4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+            "locator": "regex:INT8",
+            "excerpt": "T4 introduces the revolutionary Turing Tensor Core technology with multi-precision computing to handle diverse workloads. Powering extraordinary performance from FP32 to FP16 to INT8, as well as INT4 precisions, T4 delivers up to 40X higher performance than CPUs."
+          }
+        ],
+        "tensor_datatypes.int4": [
+          {
+            "source_id": "t4-page",
+            "title": "NVIDIA T4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+            "locator": "regex:INT4",
+            "excerpt": "he revolutionary Turing Tensor Core technology with multi-precision computing to handle diverse workloads. Powering extraordinary performance from FP32 to FP16 to INT8, as well as INT4 precisions, T4 delivers up to 40X higher performance than CPUs."
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "t4-page",
+            "title": "NVIDIA T4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+            "locator": "T4 specifications",
+            "excerpt": "Performance\n \n \n \n \n \n \n \n \n Turing Tensor Cores \n 320 \n \n NVIDIA CUDA ® cores \n 2,560 \n \n Single Precision Performance (FP32) \n 8.1 TFLOPS\n \n Mixed Precision (FP16/FP32) \n 65 FP16 TFLOPS\n \n INT8 Precision \n 130 INT8 TOPS\n \n INT4 Precision \n 260 INT4 TOPS\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n Interconnect\n \n \n \n \n \n \n \n \n \n \n Gen3 \n x16 PCIe"
+          },
+          {
+            "source_id": "t4-page",
+            "title": "NVIDIA T4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+            "locator": "T4 specifications",
+            "excerpt": "Turing Tensor Cores \n 320 \n \n NVIDIA CUDA ® cores \n 2,560 \n \n Single Precision Performance (FP32) \n 8.1 TFLOPS\n \n Mixed Precision (FP16/FP32) \n 65 FP16 TFLOPS\n \n INT8 Precision \n 130 INT8 TOPS\n \n INT4 Precision \n 260 INT4 TOPS\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n Interconnect\n \n \n \n \n \n \n \n \n \n \n Gen3 \n x16 PCIe…"
+          },
+          {
+            "source_id": "t4-page",
+            "title": "NVIDIA T4 Tensor Core GPU",
+            "url": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+            "locator": "T4 specifications",
+            "excerpt": "res \n 320 \n \n NVIDIA CUDA ® cores \n 2,560 \n \n Single Precision Performance (FP32) \n 8.1 TFLOPS\n \n Mixed Precision (FP16/FP32) \n 65 FP16 TFLOPS\n \n INT8 Precision \n 130 INT8 TOPS\n \n INT4 Precision \n 260 INT4 TOPS\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n Interconnect\n \n \n \n \n \n \n \n \n \n \n Gen3 \n x16 PCIe\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n Memo…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "die_family",
+        "sm_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation"
+      ]
+    },
+    {
+      "record_id": "arch-volta",
+      "record_type": "architecture",
+      "generation": "Volta",
+      "product_name": "Volta",
+      "architecture_codename": "Volta",
+      "die_family": "GV100",
+      "compute_capability": "7.0",
+      "sm_count": null,
+      "tensor_core_count": 12,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "Deep Learning",
+          "dtype": "fp16",
+          "value": 125,
+          "unit": "TFLOPS",
+          "sparsity": null,
+          "source_id": "v100-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda-legacy-gpus",
+        "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+        "https://www.nvidia.com/en-gb/data-center/tesla-v100/"
+      ],
+      "field_evidence": {
+        "die_family": [
+          {
+            "source_id": "volta-whitepaper",
+            "title": "NVIDIA Tesla V100 GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+            "locator": "GV100 whitepaper heading",
+            "excerpt": "............................................................... 23 \nTesla V100 Board Design ................................................................................... 23 \nGV100 CUDA Hardware and Software Architectural Advances............................... 25 \nIndependent Thread Scheduling ..........................................................…"
+          }
+        ],
+        "compute_capability": [
+          {
+            "source_id": "cc-legacy",
+            "title": "Legacy CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda-legacy-gpus",
+            "locator": "listing:NVIDIA V100",
+            "excerpt": "Jetson Xavier NX\n7.0\nNVIDIA V100\nQuadro GV100"
+          }
+        ],
+        "tensor_core_count": [
+          {
+            "source_id": "volta-whitepaper",
+            "title": "NVIDIA Tesla V100 GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+            "locator": "Volta whitepaper Tensor Core count",
+            "excerpt": "ency ............................................................... 11 \nVolta Streaming Multiprocessor ........................................................................... 12 \nTensor Cores .............................................................................................. 14 \nEnhanced L1 Data Cache and Shared Memory ......................…"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "volta-whitepaper",
+            "title": "NVIDIA Tesla V100 GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+            "locator": "regex:FP16 multiply results",
+            "excerpt": "d D may be FP16 or FP32 matrices (see Figure 8). \n \n \nFigure 8. Tensor Core 4x4 Matrix Multiply and Accumulate \nTensor Cores operate on FP16 input data with FP32 accumulation. The FP16 multiply results in a \nfull precision product that is then accumulated using FP32 addition with the other intermediate \nproducts for a 4x4x4 matrix multiply (see Figure 9). I…"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "v100-page",
+            "title": "NVIDIA Tesla V100",
+            "url": "https://www.nvidia.com/en-gb/data-center/tesla-v100/",
+            "locator": "Tesla V100 specs",
+            "excerpt": "Tesla V100S for PCIe\n \n \n \n \n \n \n \n \n \n \n \n \n PERFORMANCE\n with NVIDIA GPU Boost ™ \n \n \n \n \n \n \n \n \n Double-Precision \n 7.8 teraFLOPS\n \n Single-Precision \n 15.7 teraFLOPS\n \n Deep Learning \n 125 teraFLOPS\n \n \n \n \n \n \n \n \n \n \n Double-Precision \n 7 teraFLOPS\n \n Single-Precision \n 14 teraFLOPS\n \n Deep Learning \n 112 teraFLOPS\n \n \n \n \n \n \n \n \n \n \n Double-Precisi…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [
+        "Architecture summary is anchored to the flagship GV100/V100 whitepaper."
+      ],
+      "missing_fields": [
+        "sm_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation"
+      ]
+    },
+    {
+      "record_id": "sku-v100",
+      "record_type": "sku",
+      "generation": "Volta",
+      "product_name": "Tesla V100",
+      "architecture_codename": "Volta",
+      "die_family": "GV100",
+      "compute_capability": "7.0",
+      "sm_count": null,
+      "tensor_core_count": null,
+      "rt_core_count": null,
+      "gpc_count": null,
+      "tpc_count": null,
+      "sm_per_tpc": null,
+      "tpc_per_gpc": null,
+      "enabled_units_summary": null,
+      "tensor_core_generation": null,
+      "tensor_datatypes": {
+        "tf32": null,
+        "fp16": true,
+        "bf16": null,
+        "fp8": null,
+        "fp4": null,
+        "int8": null,
+        "int4": null
+      },
+      "official_tensor_throughput": [
+        {
+          "label": "Deep Learning",
+          "dtype": "fp16",
+          "value": 125,
+          "unit": "TFLOPS",
+          "sparsity": null,
+          "source_id": "v100-page"
+        }
+      ],
+      "source_urls": [
+        "https://developer.nvidia.com/cuda-legacy-gpus",
+        "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+        "https://www.nvidia.com/en-gb/data-center/tesla-v100/"
+      ],
+      "field_evidence": {
+        "die_family": [
+          {
+            "source_id": "volta-whitepaper",
+            "title": "NVIDIA Tesla V100 GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+            "locator": "regex:GV100",
+            "excerpt": "................................................................... 6 \nGPU-Accelerated Deep Learning ........................................................................... 7 \nGV100 GPU Hardware Architecture In-Depth ....................................................... 8 \nExtreme Performance and High Efficiency .......................................…"
+          }
+        ],
+        "compute_capability": [
+          {
+            "source_id": "cc-legacy",
+            "title": "Legacy CUDA GPU Compute Capability",
+            "url": "https://developer.nvidia.com/cuda-legacy-gpus",
+            "locator": "listing:NVIDIA V100",
+            "excerpt": "Jetson Xavier NX\n7.0\nNVIDIA V100\nQuadro GV100"
+          }
+        ],
+        "tensor_datatypes.fp16": [
+          {
+            "source_id": "volta-whitepaper",
+            "title": "NVIDIA Tesla V100 GPU Architecture Whitepaper",
+            "url": "https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf",
+            "locator": "regex:FP16",
+            "excerpt": "(SM) ..................................... 13 \nFigure 6. cuBLAS Single Precision (FP32) .................................................... 14 \nFigure 7. cuBLAS Mixed Precision (FP16 Input, FP32 Compute) .......................... 15 \nFigure 8. Tensor Core 4x4 Matrix Multiply and Accumulate ............................... 15 \nFigure 9. Mixed Precision Mult…"
+          }
+        ],
+        "official_tensor_throughput": [
+          {
+            "source_id": "v100-page",
+            "title": "NVIDIA Tesla V100",
+            "url": "https://www.nvidia.com/en-gb/data-center/tesla-v100/",
+            "locator": "Tesla V100 specifications",
+            "excerpt": "Tesla V100S for PCIe\n \n \n \n \n \n \n \n \n \n \n \n \n PERFORMANCE\n with NVIDIA GPU Boost ™ \n \n \n \n \n \n \n \n \n Double-Precision \n 7.8 teraFLOPS\n \n Single-Precision \n 15.7 teraFLOPS\n \n Deep Learning \n 125 teraFLOPS\n \n \n \n \n \n \n \n \n \n \n Double-Precision \n 7 teraFLOPS\n \n Single-Precision \n 14 teraFLOPS\n \n Deep Learning \n 112 teraFLOPS\n \n \n \n \n \n \n \n \n \n \n Double-Precisi…"
+          }
+        ]
+      },
+      "supplemental_sources": [],
+      "notes": [],
+      "missing_fields": [
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation"
+      ]
+    }
+  ]
+}

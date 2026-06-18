@@ -6,6 +6,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { useMemo, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import type { LlmBenchmarkEntry, LlmInferenceData } from "../types/llmInference";
 import { formatTps, toTitleCase } from "../utils/format";
@@ -17,9 +18,11 @@ interface LlmInferencePageProps {
 }
 
 export default function LlmInferencePage({ data }: LlmInferencePageProps) {
-  const entries = [...data.benchmarks].sort(
-    (a, b) => (b.tgTps ?? -Infinity) - (a.tgTps ?? -Infinity),
-  );
+  const [selectedCase, setSelectedCase] = useState("all");
+  const caseOptions = useMemo(() => buildCaseOptions(data.benchmarks), [data.benchmarks]);
+  const entries = [...data.benchmarks]
+    .filter((entry) => selectedCase === "all" || entry.caseName === selectedCase)
+    .sort((a, b) => (b.tgTps ?? -Infinity) - (a.tgTps ?? -Infinity));
   const successfulEntries = entries.filter((entry) => entry.status !== "failed");
   const topTg = entries
     .map((entry) => entry.tgTps)
@@ -52,6 +55,12 @@ export default function LlmInferencePage({ data }: LlmInferencePageProps) {
         </section>
       )}
 
+      <CaseSelector
+        cases={caseOptions}
+        selectedCase={selectedCase}
+        onSelect={setSelectedCase}
+      />
+
       <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Visible Entries" value={entries.length.toLocaleString()} />
         <MetricCard label="Successful" value={successfulEntries.length.toLocaleString()} />
@@ -62,6 +71,94 @@ export default function LlmInferencePage({ data }: LlmInferencePageProps) {
       <LlmThroughputChart entries={successfulEntries} />
       <LlmResultTable entries={entries} />
     </div>
+  );
+}
+
+function buildCaseOptions(entries: LlmBenchmarkEntry[]) {
+  const seen = new Set<string>();
+  return entries
+    .filter((entry) => {
+      if (seen.has(entry.caseName)) return false;
+      seen.add(entry.caseName);
+      return true;
+    })
+    .sort((a, b) => a.promptTokens - b.promptTokens || a.generationTokens - b.generationTokens)
+    .map((entry) => ({
+      name: entry.caseName,
+      promptTokens: entry.promptTokens,
+      generationTokens: entry.generationTokens,
+      count: entries.filter((candidate) => candidate.caseName === entry.caseName).length,
+    }));
+}
+
+function CaseSelector({
+  cases,
+  selectedCase,
+  onSelect,
+}: {
+  cases: Array<{ name: string; promptTokens: number; generationTokens: number; count: number }>;
+  selectedCase: string;
+  onSelect: (caseName: string) => void;
+}) {
+  const totalCount = cases.reduce((sum, item) => sum + item.count, 0);
+
+  return (
+    <section className="grid gap-3 rounded-2xl border border-[var(--color-line)] bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="m-0 font-[var(--font-display)] text-lg">Cases</h2>
+        <p className="m-0 font-[var(--font-mono)] text-sm tabular-nums text-[var(--color-muted)]">
+          {totalCount.toLocaleString()} entries
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <CaseButton
+          active={selectedCase === "all"}
+          title="All Cases"
+          subtitle={`${totalCount.toLocaleString()} entries`}
+          onClick={() => onSelect("all")}
+        />
+        {cases.map((item) => (
+          <CaseButton
+            key={item.name}
+            active={selectedCase === item.name}
+            title={item.name}
+            subtitle={`${item.promptTokens.toLocaleString()}p / ${item.generationTokens.toLocaleString()}g · ${item.count.toLocaleString()}`}
+            onClick={() => onSelect(item.name)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CaseButton({
+  active,
+  title,
+  subtitle,
+  onClick,
+}: {
+  active: boolean;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`max-w-full cursor-pointer rounded-full border px-4 py-2 text-left transition-colors ${
+        active
+          ? "border-[var(--color-brand)] bg-[var(--color-brand)] text-[#ebfffd]"
+          : "border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)] hover:border-blue-200 hover:bg-blue-50"
+      }`}
+    >
+      <span className="block max-w-[18rem] truncate font-[var(--font-mono)] text-xs font-semibold">
+        {title}
+      </span>
+      <span className={`block text-xs ${active ? "text-[#dffdfa]" : "text-[var(--color-muted)]"}`}>
+        {subtitle}
+      </span>
+    </button>
   );
 }
 

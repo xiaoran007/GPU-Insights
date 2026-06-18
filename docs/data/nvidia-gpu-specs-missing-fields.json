@@ -1,0 +1,485 @@
+{
+  "generatedAt": "2026-04-17T03:09:15+00:00",
+  "records": [
+    {
+      "recordId": "arch-ada",
+      "recordType": "architecture",
+      "generation": "Ada",
+      "productName": "Ada",
+      "missingFields": [
+        "die_family",
+        "tensor_core_count",
+        "tpc_count",
+        "enabled_units_summary",
+        "tensor_datatypes.fp4"
+      ]
+    },
+    {
+      "recordId": "sku-rtx-4090",
+      "recordType": "sku",
+      "generation": "Ada",
+      "productName": "GeForce RTX 4090",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "tensor_datatypes",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-l4",
+      "recordType": "sku",
+      "generation": "Ada",
+      "productName": "L4",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-l40s",
+      "recordType": "sku",
+      "generation": "Ada",
+      "productName": "L40S",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput",
+        "tensor_datatypes.fp4"
+      ]
+    },
+    {
+      "recordId": "sku-rtx-6000-ada",
+      "recordType": "sku",
+      "generation": "Ada",
+      "productName": "RTX 6000 Ada",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "arch-ampere",
+      "recordType": "architecture",
+      "generation": "Ampere",
+      "productName": "Ampere",
+      "missingFields": [
+        "rt_core_count",
+        "tpc_count",
+        "enabled_units_summary",
+        "official_tensor_throughput",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-a100",
+      "recordType": "sku",
+      "generation": "Ampere",
+      "productName": "A100",
+      "missingFields": [
+        "rt_core_count",
+        "tpc_count",
+        "tpc_per_gpc",
+        "official_tensor_throughput",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-a40",
+      "recordType": "sku",
+      "generation": "Ampere",
+      "productName": "A40",
+      "missingFields": [
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "official_tensor_throughput",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-rtx-3090",
+      "recordType": "sku",
+      "generation": "Ampere",
+      "productName": "GeForce RTX 3090",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-rtx-a6000",
+      "recordType": "sku",
+      "generation": "Ampere",
+      "productName": "RTX A6000",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "arch-blackwell",
+      "recordType": "architecture",
+      "generation": "Blackwell",
+      "productName": "Blackwell",
+      "missingFields": [
+        "die_family",
+        "compute_capability",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "official_tensor_throughput",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-b200",
+      "recordType": "sku",
+      "generation": "Blackwell",
+      "productName": "B200",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "official_tensor_throughput",
+        "tensor_datatypes",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-rtx-5090",
+      "recordType": "sku",
+      "generation": "Blackwell",
+      "productName": "GeForce RTX 5090",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-rtx-pro-6000-blackwell",
+      "recordType": "sku",
+      "generation": "Blackwell",
+      "productName": "RTX PRO 6000 Blackwell Workstation Edition",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.fp16",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "arch-hopper",
+      "recordType": "architecture",
+      "generation": "Hopper",
+      "productName": "Hopper",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-h100",
+      "recordType": "sku",
+      "generation": "Hopper",
+      "productName": "H100",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-h200",
+      "recordType": "sku",
+      "generation": "Hopper",
+      "productName": "H200",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "official_tensor_throughput",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "arch-turing",
+      "recordType": "architecture",
+      "generation": "Turing",
+      "productName": "Turing",
+      "missingFields": [
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4"
+      ]
+    },
+    {
+      "recordId": "sku-quadro-rtx-6000",
+      "recordType": "sku",
+      "generation": "Turing",
+      "productName": "Quadro RTX 6000",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "official_tensor_throughput",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-titan-rtx",
+      "recordType": "sku",
+      "generation": "Turing",
+      "productName": "TITAN RTX",
+      "missingFields": [
+        "die_family",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "tensor_core_generation",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4"
+      ]
+    },
+    {
+      "recordId": "sku-t4",
+      "recordType": "sku",
+      "generation": "Turing",
+      "productName": "Tesla T4",
+      "missingFields": [
+        "die_family",
+        "sm_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4"
+      ]
+    },
+    {
+      "recordId": "arch-volta",
+      "recordType": "architecture",
+      "generation": "Volta",
+      "productName": "Volta",
+      "missingFields": [
+        "sm_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    },
+    {
+      "recordId": "sku-v100",
+      "recordType": "sku",
+      "generation": "Volta",
+      "productName": "Tesla V100",
+      "missingFields": [
+        "sm_count",
+        "tensor_core_count",
+        "rt_core_count",
+        "gpc_count",
+        "tpc_count",
+        "sm_per_tpc",
+        "tpc_per_gpc",
+        "enabled_units_summary",
+        "tensor_core_generation",
+        "tensor_datatypes.tf32",
+        "tensor_datatypes.bf16",
+        "tensor_datatypes.fp8",
+        "tensor_datatypes.fp4",
+        "tensor_datatypes.int8",
+        "tensor_datatypes.int4"
+      ]
+    }
+  ]
+}
