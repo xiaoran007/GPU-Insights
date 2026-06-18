@@ -51,6 +51,68 @@ GPU-Insights does not install or configure llama.cpp, CUDA, ROCm, Vulkan, or
 SYCL. Build/install llama.cpp for your platform first, then make sure
 `llama-bench` is on `PATH`, or pass its path with `--llama-bench`.
 
+### Prepare llama.cpp
+
+GPU-Insights calls the `llama-bench` binary produced by llama.cpp. Follow the
+upstream llama.cpp build guide for your platform:
+
+- Official build guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md>
+- Intel GPU / SYCL guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/backend/SYCL.md>
+
+General source checkout:
+
+```shell
+git clone https://github.com/ggml-org/llama.cpp
+cd llama.cpp
+```
+
+Common local builds:
+
+```shell
+# CPU-only sanity build
+cmake -B build
+cmake --build build --config Release -j
+
+# NVIDIA CUDA
+cmake -B build -DGGML_CUDA=ON
+cmake --build build --config Release -j
+
+# AMD ROCm / HIP on Linux
+HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
+  cmake -S . -B build -DGGML_HIP=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release -j
+
+# Vulkan, useful for cross-vendor Windows/Linux setups
+cmake -B build -DGGML_VULKAN=1
+cmake --build build --config Release -j
+```
+
+On Windows, use a Visual Studio 2022 Developer Command Prompt or the toolchain
+prompt required by the selected GPU backend, then run the same CMake build shape
+with the relevant `GGML_*` backend flag. On macOS, Metal is enabled by default
+in llama.cpp, so the regular CMake build is the expected local GPU build.
+
+For Intel GPU, llama.cpp recommends the SYCL backend with Intel oneAPI. After
+installing Intel GPU drivers and oneAPI, source the oneAPI environment and
+build with SYCL:
+
+```shell
+source /opt/intel/oneapi/setvars.sh
+cmake -B build -DGGML_SYCL=ON -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DGGML_SYCL_F16=ON
+cmake --build build --config Release -j
+```
+
+After building, either add `llama.cpp/build/bin` to `PATH` or pass the binary
+explicitly:
+
+```shell
+python3 -m llm_bench.cli --llama-bench /path/to/llama.cpp/build/bin/llama-bench
+```
+
+Keep GPU memory behavior strict for benchmark submissions. Do not enable CUDA
+unified-memory/system-RAM fallback for submitted full-GPU results; if a case
+does not fit in VRAM, let it fail and import the failed case status.
+
 ### Fixed model and cases
 
 The default contract lives in `llm_bench/configs/default.json`.
