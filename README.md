@@ -10,6 +10,7 @@ Multi-model GPU/NPU training performance benchmark suite. Measures compute throu
 - **DDP Multi-GPU** — Distributed data-parallel training via `torchrun`
 - **Auto Batch Size** — Calibration-table-based automatic batch size selection (NVML)
 - **Unified Scoring** — Throughput-based scoring system consistent across all models
+- **LLM Inference Track** — Standalone full-GPU llama.cpp benchmark for coding-agent workloads
 
 ## Quick Start
 
@@ -37,6 +38,91 @@ Legacy expert entrypoints remain available:
 python main.py -mt resnet50 -s 512 -e 2 -dt FP32
 torchrun --nproc_per_node=2 main_ddp.py -mt resnet50 -s 512 -e 2 -abs -dt FP16
 python main_tpu.py -mt resnet50 -s 512 -e 2 -dt BF16
+```
+
+## LLM Inference Benchmark
+
+The LLM inference track is separate from the training benchmark path. It uses
+`llama-bench` from an external llama.cpp installation and records prompt
+processing (PP) plus token generation (TG) throughput for coding-agent-shaped
+cases.
+
+GPU-Insights does not install or configure llama.cpp, CUDA, ROCm, Vulkan, or
+SYCL. Build/install llama.cpp for your platform first, then make sure
+`llama-bench` is on `PATH`, or pass its path with `--llama-bench`.
+
+### Fixed model and cases
+
+The default contract lives in `llm_bench/configs/default.json`.
+
+Model:
+
+- Repo: `unsloth/Qwen3.6-27B-GGUF`
+- Revision: `82d411acf4a06cfb8d9b073a5211bf410bfc29bf`
+- File: `Qwen3.6-27B-Q4_K_M.gguf`
+- Default local path: `models/llm/Qwen3.6-27B-Q4_K_M.gguf`
+
+Cases:
+
+| Case | Prompt Tokens | Generation Tokens | Purpose |
+|------|--------------:|------------------:|---------|
+| `agent_step_small` | 2,048 | 128 | Short tool result or agent loop step |
+| `single_file_edit` | 8,192 | 512 | One file plus focused context |
+| `multi_file_patch` | 16,384 | 1,024 | Multi-file edit with longer patch output |
+| `repo_context_plan` | 32,768 | 512 | Large repo context with concise planning |
+| `long_context_debug` | 65,536 | 1,024 | Long logs/diffs/context with substantial response |
+
+Results are full-GPU only: the default config uses `nGpuLayers: -1` and does
+not fall back to partial CPU offload. If a GPU cannot fit a case, that case is
+recorded as `status: failed` with the error text.
+
+### Download the fixed GGUF
+
+```shell
+# Preview the exact Hugging Face URL and output path
+python3 scripts/download-llm-model.py --dry-run
+
+# Download to models/llm/Qwen3.6-27B-Q4_K_M.gguf
+python3 scripts/download-llm-model.py
+```
+
+The downloader is only a model-file helper. It does not install llama.cpp or
+configure GPU runtime libraries.
+
+### Run the LLM benchmark
+
+```shell
+# Run all configured coding-agent cases
+python3 -m llm_bench.cli
+
+# Use a specific llama-bench binary
+python3 -m llm_bench.cli --llama-bench /path/to/llama-bench
+
+# Run one case
+python3 -m llm_bench.cli --case repo_context_plan
+
+# List configured cases
+python3 -m llm_bench.cli --list-cases
+```
+
+At the end of a real run, the launcher prints:
+
+```text
+LLM_RESULT_PAYLOAD_B64=<base64-json>
+```
+
+Import it into the dashboard data:
+
+```shell
+python3 scripts/manage-data.py import-llm-payload 'LLM_RESULT_PAYLOAD_B64=...'
+```
+
+For development without running llama.cpp:
+
+```shell
+python3 -m llm_bench.cli \
+  --mock-result-file llm_bench/mock/llama-bench-qwen3_6_27b-q4.json \
+  --pretty
 ```
 
 ## Models
@@ -218,6 +304,9 @@ python3 scripts/manage-data.py import-payload 'RESULT_PAYLOAD_B64=...'
 # Decode a payload for inspection
 python3 scripts/manage-data.py decode-payload 'RESULT_PAYLOAD_B64=...' --pretty
 
+# Import an LLM inference payload
+python3 scripts/manage-data.py import-llm-payload 'LLM_RESULT_PAYLOAD_B64=...'
+
 # Validate benchmark data
 python3 scripts/manage-data.py validate
 
@@ -254,8 +343,10 @@ python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value h
 ├── calibrate_memory.py  # NVML memory calibration tool
 ├── scripts/
 │   ├── probe_benchmark_env.py  # Host/device metadata probe used by main_auto.py payload export
+│   ├── download-llm-model.py   # Fixed Qwen3.6-27B Q4_K_M GGUF downloader
 │   └── manage-data.py          # Benchmark data management
 ├── Makefile             # Smart launcher and developer convenience targets
+├── llm_bench/           # Standalone llama.cpp LLM inference benchmark adapter
 ├── benchmark/
 │   ├── Bench.py         # Orchestrator
 │   ├── cli.py           # Unified CLI parsing
