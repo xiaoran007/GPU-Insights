@@ -21,7 +21,7 @@
     "filename": "Qwen3.6-27B-Q4_K_M.gguf",
     "localPath": "models/llm/Qwen3.6-27B-Q4_K_M.gguf",
     "sourceUrl": "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/blob/82d411acf4a06cfb8d9b073a5211bf410bfc29bf/Qwen3.6-27B-Q4_K_M.gguf",
-    "expectedBytes": 16071772384,
+    "expectedBytes": 16817244384,
     "parameters": "27B",
     "contextLength": 262144
   },
