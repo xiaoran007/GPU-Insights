@@ -54,12 +54,16 @@ class LlamaCppRuntime:
         if config.threads is not None:
             command.extend(["-t", str(config.threads)])
 
-        completed = subprocess.run(
-            command,
-            check=True,
-            text=True,
-            capture_output=True,
-        )
+        try:
+            completed = subprocess.run(
+                command,
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            message = (exc.stderr or exc.stdout or str(exc)).strip()
+            raise RuntimeError(message) from exc
         payload = json.loads(completed.stdout)
         if not isinstance(payload, list):
             raise ValueError("llama-bench JSON output must be an array.")
@@ -71,6 +75,10 @@ class LlamaCppRuntime:
         anchor = pp_row or tg_row or {}
 
         return RuntimeResult(
+            caseName=config.case_name,
+            caseDescription=config.case_description,
+            status="ok",
+            error="",
             model=config.model,
             baseModel=config.base_model,
             artifact=config.artifact,

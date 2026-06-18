@@ -6,6 +6,8 @@ from typing import Any, Dict, Protocol
 
 @dataclass(frozen=True)
 class RuntimeConfig:
+    case_name: str
+    case_description: str
     model: str
     model_path: str
     base_model: str
@@ -21,6 +23,10 @@ class RuntimeConfig:
 
 @dataclass(frozen=True)
 class RuntimeResult:
+    caseName: str
+    caseDescription: str
+    status: str
+    error: str
     model: str
     baseModel: str
     artifact: str
@@ -50,4 +56,3 @@ class RuntimeAdapter(Protocol):
 
     def run(self, config: RuntimeConfig) -> RuntimeResult:
         ...
-

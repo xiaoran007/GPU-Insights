@@ -20,13 +20,13 @@ export default function LlmInferencePage({ data }: LlmInferencePageProps) {
   const entries = [...data.benchmarks].sort(
     (a, b) => (b.tgTps ?? -Infinity) - (a.tgTps ?? -Infinity),
   );
+  const successfulEntries = entries.filter((entry) => entry.status !== "failed");
   const topTg = entries
     .map((entry) => entry.tgTps)
     .filter((value): value is number => typeof value === "number");
   const topPp = entries
     .map((entry) => entry.ppTps)
     .filter((value): value is number => typeof value === "number");
-  const vendors = new Set(entries.map((entry) => entry.vendor));
   const model = Object.values(data.models)[0];
 
   return (
@@ -54,12 +54,12 @@ export default function LlmInferencePage({ data }: LlmInferencePageProps) {
 
       <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Visible Entries" value={entries.length.toLocaleString()} />
+        <MetricCard label="Successful" value={successfulEntries.length.toLocaleString()} />
         <MetricCard label="Top TG tok/s" value={topTg.length ? formatTps(Math.max(...topTg)) : "N/A"} />
         <MetricCard label="Top PP tok/s" value={topPp.length ? formatTps(Math.max(...topPp)) : "N/A"} />
-        <MetricCard label="Vendors" value={vendors.size.toLocaleString()} />
       </div>
 
-      <LlmThroughputChart entries={entries} />
+      <LlmThroughputChart entries={successfulEntries} />
       <LlmResultTable entries={entries} />
     </div>
   );
@@ -154,6 +154,8 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
             <tr>
               {[
                 "Device",
+                "Case",
+                "Status",
                 "Runtime",
                 "Backend",
                 "Platform",
@@ -176,12 +178,27 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
           </thead>
           <tbody>
             {entries.map((entry, index) => (
-              <tr key={`${entry.device}-${entry.runtime}-${index}`} className="hover:bg-[#f7fbff]">
+              <tr key={`${entry.device}-${entry.caseName}-${entry.runtime}-${index}`} className="hover:bg-[#f7fbff]">
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
                   <div className="font-semibold">{entry.device}</div>
                   <small className="text-[var(--color-muted)]">
                     {toTitleCase(entry.vendor)} · {entry.memory || "N/A"}
                   </small>
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
+                  <div className="font-[var(--font-mono)] text-xs">{entry.caseName}</div>
+                  <small className="text-[var(--color-muted)]">{entry.promptTokens.toLocaleString()}p / {entry.generationTokens.toLocaleString()}g</small>
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
+                  <span
+                    className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${
+                      entry.status === "failed"
+                        ? "bg-red-50 text-red-700"
+                        : "bg-[var(--color-brand-soft)] text-[var(--color-brand-strong)]"
+                    }`}
+                  >
+                    {entry.status.toUpperCase()}
+                  </span>
                 </td>
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
                   <div>{entry.runtime}</div>
@@ -209,7 +226,7 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
                   {entry.batchSize.toLocaleString()}
                 </td>
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 italic text-[var(--color-muted)]">
-                  {entry.note || "N/A"}
+                  {entry.status === "failed" ? entry.error || "Failed" : entry.note || "N/A"}
                 </td>
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
                   {entry.date || "N/A"}

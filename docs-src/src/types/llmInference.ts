@@ -10,6 +10,10 @@ export interface LlmModelInfo {
 
 export interface LlmBenchmarkEntry {
   model: string;
+  caseName: string;
+  caseDescription: string;
+  status: "ok" | "failed";
+  error: string;
   baseModel: string;
   artifact: string;
   runtime: string;

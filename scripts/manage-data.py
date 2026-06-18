@@ -370,6 +370,7 @@ def build_entry_key(entry: dict) -> tuple:
 
 def build_llm_identity_key(entry: dict) -> tuple:
     return (
+        entry["caseName"],
         entry["model"],
         entry["runtime"],
         entry["accelerationBackend"],
@@ -389,6 +390,9 @@ def build_llm_identity_key(entry: dict) -> tuple:
 def build_llm_entry_key(entry: dict) -> tuple:
     return (
         *build_llm_identity_key(entry),
+        entry["caseDescription"],
+        entry["status"],
+        entry["error"],
         entry["runtimeVersion"],
         entry["ppTps"],
         entry["ppStddev"],
@@ -449,6 +453,10 @@ def validate_llm_entry(entry: dict) -> list[str]:
     errors = []
     required_fields = [
         "model",
+        "caseName",
+        "caseDescription",
+        "status",
+        "error",
         "baseModel",
         "artifact",
         "runtime",
@@ -488,6 +496,9 @@ def validate_llm_entry(entry: dict) -> list[str]:
         if field in entry and entry[field] is not None and not isinstance(entry[field], (int, float)):
             errors.append(f"{field} must be a number or null")
 
+    if "status" in entry and entry["status"] not in {"ok", "failed"}:
+        errors.append("status must be 'ok' or 'failed'")
+
     if "vendor" in entry and entry["vendor"] not in VALID_VENDORS:
         errors.append(f"Invalid vendor '{entry['vendor']}'. Must be one of: {', '.join(sorted(VALID_VENDORS))}")
 
@@ -513,6 +524,10 @@ def validate_llm_entry(entry: dict) -> list[str]:
 def normalize_llm_payload_entry(payload_entry: dict, payload_host: dict) -> dict:
     return {
         "model": payload_entry.get("model", ""),
+        "caseName": payload_entry.get("caseName", ""),
+        "caseDescription": payload_entry.get("caseDescription", ""),
+        "status": payload_entry.get("status", "ok"),
+        "error": payload_entry.get("error", ""),
         "baseModel": payload_entry.get("baseModel", ""),
         "artifact": payload_entry.get("artifact", ""),
         "runtime": payload_entry.get("runtime", ""),
