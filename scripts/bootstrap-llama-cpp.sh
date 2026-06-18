@@ -13,10 +13,10 @@ jobs="${GPU_INSIGHTS_LLAMA_CPP_JOBS:-}"
 usage() {
   cat <<'USAGE'
 Usage:
-  bash scripts/bootstrap-llama-cpp.sh --ref <tag-or-commit> [--backend <backend>]
+  bash scripts/bootstrap-llama-cpp.sh [--backend <backend>] [--ref <git-ref>]
 
 Options:
-  --ref <git-ref>       llama.cpp tag, branch, or commit to check out.
+  --ref <git-ref>       llama.cpp tag, branch, or commit to check out. Defaults to origin/HEAD.
   --backend <backend>   One of: cpu, cuda, hip, vulkan, sycl, metal.
   --dir <path>          llama.cpp checkout directory.
   --build-dir <path>    CMake build directory.
@@ -81,23 +81,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-prompt_ref() {
-  if [[ -n "${llama_ref}" ]]; then
-    return
-  fi
-
-  if [[ ! -t 0 ]]; then
-    echo "Missing llama.cpp git ref. Pass --ref <tag-or-commit> or set GPU_INSIGHTS_LLAMA_CPP_REF."
-    exit 1
-  fi
-
-  read -r -p "llama.cpp git ref to checkout (tag/commit/branch): " llama_ref
-  if [[ -z "${llama_ref}" ]]; then
-    echo "A llama.cpp git ref is required for reproducible benchmark builds."
-    exit 1
-  fi
-}
 
 prompt_backend() {
   if [[ -n "${backend}" ]]; then
@@ -250,6 +233,7 @@ prepare_checkout() {
 
   echo "Fetching llama.cpp tags and refs..."
   git -C "${src_dir}" fetch --tags origin
+  git -C "${src_dir}" remote set-head origin -a >/dev/null 2>&1 || true
 
   echo "Checking out llama.cpp ref:"
   echo "  ${llama_ref}"
@@ -330,7 +314,9 @@ print_result() {
   echo "Inspect the CMake output above or search the build directory manually."
 }
 
-prompt_ref
+if [[ -z "${llama_ref}" ]]; then
+  llama_ref="origin/HEAD"
+fi
 prompt_backend
 normalize_backend
 

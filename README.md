@@ -59,17 +59,22 @@ upstream llama.cpp build guide for your platform:
 - Official build guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md>
 - Intel GPU / SYCL guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/backend/SYCL.md>
 
-GPU-Insights provides a helper that clones llama.cpp, checks out an explicit
-git ref, asks which backend to build, and builds only `llama-bench`. It does
-not install GPU drivers, CUDA, ROCm, Vulkan SDK, oneAPI, compilers, or CMake;
-missing build commands are reported before cloning/building.
+GPU-Insights provides a helper that clones llama.cpp, checks out upstream
+`origin/HEAD` by default, asks which backend to build, and builds only
+`llama-bench`. Pass `--ref <git-ref>` only when you want to pin a specific
+llama.cpp commit, branch, or tag. The helper does not install GPU drivers,
+CUDA, ROCm, Vulkan SDK, oneAPI, compilers, or CMake; missing build commands are
+reported before cloning/building.
 
 ```shell
 # Interactive backend selection
-bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-tag-or-commit>
+bash scripts/bootstrap-llama-cpp.sh
 
 # Non-interactive CUDA example
-bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-tag-or-commit> --backend cuda --jobs 16
+bash scripts/bootstrap-llama-cpp.sh --backend cuda --jobs 16
+
+# Optional pinned-ref build
+bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-commit> --backend cuda --jobs 16
 ```
 
 By default the helper uses `third_party/llama.cpp`, which is ignored by git.
