@@ -59,6 +59,23 @@ upstream llama.cpp build guide for your platform:
 - Official build guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md>
 - Intel GPU / SYCL guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/backend/SYCL.md>
 
+GPU-Insights provides a helper that clones llama.cpp, checks out an explicit
+git ref, asks which backend to build, and builds only `llama-bench`. It does
+not install GPU drivers, CUDA, ROCm, Vulkan SDK, oneAPI, compilers, or CMake;
+missing build commands are reported before cloning/building.
+
+```shell
+# Interactive backend selection
+bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-tag-or-commit>
+
+# Non-interactive CUDA example
+bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-tag-or-commit> --backend cuda --jobs 16
+```
+
+By default the helper uses `third_party/llama.cpp`, which is ignored by git.
+Override paths with `--dir`, `--build-dir`, or the corresponding
+`GPU_INSIGHTS_LLAMA_CPP_*` environment variables printed by `--help`.
+
 General source checkout:
 
 ```shell
