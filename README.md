@@ -114,7 +114,7 @@ LLM_RESULT_PAYLOAD_B64=<base64-json>
 Import it into the dashboard data:
 
 ```shell
-python3 scripts/manage-data.py import-llm-payload 'LLM_RESULT_PAYLOAD_B64=...'
+python3 scripts/manage-data.py l 'LLM_RESULT_PAYLOAD_B64=...'
 ```
 
 For development without running llama.cpp:
@@ -305,7 +305,7 @@ python3 scripts/manage-data.py import-payload 'RESULT_PAYLOAD_B64=...'
 python3 scripts/manage-data.py decode-payload 'RESULT_PAYLOAD_B64=...' --pretty
 
 # Import an LLM inference payload
-python3 scripts/manage-data.py import-llm-payload 'LLM_RESULT_PAYLOAD_B64=...'
+python3 scripts/manage-data.py l 'LLM_RESULT_PAYLOAD_B64=...'
 
 # Validate benchmark data
 python3 scripts/manage-data.py validate

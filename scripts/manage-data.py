@@ -812,6 +812,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     llm_import_parser = subparsers.add_parser(
         "import-llm-payload",
+        aliases=["l"],
         help="Import an LLM_RESULT_PAYLOAD_B64 payload emitted by llm_bench.cli",
     )
     llm_import_parser.add_argument("payload", nargs="?", help="Raw Base64 payload or full LLM_RESULT_PAYLOAD_B64=... line")
@@ -862,7 +863,7 @@ def main() -> int:
         return 0 if add_benchmark(args) else 1
     if args.command in {"import-payload", "i"}:
         return 0 if import_payload(args) else 1
-    if args.command == "import-llm-payload":
+    if args.command in {"import-llm-payload", "l"}:
         return 0 if import_llm_payload(args) else 1
     if args.command == "decode-payload":
         return 0 if decode_payload_command(args) else 1
