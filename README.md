@@ -173,6 +173,9 @@ recorded as `status: failed` with the error text.
 # Oscar cluster: link models/llm to persistent storage before downloading
 bash scripts/bootstrap-llm-oscar.sh
 
+# AutoDL: link models/llm to persistent storage before downloading
+bash scripts/bootstrap-llm-autodl.sh
+
 # Preview the exact Hugging Face URL and output path
 python3 scripts/download-llm-model.py --dry-run
 
@@ -187,6 +190,10 @@ On Oscar, `scripts/bootstrap-llm-oscar.sh` links the repo-local `models/llm`
 path to `/users/tfang11/tfang/llm` so the GGUF survives compute-node teardown
 and does not need to be downloaded again. Override the target with
 `GPU_INSIGHTS_OSCAR_LLM_DIR=/path/to/llm` if needed.
+
+On AutoDL, `scripts/bootstrap-llm-autodl.sh` links `models/llm` to
+`/root/autodl-fs/llm`. Override the target with
+`GPU_INSIGHTS_AUTODL_LLM_DIR=/path/to/llm` if needed.
 
 ### Run the LLM benchmark
 
@@ -443,6 +450,7 @@ python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value h
 ├── scripts/
 │   ├── probe_benchmark_env.py  # Host/device metadata probe used by main_auto.py payload export
 │   ├── bootstrap-llm-oscar.sh  # Link models/llm to Oscar persistent storage
+│   ├── bootstrap-llm-autodl.sh # Link models/llm to AutoDL persistent storage
 │   ├── download-llm-model.py   # Fixed Qwen3.6-27B Q4_K_M GGUF downloader
 │   └── manage-data.py          # Benchmark data management
 ├── Makefile             # Smart launcher and developer convenience targets
