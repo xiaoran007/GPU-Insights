@@ -79,6 +79,9 @@ recorded as `status: failed` with the error text.
 ### Download the fixed GGUF
 
 ```shell
+# Oscar cluster: link models/llm to persistent storage before downloading
+bash scripts/bootstrap-llm-oscar.sh
+
 # Preview the exact Hugging Face URL and output path
 python3 scripts/download-llm-model.py --dry-run
 
@@ -88,6 +91,11 @@ python3 scripts/download-llm-model.py
 
 The downloader is only a model-file helper. It does not install llama.cpp or
 configure GPU runtime libraries.
+
+On Oscar, `scripts/bootstrap-llm-oscar.sh` links the repo-local `models/llm`
+path to `/users/tfang11/tfang/llm` so the GGUF survives compute-node teardown
+and does not need to be downloaded again. Override the target with
+`GPU_INSIGHTS_OSCAR_LLM_DIR=/path/to/llm` if needed.
 
 ### Run the LLM benchmark
 
@@ -343,6 +351,7 @@ python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value h
 ├── calibrate_memory.py  # NVML memory calibration tool
 ├── scripts/
 │   ├── probe_benchmark_env.py  # Host/device metadata probe used by main_auto.py payload export
+│   ├── bootstrap-llm-oscar.sh  # Link models/llm to Oscar persistent storage
 │   ├── download-llm-model.py   # Fixed Qwen3.6-27B Q4_K_M GGUF downloader
 │   └── manage-data.py          # Benchmark data management
 ├── Makefile             # Smart launcher and developer convenience targets

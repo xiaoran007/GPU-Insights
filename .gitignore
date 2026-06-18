@@ -13,6 +13,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Local benchmark model files and symlinks
+/models/
+
 # C extensions
 *.so
 
