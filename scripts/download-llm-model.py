@@ -43,26 +43,74 @@ def main() -> int:
     print(f"  File:     {model['filename']}")
     print(f"  Output:   {output_path}")
     if expected_bytes:
-        print(f"  Expected: {expected_bytes:,} bytes")
+        print(f"  Expected: {_format_bytes(expected_bytes)} ({expected_bytes:,} bytes)")
 
     if args.dry_run:
         print(f"  URL:      {url}")
         return 0
 
     if output_path.exists() and not args.force:
-        if expected_bytes and output_path.stat().st_size == expected_bytes:
+        existing_size = output_path.stat().st_size
+        if expected_bytes and existing_size == expected_bytes:
             print("Existing file matches expected size; nothing to do.")
             return 0
-        print("Existing file found. Pass --force to overwrite.")
+        if expected_bytes:
+            print(
+                "Existing file size does not match expected size: "
+                f"{_format_bytes(existing_size)} ({existing_size:,} bytes) vs "
+                f"{_format_bytes(expected_bytes)} ({expected_bytes:,} bytes)."
+            )
+        else:
+            print(f"Existing file found: {_format_bytes(existing_size)} ({existing_size:,} bytes).")
+        print("Pass --force to overwrite.")
         return 1
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = output_path.with_suffix(output_path.suffix + ".part")
 
-    try:
-        with urllib.request.urlopen(url) as response, temp_path.open("wb") as handle:
-            total = int(response.headers.get("Content-Length") or expected_bytes or 0)
-            downloaded = 0
+    if args.force and temp_path.exists():
+        temp_path.unlink()
+
+    resume_from = 0
+    if temp_path.exists():
+        resume_from = temp_path.stat().st_size
+        if expected_bytes and resume_from == expected_bytes:
+            temp_path.replace(output_path)
+            print("Existing partial file matches expected size; promoted it to final output.")
+            return 0
+        if expected_bytes and resume_from > expected_bytes:
+            print(
+                "Existing partial file is larger than expected: "
+                f"{_format_bytes(resume_from)} ({resume_from:,} bytes) vs "
+                f"{_format_bytes(expected_bytes)} ({expected_bytes:,} bytes)."
+            )
+            print("Remove the .part file or pass --force to restart.")
+            return 1
+        if resume_from > 0:
+            print(f"Resuming from {_format_bytes(resume_from)} ({resume_from:,} bytes).")
+
+    request = urllib.request.Request(url)
+    if resume_from > 0:
+        request.add_header("Range", f"bytes={resume_from}-")
+
+    with urllib.request.urlopen(request) as response:
+        status = getattr(response, "status", response.getcode())
+        if resume_from > 0 and status != 206:
+            print("Server did not honor the Range request; restarting from 0 bytes.")
+            temp_path.unlink()
+            resume_from = 0
+
+        content_length = int(response.headers.get("Content-Length") or 0)
+        if expected_bytes:
+            total = expected_bytes
+        elif resume_from > 0 and status == 206:
+            total = resume_from + content_length
+        else:
+            total = content_length
+
+        downloaded = resume_from
+        mode = "ab" if resume_from > 0 and status == 206 else "wb"
+        with temp_path.open(mode) as handle:
             while True:
                 chunk = response.read(1024 * 1024)
                 if not chunk:
@@ -70,17 +118,19 @@ def main() -> int:
                 handle.write(chunk)
                 downloaded += len(chunk)
                 _print_progress(downloaded, total)
-        print()
-        if expected_bytes and temp_path.stat().st_size != expected_bytes:
-            print(
-                f"Downloaded size mismatch: got {temp_path.stat().st_size:,}, "
-                f"expected {expected_bytes:,}."
-            )
-            return 1
-        temp_path.replace(output_path)
-    finally:
-        if temp_path.exists() and not output_path.exists():
-            temp_path.unlink()
+    print()
+
+    final_size = temp_path.stat().st_size
+    if expected_bytes and final_size != expected_bytes:
+        print(
+            "Downloaded size mismatch: "
+            f"got {_format_bytes(final_size)} ({final_size:,} bytes), "
+            f"expected {_format_bytes(expected_bytes)} ({expected_bytes:,} bytes)."
+        )
+        print(f"Partial file kept at {temp_path} for resume/debugging.")
+        return 1
+
+    temp_path.replace(output_path)
 
     print(f"Downloaded model to {output_path}")
     return 0
@@ -89,9 +139,24 @@ def main() -> int:
 def _print_progress(downloaded: int, total: int) -> None:
     if total > 0:
         pct = downloaded / total * 100
-        print(f"\r  Downloaded: {downloaded:,}/{total:,} bytes ({pct:5.1f}%)", end="", flush=True)
+        print(
+            f"\r  Downloaded: {_format_bytes(downloaded)} / {_format_bytes(total)} ({pct:5.1f}%)",
+            end="",
+            flush=True,
+        )
     else:
-        print(f"\r  Downloaded: {downloaded:,} bytes", end="", flush=True)
+        print(f"\r  Downloaded: {_format_bytes(downloaded)}", end="", flush=True)
+
+
+def _format_bytes(value: int) -> str:
+    units = ("B", "KiB", "MiB", "GiB", "TiB")
+    size = float(value)
+    for unit in units:
+        if size < 1024 or unit == units[-1]:
+            if unit == "B":
+                return f"{int(size)} {unit}"
+            return f"{size:.2f} {unit}"
+        size /= 1024
 
 
 if __name__ == "__main__":

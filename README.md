@@ -186,6 +186,12 @@ python3 scripts/download-llm-model.py
 The downloader is only a model-file helper. It does not install llama.cpp or
 configure GPU runtime libraries.
 
+If the final GGUF already exists and matches the configured expected byte size,
+the downloader exits without downloading. Interrupted downloads are kept as a
+`.part` file and resumed on the next run when the server honors HTTP Range
+requests. Progress shows human-readable downloaded and total sizes; when
+resuming, downloaded includes the bytes already present in the `.part` file.
+
 On Oscar, `scripts/bootstrap-llm-oscar.sh` links the repo-local `models/llm`
 path to `/users/tfang11/tfang/llm` so the GGUF survives compute-node teardown
 and does not need to be downloaded again. Override the target with
