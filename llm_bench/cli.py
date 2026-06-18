@@ -53,7 +53,18 @@ def main() -> int:
     model_path = args.model_path or str(resolve_model_path(bench_config))
     results = []
 
-    for case in cases:
+    print("LLM inference benchmark")
+    print(f"  Runtime:     {runtime.name}")
+    if args.mock_result_file:
+        print(f"  llama-bench: mock data from {args.mock_result_file}")
+    else:
+        print(f"  llama-bench: {runtime.resolve_executable() or 'not found'}")
+    print(f"  Model:       {model['displayName']} ({model['artifact']})")
+    print(f"  Model path:  {model_path}")
+    print(f"  Cases:       {len(cases)}")
+    print()
+
+    for index, case in enumerate(cases, start=1):
         config = RuntimeConfig(
             case_name=case["name"],
             case_description=case.get("description", ""),
@@ -69,14 +80,24 @@ def main() -> int:
             device=args.device or runtime_config["device"],
             threads=args.threads if args.threads is not None else defaults.get("threads"),
         )
-        try:
-            results.append(runtime.run(config))
-        except Exception as exc:
-            results.append(_failed_result(config, str(exc)))
 
+        print(
+            f"[{index}/{len(cases)}] {config.case_name} "
+            f"(p={config.prompt_tokens:,}, g={config.generation_tokens:,}) ...",
+            flush=True,
+        )
+        try:
+            result = runtime.run(config)
+        except Exception as exc:
+            result = _failed_result(config, str(exc))
+        results.append(result)
+        _print_result(result)
+
+    print("Probing host metadata...")
     host = probe_benchmark_env(requested_backend=args.backend, device_ids=_parse_device_ids(args.gpu_id))
     payload = build_payload(host=host, results=results, note=args.note)
 
+    _print_summary(results)
     if args.pretty:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
     print(encode_payload(payload))
@@ -117,6 +138,42 @@ def _failed_result(config: RuntimeConfig, error: str) -> RuntimeResult:
         note="",
         date="",
     )
+
+
+def _print_result(result: RuntimeResult) -> None:
+    if result.status != "ok":
+        print(f"  failed: {result.error or 'unknown error'}")
+        print()
+        return
+
+    parts = []
+    if result.ppTps is not None:
+        parts.append(f"PP {_format_rate(result.ppTps)} tok/s")
+        if result.ppStddev is not None:
+            parts[-1] += f" (stddev {_format_rate(result.ppStddev)})"
+    if result.tgTps is not None:
+        parts.append(f"TG {_format_rate(result.tgTps)} tok/s")
+        if result.tgStddev is not None:
+            parts[-1] += f" (stddev {_format_rate(result.tgStddev)})"
+
+    metrics = ", ".join(parts) if parts else "no PP/TG metrics parsed"
+    backend = result.accelerationBackend or "unknown backend"
+    print(f"  ok: {metrics}; backend={backend}; ngl={result.nGpuLayers}")
+    print()
+
+
+def _print_summary(results: list[RuntimeResult]) -> None:
+    ok_count = sum(1 for result in results if result.status == "ok")
+    failed_count = len(results) - ok_count
+    print("Summary")
+    print(f"  Cases:  {len(results)}")
+    print(f"  OK:     {ok_count}")
+    print(f"  Failed: {failed_count}")
+    print()
+
+
+def _format_rate(value: float) -> str:
+    return f"{value:,.2f}"
 
 
 if __name__ == "__main__":

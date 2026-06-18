@@ -8,6 +8,14 @@ from typing import Any, Dict, List
 
 from llm_bench.runtimes.base import RuntimeConfig, RuntimeResult
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_LLAMA_BENCH_CANDIDATES = (
+    ROOT_DIR / "third_party/llama.cpp/build/bin/llama-bench",
+    ROOT_DIR / "third_party/llama.cpp/build/bin/Release/llama-bench",
+    ROOT_DIR / "third_party/llama.cpp/build/bin/llama-bench.exe",
+    ROOT_DIR / "third_party/llama.cpp/build/bin/Release/llama-bench.exe",
+)
+
 
 class LlamaCppRuntime:
     name = "llama.cpp"
@@ -20,6 +28,16 @@ class LlamaCppRuntime:
         rows = self._load_rows(config)
         return self._build_result(config, rows)
 
+    def resolve_executable(self) -> str | None:
+        if self.executable:
+            return str(Path(self.executable).expanduser())
+
+        for candidate in DEFAULT_LLAMA_BENCH_CANDIDATES:
+            if candidate.is_file():
+                return str(candidate)
+
+        return shutil.which("llama-bench")
+
     def _load_rows(self, config: RuntimeConfig) -> List[Dict[str, Any]]:
         if self.mock_result_file:
             with Path(self.mock_result_file).expanduser().open("r", encoding="utf-8") as handle:
@@ -28,9 +46,14 @@ class LlamaCppRuntime:
                 raise ValueError("Mock llama-bench result must be a JSON array.")
             return payload
 
-        executable = self.executable or shutil.which("llama-bench")
+        executable = self.resolve_executable()
         if not executable:
-            raise FileNotFoundError("llama-bench executable was not found. Pass --llama-bench.")
+            default_path = DEFAULT_LLAMA_BENCH_CANDIDATES[0]
+            raise FileNotFoundError(
+                "llama-bench executable was not found. "
+                f"Run scripts/bootstrap-llama-cpp.sh, place it at {default_path}, "
+                "make llama-bench available on PATH, or pass --llama-bench."
+            )
 
         command = [
             executable,

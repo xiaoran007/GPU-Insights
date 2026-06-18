@@ -48,8 +48,9 @@ processing (PP) plus token generation (TG) throughput for coding-agent-shaped
 cases.
 
 GPU-Insights does not install or configure llama.cpp, CUDA, ROCm, Vulkan, or
-SYCL. Build/install llama.cpp for your platform first, then make sure
-`llama-bench` is on `PATH`, or pass its path with `--llama-bench`.
+SYCL. Build/install llama.cpp for your platform first. The launcher checks the
+bootstrap build output under `third_party/llama.cpp/build/bin/`, then `PATH`,
+or you can pass an explicit path with `--llama-bench`.
 
 ### Prepare llama.cpp
 
@@ -217,7 +218,10 @@ python3 -m llm_bench.cli --case repo_context_plan
 python3 -m llm_bench.cli --list-cases
 ```
 
-At the end of a real run, the launcher prints:
+By default the launcher looks for `llama-bench` in the bootstrap build output
+under `third_party/llama.cpp/build/bin/` before falling back to `PATH`. During a
+run it prints the selected runtime, model path, per-case progress, PP/TG
+throughput results, a summary, and finally the import payload:
 
 ```text
 LLM_RESULT_PAYLOAD_B64=<base64-json>
