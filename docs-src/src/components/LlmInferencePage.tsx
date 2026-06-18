@@ -195,6 +195,7 @@ function LlmThroughputChart({ entries }: { entries: LlmBenchmarkEntry[] }) {
               {
                 label: "TG tok/s",
                 data: top.map((entry) => entry.tgTps ?? 0),
+                yAxisID: "yTg",
                 backgroundColor: "rgba(3, 105, 161, 0.72)",
                 borderColor: "rgba(3, 105, 161, 1)",
                 borderWidth: 1,
@@ -202,6 +203,7 @@ function LlmThroughputChart({ entries }: { entries: LlmBenchmarkEntry[] }) {
               {
                 label: "PP tok/s",
                 data: top.map((entry) => entry.ppTps ?? 0),
+                yAxisID: "yPp",
                 backgroundColor: "rgba(15, 118, 110, 0.58)",
                 borderColor: "rgba(15, 118, 110, 1)",
                 borderWidth: 1,
@@ -213,9 +215,18 @@ function LlmThroughputChart({ entries }: { entries: LlmBenchmarkEntry[] }) {
             maintainAspectRatio: false,
             scales: {
               x: { ticks: { maxRotation: 35, minRotation: 35 } },
-              y: {
+              yTg: {
                 beginAtZero: true,
-                title: { display: true, text: "Tokens per second" },
+                position: "left",
+                title: { display: true, text: "TG tokens/s" },
+                ticks: { color: "rgba(3, 105, 161, 1)" },
+              },
+              yPp: {
+                beginAtZero: true,
+                position: "right",
+                title: { display: true, text: "PP tokens/s" },
+                ticks: { color: "rgba(15, 118, 110, 1)" },
+                grid: { drawOnChartArea: false },
               },
             },
             plugins: {
