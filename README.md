@@ -77,6 +77,13 @@ bash scripts/bootstrap-llama-cpp.sh --backend cuda --jobs 16
 bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-commit> --backend cuda --jobs 16
 ```
 
+On CUDA systems, if the active GCC is newer than the CUDA toolkit supports,
+load a compatible compiler module first or pass it explicitly:
+
+```shell
+bash scripts/bootstrap-llama-cpp.sh --backend cuda --cuda-host-compiler /path/to/g++-14
+```
+
 By default the helper uses `third_party/llama.cpp`, which is ignored by git.
 Override paths with `--dir`, `--build-dir`, or the corresponding
 `GPU_INSIGHTS_LLAMA_CPP_*` environment variables printed by `--help`.

@@ -9,6 +9,7 @@ build_dir="${GPU_INSIGHTS_LLAMA_CPP_BUILD_DIR:-${src_dir}/build}"
 llama_ref="${GPU_INSIGHTS_LLAMA_CPP_REF:-}"
 backend="${GPU_INSIGHTS_LLAMA_CPP_BACKEND:-}"
 jobs="${GPU_INSIGHTS_LLAMA_CPP_JOBS:-}"
+cuda_host_compiler="${GPU_INSIGHTS_LLAMA_CPP_CUDA_HOST_COMPILER:-}"
 
 usage() {
   cat <<'USAGE'
@@ -21,6 +22,8 @@ Options:
   --dir <path>          llama.cpp checkout directory.
   --build-dir <path>    CMake build directory.
   --jobs <n>            Parallel build jobs passed to CMake.
+  --cuda-host-compiler <path>
+                       Host C++ compiler for CUDA builds.
   -h, --help            Show this help text.
 
 Environment overrides:
@@ -30,6 +33,7 @@ Environment overrides:
   GPU_INSIGHTS_LLAMA_CPP_BUILD_DIR
   GPU_INSIGHTS_LLAMA_CPP_JOBS
   GPU_INSIGHTS_LLAMA_CPP_REPO
+  GPU_INSIGHTS_LLAMA_CPP_CUDA_HOST_COMPILER
 USAGE
 }
 
@@ -68,6 +72,11 @@ while [[ $# -gt 0 ]]; do
     --jobs)
       require_option_value "$1" "${2:-}"
       jobs="$2"
+      shift 2
+      ;;
+    --cuda-host-compiler)
+      require_option_value "$1" "${2:-}"
+      cuda_host_compiler="$2"
       shift 2
       ;;
     -h|--help)
@@ -148,6 +157,54 @@ require_cxx_toolchain() {
   fi
 }
 
+detect_gnu_major() {
+  local compiler="$1"
+  local version
+  version="$("${compiler}" -dumpfullversion -dumpversion 2>/dev/null | head -n 1 || true)"
+  if [[ "${version}" =~ ^([0-9]+) ]]; then
+    printf '%s\n' "${BASH_REMATCH[1]}"
+  fi
+}
+
+detect_gnu_version() {
+  local compiler="$1"
+  "${compiler}" -dumpfullversion -dumpversion 2>/dev/null | head -n 1 || true
+}
+
+detect_nvcc_major() {
+  nvcc --version 2>/dev/null | sed -n 's/.*release \([0-9][0-9]*\)\..*/\1/p' | head -n 1
+}
+
+preflight_cuda_host_compiler() {
+  local host_compiler="${cuda_host_compiler}"
+
+  if [[ -n "${host_compiler}" ]]; then
+    if [[ ! -x "${host_compiler}" ]]; then
+      missing+=("${host_compiler} (CUDA host compiler path is not executable)")
+      return
+    fi
+  elif command -v g++ >/dev/null 2>&1; then
+    host_compiler="$(command -v g++)"
+  elif command -v c++ >/dev/null 2>&1; then
+    host_compiler="$(command -v c++)"
+  fi
+
+  if [[ -z "${host_compiler}" ]]; then
+    return
+  fi
+
+  local nvcc_major
+  local gnu_major
+  local gnu_version
+  nvcc_major="$(detect_nvcc_major)"
+  gnu_major="$(detect_gnu_major "${host_compiler}")"
+  gnu_version="$(detect_gnu_version "${host_compiler}")"
+
+  if [[ "${nvcc_major}" == "12" && -n "${gnu_major}" && "${gnu_major}" -gt 14 ]]; then
+    missing+=("CUDA 12.x nvcc does not support GCC ${gnu_version} as host compiler; load GCC 14 or older, or pass --cuda-host-compiler /path/to/g++-14")
+  fi
+}
+
 preflight_dependencies() {
   require_cmd git "required to clone and check out llama.cpp"
   require_cmd cmake "required to configure and build llama.cpp"
@@ -159,6 +216,9 @@ preflight_dependencies() {
     cuda)
       require_cxx_toolchain
       require_cmd nvcc "install the NVIDIA CUDA toolkit and ensure nvcc is on PATH"
+      if command -v nvcc >/dev/null 2>&1; then
+        preflight_cuda_host_compiler
+      fi
       ;;
     hip)
       require_cxx_toolchain
@@ -252,6 +312,9 @@ configure_and_build() {
       ;;
     cuda)
       cmake_args+=(-DGGML_CUDA=ON)
+      if [[ -n "${cuda_host_compiler}" ]]; then
+        cmake_args+=("-DCMAKE_CUDA_HOST_COMPILER=${cuda_host_compiler}")
+      fi
       ;;
     hip)
       cmake_args+=(-DGGML_HIP=ON)
@@ -327,6 +390,9 @@ echo "  checkout:  ${src_dir}"
 echo "  build dir: ${build_dir}"
 if [[ -n "${jobs}" ]]; then
   echo "  jobs:      ${jobs}"
+fi
+if [[ -n "${cuda_host_compiler}" ]]; then
+  echo "  CUDA host compiler: ${cuda_host_compiler}"
 fi
 echo
 
