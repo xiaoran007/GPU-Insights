@@ -90,6 +90,13 @@ bash scripts/build-llama-bench-release.sh --variant cuda12 --ref <llama.cpp-comm
 bash scripts/build-llama-bench-release.sh --variant cuda13 --ref <llama.cpp-commit>
 ```
 
+The release builder mounts a named Docker volume at `/work` by default
+(`gpu-insights-llama-bench-work`) so the llama.cpp checkout and CMake build tree
+survive the temporary `docker run --rm` container. Repeated builds reuse that
+cache per variant. Use `--clean-work` to clear the selected variant work tree,
+or `--work-volume <name>` / `GPU_INSIGHTS_LLAMA_BENCH_WORK_VOLUME` to isolate a
+different cache.
+
 The CUDA 12 asset is built with `GGML_NATIVE=OFF` and
 `CMAKE_CUDA_ARCHITECTURES=80;86;87;89;90`, covering Ampere, Ada, and Hopper.
 The CUDA 13 asset uses `80;86;87;88;89;90;100;103;110;120;121`, covering
@@ -98,6 +105,8 @@ CUDA 13 nvcc. Release packages include a `llama-bench` wrapper, the compiled
 `llama-bench.bin`, llama.cpp/ggml shared libraries, `LICENSE.llama.cpp`,
 `BUILD-MANIFEST.json`, and SHA256 checksums. They intentionally do not bundle
 NVIDIA driver, CUDA runtime, cuBLAS, system libc/libstdc++, or model files.
+The Docker build uses CUDA stub libraries only for link-time `libcuda.so.1`
+resolution; target machines still provide the real NVIDIA driver at runtime.
 
 On CUDA systems, if the active GCC is newer than the CUDA toolkit supports,
 load a compatible compiler module first or pass it explicitly:

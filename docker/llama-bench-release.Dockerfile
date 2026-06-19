@@ -15,4 +15,11 @@ RUN apt-get update \
         xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
+RUN if [ -f /usr/local/cuda/lib64/stubs/libcuda.so ] \
+        && [ ! -e /usr/local/cuda/lib64/stubs/libcuda.so.1 ]; then \
+      ln -s libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1; \
+    fi
+
+ENV LIBRARY_PATH=/usr/local/cuda/lib64/stubs
+
 WORKDIR /work
