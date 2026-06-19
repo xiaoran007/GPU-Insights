@@ -994,7 +994,7 @@
       "accelerationBackend": "MTL,BLAS",
       "vendor": "apple",
       "architecture": "Apple Silicon",
-      "device": "Apple M1 Max",
+      "device": "Apple M1 Max (32c)",
       "memory": "64 GB (shared memory)",
       "platform": "macOS 26.5.1",
       "promptTokens": 2048,
