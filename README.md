@@ -227,19 +227,29 @@ python3 -m llm_bench.cli --list-cases
 By default the launcher looks for `llama-bench` in the bootstrap build output
 under `third_party/llama.cpp/build/bin/` before falling back to `PATH`. During a
 run it prints the selected runtime, model path, per-case progress, PP/TG
-throughput results, a summary, and finally the import payload. `llama-bench`
+throughput results, a summary, and finally a short import command. `llama-bench`
 stderr is streamed live with a `llama-bench |` prefix so backend/debug messages
-remain visible while stdout is still parsed as JSON:
+remain visible while stdout is still parsed as JSON.
+
+By default the dashboard import payload is written to `outputs/llm-bench/`, and
+a sidecar `*.debug.json` file keeps the full raw llama-bench rows for debugging:
 
 ```text
-LLM_RESULT_PAYLOAD_B64=<base64-json>
+LLM_RESULT_PAYLOAD_FILE=outputs/llm-bench/llm-bench-20260618-211527-qwen3_6_27b_q4.json
+LLM_DEBUG_PAYLOAD_FILE=outputs/llm-bench/llm-bench-20260618-211527-qwen3_6_27b_q4.debug.json
+
+Import:
+  python3 scripts/manage-data.py l outputs/llm-bench/llm-bench-20260618-211527-qwen3_6_27b_q4.json
 ```
 
 Import it into the dashboard data:
 
 ```shell
-python3 scripts/manage-data.py l 'LLM_RESULT_PAYLOAD_B64=...'
+python3 scripts/manage-data.py l outputs/llm-bench/llm-bench-20260618-211527-qwen3_6_27b_q4.json
 ```
+
+Pass `--emit-base64` if you need the legacy `LLM_RESULT_PAYLOAD_B64=...` line
+for copy-paste workflows.
 
 For development without running llama.cpp:
 
@@ -429,7 +439,7 @@ python3 scripts/manage-data.py import-payload 'RESULT_PAYLOAD_B64=...'
 python3 scripts/manage-data.py decode-payload 'RESULT_PAYLOAD_B64=...' --pretty
 
 # Import an LLM inference payload
-python3 scripts/manage-data.py l 'LLM_RESULT_PAYLOAD_B64=...'
+python3 scripts/manage-data.py l outputs/llm-bench/llm-bench-20260618-211527-qwen3_6_27b_q4.json
 
 # Validate benchmark data
 python3 scripts/manage-data.py validate

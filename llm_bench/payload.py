@@ -23,17 +23,14 @@ def build_payload(
     host: Dict[str, Any],
     results: List[RuntimeResult],
     note: str,
+    include_raw_result: bool = False,
 ) -> Dict[str, Any]:
     return {
         "schemaVersion": PAYLOAD_SCHEMA_VERSION,
         "createdAt": datetime.now().isoformat(timespec="seconds"),
         "host": host,
         "benchmarks": [
-            {
-                **asdict(result),
-                "date": result.date or current_date_string(),
-                "note": result.note or note,
-            }
+            _result_payload_entry(result=result, note=note, include_raw_result=include_raw_result)
             for result in results
         ],
     }
@@ -43,3 +40,16 @@ def encode_payload(payload: Dict[str, Any]) -> str:
     encoded = base64.b64encode(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
     return f"{PAYLOAD_PREFIX}{encoded.decode('ascii')}"
 
+
+def _result_payload_entry(
+    *,
+    result: RuntimeResult,
+    note: str,
+    include_raw_result: bool,
+) -> Dict[str, Any]:
+    entry = asdict(result)
+    if not include_raw_result:
+        entry["rawResult"] = {}
+    entry["date"] = result.date or current_date_string()
+    entry["note"] = result.note or note
+    return entry

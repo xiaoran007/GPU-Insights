@@ -320,6 +320,9 @@ def extract_payload_text(raw_payload: str) -> str:
 
 def load_payload_text(args: argparse.Namespace) -> Optional[str]:
     if args.payload:
+        payload_path = _payload_path_from_argument(args.payload)
+        if payload_path is not None:
+            return payload_path.read_text(encoding="utf-8")
         return args.payload
     if args.payload_file:
         return Path(args.payload_file).read_text(encoding="utf-8")
@@ -332,7 +335,14 @@ def load_payload_text(args: argparse.Namespace) -> Optional[str]:
 
 
 def decode_payload(raw_payload: str) -> dict:
-    payload_text = extract_payload_text(raw_payload)
+    payload_text = raw_payload.strip()
+    if payload_text.startswith("{"):
+        try:
+            return json.loads(payload_text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Payload JSON is invalid: {exc}") from exc
+
+    payload_text = extract_payload_text(payload_text)
     try:
         decoded = base64.b64decode(payload_text, validate=True)
     except binascii.Error as exc:
@@ -342,6 +352,19 @@ def decode_payload(raw_payload: str) -> dict:
         return json.loads(decoded.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError(f"Decoded payload is not valid UTF-8 JSON: {exc}") from exc
+
+
+def _payload_path_from_argument(value: str) -> Optional[Path]:
+    payload = value.strip()
+    if payload.startswith((PAYLOAD_PREFIX, LLM_PAYLOAD_PREFIX, "{")):
+        return None
+    try:
+        path = Path(payload).expanduser()
+    except (OSError, ValueError):
+        return None
+    if path.is_file():
+        return path
+    return None
 
 
 def build_identity_key(entry: dict) -> tuple:
@@ -820,10 +843,10 @@ def build_parser() -> argparse.ArgumentParser:
     import_parser = subparsers.add_parser(
         "import-payload",
         aliases=["i"],
-        help="Import a RESULT_PAYLOAD_B64 payload emitted by main_auto.py",
+        help="Import a RESULT_PAYLOAD_B64 payload or JSON payload file emitted by main_auto.py",
     )
-    import_parser.add_argument("payload", nargs="?", help="Raw Base64 payload or full RESULT_PAYLOAD_B64=... line")
-    import_parser.add_argument("--payload-file", help="Read payload text from a file")
+    import_parser.add_argument("payload", nargs="?", help="Payload JSON file, raw Base64 payload, or full RESULT_PAYLOAD_B64=... line")
+    import_parser.add_argument("--payload-file", help="Read payload JSON or payload text from a file")
     import_parser.add_argument("--dry-run", action="store_true", help="Normalize and validate without writing")
     import_parser.add_argument(
         "--allow-duplicates",
@@ -834,10 +857,10 @@ def build_parser() -> argparse.ArgumentParser:
     llm_import_parser = subparsers.add_parser(
         "import-llm-payload",
         aliases=["l"],
-        help="Import an LLM_RESULT_PAYLOAD_B64 payload emitted by llm_bench.cli",
+        help="Import an LLM payload JSON file or LLM_RESULT_PAYLOAD_B64 payload emitted by llm_bench.cli",
     )
-    llm_import_parser.add_argument("payload", nargs="?", help="Raw Base64 payload or full LLM_RESULT_PAYLOAD_B64=... line")
-    llm_import_parser.add_argument("--payload-file", help="Read payload text from a file")
+    llm_import_parser.add_argument("payload", nargs="?", help="Payload JSON file, raw Base64 payload, or full LLM_RESULT_PAYLOAD_B64=... line")
+    llm_import_parser.add_argument("--payload-file", help="Read payload JSON or payload text from a file")
     llm_import_parser.add_argument("--dry-run", action="store_true", help="Normalize and validate without writing")
     llm_import_parser.add_argument(
         "--allow-duplicates",
@@ -852,10 +875,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     decode_parser = subparsers.add_parser(
         "decode-payload",
-        help="Decode a RESULT_PAYLOAD_B64 payload and print the JSON envelope",
+        help="Decode a Base64 payload or print a payload JSON envelope",
     )
-    decode_parser.add_argument("payload", nargs="?", help="Raw Base64 payload or full RESULT_PAYLOAD_B64=... line")
-    decode_parser.add_argument("--payload-file", help="Read payload text from a file")
+    decode_parser.add_argument("payload", nargs="?", help="Payload JSON file, raw Base64 payload, or full RESULT_PAYLOAD_B64=... line")
+    decode_parser.add_argument("--payload-file", help="Read payload JSON or payload text from a file")
     decode_parser.add_argument("--pretty", action="store_true", help="Pretty-print the decoded JSON")
 
     migrate_parser = subparsers.add_parser("migrate-version", help="Backfill or normalize benchmark version field")
