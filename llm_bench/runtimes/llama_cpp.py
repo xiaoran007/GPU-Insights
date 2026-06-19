@@ -25,6 +25,7 @@ class LlamaCppRuntime:
     def __init__(self, executable: str | None = None, mock_result_file: str | None = None):
         self.executable = executable
         self.mock_result_file = mock_result_file
+        self._last_command: List[str] | None = None
 
     def run(self, config: RuntimeConfig) -> RuntimeResult:
         rows = self._load_rows(config)
@@ -41,6 +42,7 @@ class LlamaCppRuntime:
         return shutil.which("llama-bench")
 
     def _load_rows(self, config: RuntimeConfig) -> List[Dict[str, Any]]:
+        self._last_command = None
         if self.mock_result_file:
             with Path(self.mock_result_file).expanduser().open("r", encoding="utf-8") as handle:
                 payload = json.load(handle)
@@ -65,6 +67,8 @@ class LlamaCppRuntime:
             str(config.prompt_tokens),
             "-n",
             str(config.generation_tokens),
+            "-c",
+            str(config.context_size),
             "-b",
             str(config.batch_size),
             "-r",
@@ -76,9 +80,18 @@ class LlamaCppRuntime:
             "-o",
             "json",
         ]
+        if config.ubatch_size is not None:
+            command.extend(["-ub", str(config.ubatch_size)])
         if config.threads is not None:
             command.extend(["-t", str(config.threads)])
+        if config.cache_type_k:
+            command.extend(["-ctk", config.cache_type_k])
+        if config.cache_type_v:
+            command.extend(["-ctv", config.cache_type_v])
+        if config.flash_attention:
+            command.extend(["-fa", "1"])
 
+        self._last_command = command
         stdout = _run_llama_bench(command)
         try:
             payload = json.loads(stdout)
@@ -109,7 +122,9 @@ class LlamaCppRuntime:
             accelerationBackend=str(anchor.get("backends", "")),
             promptTokens=config.prompt_tokens,
             generationTokens=config.generation_tokens,
+            contextSize=config.context_size,
             batchSize=int(anchor.get("n_batch") or config.batch_size),
+            ubatchSize=_int_or_none(anchor.get("n_ubatch")) or config.ubatch_size,
             repetitions=config.repetitions,
             ppTps=_metric(pp_row, "avg_ts"),
             ppStddev=_metric(pp_row, "stddev_ts"),
@@ -118,9 +133,23 @@ class LlamaCppRuntime:
             nGpuLayers=int(anchor.get("n_gpu_layers") or config.n_gpu_layers),
             threads=_int_or_none(anchor.get("n_threads")) or config.threads,
             backendRaw=str(anchor.get("backends", "")),
+            cacheTypeK=str(anchor.get("type_k") or config.cache_type_k or ""),
+            cacheTypeV=str(anchor.get("type_v") or config.cache_type_v or ""),
+            flashAttention=bool(anchor.get("flash_attn", config.flash_attention)),
             modelSizeBytes=_int_or_none(anchor.get("model_size")),
             modelParams=_int_or_none(anchor.get("model_n_params")),
-            rawResult={"llamaBench": rows},
+            rawResult={
+                "llamaBench": rows,
+                "llamaBenchCommand": self._last_command,
+                "profile": {
+                    "contextSize": config.context_size,
+                    "batchSize": config.batch_size,
+                    "ubatchSize": config.ubatch_size,
+                    "cacheTypeK": config.cache_type_k,
+                    "cacheTypeV": config.cache_type_v,
+                    "flashAttention": config.flash_attention,
+                },
+            },
             note="",
             date="",
         )

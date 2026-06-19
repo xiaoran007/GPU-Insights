@@ -168,6 +168,12 @@ Results are full-GPU only: the default config uses `nGpuLayers: -1` and does
 not fall back to partial CPU offload. If a GPU cannot fit a case, that case is
 recorded as `status: failed` with the error text.
 
+The default runtime profile is a single representative coding-agent setup, not
+a tuning matrix: full GPU offload, F16 KV cache, flash attention enabled,
+`batchSize: 2048`, `ubatchSize: 512`, and an explicit per-case context size
+rounded up from `prompt + generation + 256` tokens. MTP/speculative decoding is
+not part of the canonical baseline.
+
 ### Download the fixed GGUF
 
 ```shell

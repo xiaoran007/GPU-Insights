@@ -257,7 +257,7 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
       </div>
 
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[1120px] border-collapse">
+        <table className="w-full min-w-[1280px] border-collapse">
           <thead>
             <tr>
               {[
@@ -272,6 +272,7 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
                 "Prompt",
                 "Gen",
                 "Batch",
+                "Profile",
                 "Notes",
                 "Date",
               ].map((heading) => (
@@ -332,6 +333,12 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
                 </td>
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 font-[var(--font-mono)] tabular-nums">
                   {entry.batchSize.toLocaleString()}
+                </td>
+                <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 font-[var(--font-mono)] text-xs tabular-nums">
+                  <div>ctx {entry.contextSize ? entry.contextSize.toLocaleString() : "N/A"}</div>
+                  <small className="text-[var(--color-muted)]">
+                    ub {entry.ubatchSize?.toLocaleString() ?? "N/A"} · KV {entry.cacheTypeK || "?"}/{entry.cacheTypeV || "?"} · FA {entry.flashAttention ? "on" : "off"}
+                  </small>
                 </td>
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 italic text-[var(--color-muted)]">
                   {entry.status === "failed" ? entry.error || "Failed" : entry.note || "N/A"}

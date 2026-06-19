@@ -14,11 +14,16 @@ class RuntimeConfig:
     artifact: str
     prompt_tokens: int
     generation_tokens: int
+    context_size: int
     batch_size: int
+    ubatch_size: int | None
     repetitions: int
     n_gpu_layers: int
     device: str
     threads: int | None
+    cache_type_k: str | None
+    cache_type_v: str | None
+    flash_attention: bool
 
 
 @dataclass(frozen=True)
@@ -35,7 +40,9 @@ class RuntimeResult:
     accelerationBackend: str
     promptTokens: int
     generationTokens: int
+    contextSize: int | None
     batchSize: int
+    ubatchSize: int | None
     repetitions: int
     ppTps: float | None
     ppStddev: float | None
@@ -44,6 +51,9 @@ class RuntimeResult:
     nGpuLayers: int
     threads: int | None
     backendRaw: str
+    cacheTypeK: str
+    cacheTypeV: str
+    flashAttention: bool
     modelSizeBytes: int | None
     modelParams: int | None
     rawResult: Dict[str, Any]

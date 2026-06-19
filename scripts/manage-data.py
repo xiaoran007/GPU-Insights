@@ -382,8 +382,13 @@ def build_llm_identity_key(entry: dict) -> tuple:
         entry["artifact"],
         entry["promptTokens"],
         entry["generationTokens"],
+        entry["contextSize"],
         entry["batchSize"],
+        entry["ubatchSize"],
         entry["nGpuLayers"],
+        entry["cacheTypeK"],
+        entry["cacheTypeV"],
+        entry["flashAttention"],
     )
 
 
@@ -469,7 +474,9 @@ def validate_llm_entry(entry: dict) -> list[str]:
         "platform",
         "promptTokens",
         "generationTokens",
+        "contextSize",
         "batchSize",
+        "ubatchSize",
         "repetitions",
         "ppTps",
         "ppStddev",
@@ -478,6 +485,9 @@ def validate_llm_entry(entry: dict) -> list[str]:
         "nGpuLayers",
         "threads",
         "backendRaw",
+        "cacheTypeK",
+        "cacheTypeV",
+        "flashAttention",
         "modelSizeBytes",
         "modelParams",
         "note",
@@ -488,9 +498,15 @@ def validate_llm_entry(entry: dict) -> list[str]:
         if field not in entry:
             errors.append(f"Missing required field: {field}")
 
-    for field in ("promptTokens", "generationTokens", "batchSize", "repetitions", "nGpuLayers"):
+    for field in ("promptTokens", "generationTokens", "contextSize", "batchSize", "repetitions", "nGpuLayers"):
         if field in entry and not isinstance(entry[field], int):
             errors.append(f"{field} must be an integer")
+
+    if "ubatchSize" in entry and entry["ubatchSize"] is not None and not isinstance(entry["ubatchSize"], int):
+        errors.append("ubatchSize must be an integer or null")
+
+    if "flashAttention" in entry and not isinstance(entry["flashAttention"], bool):
+        errors.append("flashAttention must be a boolean")
 
     for field in ("ppTps", "ppStddev", "tgTps", "tgStddev"):
         if field in entry and entry[field] is not None and not isinstance(entry[field], (int, float)):
@@ -540,7 +556,9 @@ def normalize_llm_payload_entry(payload_entry: dict, payload_host: dict) -> dict
         "platform": payload_entry.get("platform") or payload_host.get("platform", ""),
         "promptTokens": _coerce_int(payload_entry.get("promptTokens"), 0),
         "generationTokens": _coerce_int(payload_entry.get("generationTokens"), 0),
+        "contextSize": _coerce_int(payload_entry.get("contextSize"), 0),
         "batchSize": _coerce_int(payload_entry.get("batchSize"), 0),
+        "ubatchSize": payload_entry.get("ubatchSize"),
         "repetitions": _coerce_int(payload_entry.get("repetitions"), 0),
         "ppTps": payload_entry.get("ppTps"),
         "ppStddev": payload_entry.get("ppStddev"),
@@ -549,6 +567,9 @@ def normalize_llm_payload_entry(payload_entry: dict, payload_host: dict) -> dict
         "nGpuLayers": _coerce_int(payload_entry.get("nGpuLayers"), 0),
         "threads": payload_entry.get("threads"),
         "backendRaw": payload_entry.get("backendRaw", ""),
+        "cacheTypeK": payload_entry.get("cacheTypeK", ""),
+        "cacheTypeV": payload_entry.get("cacheTypeV", ""),
+        "flashAttention": bool(payload_entry.get("flashAttention", False)),
         "modelSizeBytes": payload_entry.get("modelSizeBytes"),
         "modelParams": payload_entry.get("modelParams"),
         "note": payload_entry.get("note") or payload_host.get("note", ""),

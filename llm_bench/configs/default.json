@@ -9,6 +9,9 @@
     "device": "auto",
     "cacheTypeK": "f16",
     "cacheTypeV": "f16",
+    "flashAttention": true,
+    "contextPadding": 256,
+    "contextRounding": 4096,
     "allowPartialOffload": false
   },
   "model": {
@@ -27,6 +30,7 @@
   },
   "defaults": {
     "batchSize": 2048,
+    "ubatchSize": 512,
     "repetitions": 5,
     "threads": null
   },

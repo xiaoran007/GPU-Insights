@@ -20,6 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--llama-bench", help="Path to llama-bench executable.")
     parser.add_argument("--mock-result-file", help="Read llama-bench JSON output from this file.")
     parser.add_argument("-b", "--batch-size", type=int, help="llama-bench batch size. Defaults to configured value.")
+    parser.add_argument("-ub", "--ubatch-size", type=int, help="llama-bench physical batch size. Defaults to configured value.")
     parser.add_argument("-r", "--repetitions", type=int, help="llama-bench repetitions. Defaults to configured value.")
     parser.add_argument("-dev", "--device", help="llama-bench device selector. Defaults to configured value.")
     parser.add_argument("-t", "--threads", type=int)
@@ -62,9 +63,22 @@ def main() -> int:
     print(f"  Model:       {model['displayName']} ({model['artifact']})")
     print(f"  Model path:  {model_path}")
     print(f"  Cases:       {len(cases)}")
+    print(
+        "  Profile:     "
+        f"KV={runtime_config.get('cacheTypeK', 'default')}/{runtime_config.get('cacheTypeV', 'default')}, "
+        f"FA={'on' if runtime_config.get('flashAttention') else 'off'}, "
+        f"batch={args.batch_size or int(defaults['batchSize'])}, "
+        f"ubatch={args.ubatch_size if args.ubatch_size is not None else defaults.get('ubatchSize', 'default')}"
+    )
     print()
 
     for index, case in enumerate(cases, start=1):
+        context_size = _case_context_size(
+            prompt_tokens=int(case["promptTokens"]),
+            generation_tokens=int(case["generationTokens"]),
+            padding=int(runtime_config.get("contextPadding", 0)),
+            rounding=int(runtime_config.get("contextRounding", 1)),
+        )
         config = RuntimeConfig(
             case_name=case["name"],
             case_description=case.get("description", ""),
@@ -74,16 +88,21 @@ def main() -> int:
             artifact=model["artifact"],
             prompt_tokens=int(case["promptTokens"]),
             generation_tokens=int(case["generationTokens"]),
+            context_size=context_size,
             batch_size=args.batch_size or int(defaults["batchSize"]),
+            ubatch_size=args.ubatch_size if args.ubatch_size is not None else defaults.get("ubatchSize"),
             repetitions=args.repetitions or int(defaults["repetitions"]),
             n_gpu_layers=int(runtime_config["nGpuLayers"]),
             device=args.device or runtime_config["device"],
             threads=args.threads if args.threads is not None else defaults.get("threads"),
+            cache_type_k=runtime_config.get("cacheTypeK"),
+            cache_type_v=runtime_config.get("cacheTypeV"),
+            flash_attention=bool(runtime_config.get("flashAttention", False)),
         )
 
         print(
             f"[{index}/{len(cases)}] {config.case_name} "
-            f"(p={config.prompt_tokens:,}, g={config.generation_tokens:,}) ...",
+            f"(p={config.prompt_tokens:,}, g={config.generation_tokens:,}, ctx={config.context_size:,}) ...",
             flush=True,
         )
         try:
@@ -123,7 +142,9 @@ def _failed_result(config: RuntimeConfig, error: str) -> RuntimeResult:
         accelerationBackend="",
         promptTokens=config.prompt_tokens,
         generationTokens=config.generation_tokens,
+        contextSize=config.context_size,
         batchSize=config.batch_size,
+        ubatchSize=config.ubatch_size,
         repetitions=config.repetitions,
         ppTps=None,
         ppStddev=None,
@@ -132,6 +153,9 @@ def _failed_result(config: RuntimeConfig, error: str) -> RuntimeResult:
         nGpuLayers=config.n_gpu_layers,
         threads=config.threads,
         backendRaw="",
+        cacheTypeK=config.cache_type_k or "",
+        cacheTypeV=config.cache_type_v or "",
+        flashAttention=config.flash_attention,
         modelSizeBytes=None,
         modelParams=None,
         rawResult={},
@@ -158,7 +182,10 @@ def _print_result(result: RuntimeResult) -> None:
 
     metrics = ", ".join(parts) if parts else "no PP/TG metrics parsed"
     backend = result.accelerationBackend or "unknown backend"
-    print(f"  ok: {metrics}; backend={backend}; ngl={result.nGpuLayers}")
+    print(
+        f"  ok: {metrics}; backend={backend}; ngl={result.nGpuLayers}; "
+        f"ctx={result.contextSize or 'N/A'}; ubatch={result.ubatchSize or 'N/A'}"
+    )
     print()
 
 
@@ -174,6 +201,18 @@ def _print_summary(results: list[RuntimeResult]) -> None:
 
 def _format_rate(value: float) -> str:
     return f"{value:,.2f}"
+
+
+def _case_context_size(
+    *,
+    prompt_tokens: int,
+    generation_tokens: int,
+    padding: int,
+    rounding: int,
+) -> int:
+    needed = prompt_tokens + generation_tokens + max(padding, 0)
+    rounding = max(rounding, 1)
+    return ((needed + rounding - 1) // rounding) * rounding
 
 
 if __name__ == "__main__":

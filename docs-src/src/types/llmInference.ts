@@ -26,7 +26,9 @@ export interface LlmBenchmarkEntry {
   platform: string;
   promptTokens: number;
   generationTokens: number;
+  contextSize: number;
   batchSize: number;
+  ubatchSize: number | null;
   repetitions: number;
   ppTps: number | null;
   ppStddev: number | null;
@@ -35,6 +37,9 @@ export interface LlmBenchmarkEntry {
   nGpuLayers: number;
   threads: number | null;
   backendRaw: string;
+  cacheTypeK: string;
+  cacheTypeV: string;
+  flashAttention: boolean;
   modelSizeBytes: number | null;
   modelParams: number | null;
   note: string;
