@@ -78,6 +78,27 @@ bash scripts/bootstrap-llama-cpp.sh --backend cuda --jobs 16
 bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-commit> --backend cuda --jobs 16
 ```
 
+For Linux amd64 CUDA release assets, build reproducible tarballs in Docker and
+upload them manually to a GitHub Release:
+
+```shell
+# Build both linux-amd64-cuda12 and linux-amd64-cuda13 assets
+bash scripts/build-llama-bench-release.sh --ref <llama.cpp-commit> --jobs 16
+
+# Or build one variant
+bash scripts/build-llama-bench-release.sh --variant cuda12 --ref <llama.cpp-commit>
+bash scripts/build-llama-bench-release.sh --variant cuda13 --ref <llama.cpp-commit>
+```
+
+The CUDA 12 asset is built with `GGML_NATIVE=OFF` and
+`CMAKE_CUDA_ARCHITECTURES=80;86;87;89;90`, covering Ampere, Ada, and Hopper.
+The CUDA 13 asset uses `80;86;87;88;89;90;100;103;110;120;121`, covering
+Ampere and later CUDA targets including Blackwell-generation SMs supported by
+CUDA 13 nvcc. Release packages include a `llama-bench` wrapper, the compiled
+`llama-bench.bin`, llama.cpp/ggml shared libraries, `LICENSE.llama.cpp`,
+`BUILD-MANIFEST.json`, and SHA256 checksums. They intentionally do not bundle
+NVIDIA driver, CUDA runtime, cuBLAS, system libc/libstdc++, or model files.
+
 On CUDA systems, if the active GCC is newer than the CUDA toolkit supports,
 load a compatible compiler module first or pass it explicitly:
 
@@ -499,6 +520,8 @@ python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value h
 │   ├── bootstrap-llm-oscar.sh  # Link models/llm to Oscar persistent storage
 │   ├── bootstrap-llm-autodl.sh # Link models/llm to AutoDL persistent storage
 │   ├── bootstrap-llm-colab.sh  # Copy Drive GGUF into Colab local runtime cache
+│   ├── build-llama-bench-release.sh
+│   ├── package-llama-bench-release.sh
 │   ├── download-llm-model.py   # Fixed Qwen3.6-27B Q4_K_M GGUF downloader
 │   └── manage-data.py          # Benchmark data management
 ├── Makefile             # Smart launcher and developer convenience targets
