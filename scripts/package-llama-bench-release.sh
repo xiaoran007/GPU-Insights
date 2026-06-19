@@ -268,7 +268,13 @@ EOF
   find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
 )
 
-tar -C "${stage_dir}" -cf - . | zstd -T0 -19 -f -o "${out_dir}/${asset_name}"
+tar \
+  --sort=name \
+  --owner=0 \
+  --group=0 \
+  --numeric-owner \
+  -C "${stage_dir}" \
+  -cf - . | zstd -T0 -19 -f -o "${out_dir}/${asset_name}"
 sha256sum "${out_dir}/${asset_name}" > "${out_dir}/${asset_name}.sha256"
 
 echo "Packaged llama-bench release asset:"

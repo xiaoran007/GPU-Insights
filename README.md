@@ -95,7 +95,9 @@ The release builder mounts a named Docker volume at `/work` by default
 survive the temporary `docker run --rm` container. Repeated builds reuse that
 cache per variant. Use `--clean-work` to clear the selected variant work tree,
 or `--work-volume <name>` / `GPU_INSIGHTS_LLAMA_BENCH_WORK_VOLUME` to isolate a
-different cache.
+different cache. Release files written under `dist/` are chowned back to the
+host UID/GID after packaging so they can be uploaded, overwritten, or deleted
+without `sudo`.
 
 The CUDA 12 asset is built with `GGML_NATIVE=OFF` and
 `CMAKE_CUDA_ARCHITECTURES=80;86;87;89;90`, covering Ampere, Ada, and Hopper.

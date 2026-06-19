@@ -9,6 +9,8 @@ jobs="${GPU_INSIGHTS_LLAMA_CPP_JOBS:-}"
 variant="all"
 work_volume="${GPU_INSIGHTS_LLAMA_BENCH_WORK_VOLUME:-gpu-insights-llama-bench-work}"
 clean_work=0
+host_uid="$(id -u)"
+host_gid="$(id -g)"
 
 cuda12_image="${GPU_INSIGHTS_LLAMA_BENCH_CUDA12_IMAGE:-nvidia/cuda:12.6.3-devel-ubuntu22.04}"
 cuda13_image="${GPU_INSIGHTS_LLAMA_BENCH_CUDA13_IMAGE:-nvidia/cuda:13.0.2-devel-ubuntu24.04}"
@@ -167,6 +169,8 @@ build_variant() {
     -e "CMAKE_FLAGS=${cmake_flags}" \
     -e "JOBS=${jobs}" \
     -e "CLEAN_WORK=${clean_work}" \
+    -e "HOST_UID=${host_uid}" \
+    -e "HOST_GID=${host_gid}" \
     -v "${work_volume}:/work" \
     -v "${repo_root}:/workspace" \
     -w /workspace \
@@ -214,6 +218,7 @@ bash /workspace/scripts/package-llama-bench-release.sh \
   --cuda-major "\${CUDA_MAJOR}" \
   --cuda-architectures "\${CUDA_ARCHITECTURES}" \
   --cmake-flags "\${CMAKE_FLAGS}"
+chown -R "\${HOST_UID}:\${HOST_GID}" "/workspace/${out_dir}"
 EOF
 }
 
