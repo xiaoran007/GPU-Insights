@@ -105,6 +105,14 @@ if [[ -z "${src_dir}" || -z "${build_dir}" || -z "${out_dir}" ]]; then
   exit 1
 fi
 
+require_cmd() {
+  local cmd="$1"
+  if ! command -v "${cmd}" >/dev/null 2>&1; then
+    echo "${cmd} is required to package llama-bench release assets." >&2
+    exit 1
+  fi
+}
+
 find_llama_bench() {
   local -a candidates=(
     "${build_dir}/bin/llama-bench"
@@ -148,19 +156,35 @@ json_string_array_from_semicolon_list() {
 copy_llama_libraries() {
   local binary="$1"
   local target_dir="$2"
+  local build_root
   local lib_path
   local lib_name
+  build_root="$(cd "${build_dir}" && pwd)"
   while IFS= read -r lib_path; do
     if [[ ! -f "${lib_path}" ]]; then
       continue
     fi
+    case "${lib_path}" in
+      "${build_root}"/*) ;;
+      *)
+        continue
+        ;;
+    esac
     lib_name="$(basename "${lib_path}")"
     case "${lib_name}" in
-      libllama.so*|libggml*.so*)
+      lib*.so*)
         cp -L "${lib_path}" "${target_dir}/${lib_name}"
         ;;
     esac
   done < <(ldd "${binary}" | awk '/=>/ {print $(NF-1)} /^[[:space:]]*\// {print $1}')
+}
+
+strip_release_binaries() {
+  local file
+  strip --strip-unneeded "${stage_dir}/bin/llama-bench.bin"
+  while IFS= read -r file; do
+    strip --strip-unneeded "${file}"
+  done < <(find "${stage_dir}/lib" -maxdepth 1 -type f -name '*.so*' | sort)
 }
 
 write_wrapper() {
@@ -176,6 +200,11 @@ WRAPPER
   chmod +x "${wrapper}"
 }
 
+require_cmd ldd
+require_cmd sha256sum
+require_cmd strip
+require_cmd zstd
+
 llama_bench="$(find_llama_bench)" || {
   echo "Could not locate built llama-bench under ${build_dir}/bin." >&2
   exit 1
@@ -189,6 +218,7 @@ mkdir -p "${stage_dir}/bin" "${stage_dir}/lib" "${stage_dir}/licenses"
 cp "${llama_bench}" "${stage_dir}/bin/llama-bench.bin"
 write_wrapper "${stage_dir}/bin/llama-bench"
 copy_llama_libraries "${llama_bench}" "${stage_dir}/lib"
+strip_release_binaries
 
 if [[ -f "${src_dir}/LICENSE" ]]; then
   cp "${src_dir}/LICENSE" "${stage_dir}/licenses/LICENSE.llama.cpp"
@@ -205,7 +235,7 @@ if [[ -n "${cuda_major}" ]]; then
 else
   cuda_label="${backend}"
 fi
-asset_name="${asset_prefix}-${platform}-${cuda_label}-${llama_commit_short}.tar.gz"
+asset_name="${asset_prefix}-${platform}-${cuda_label}-${llama_commit_short}.tar.zst"
 
 packaged_libraries="$(find "${stage_dir}/lib" -maxdepth 1 -type f -printf '%f\n' | sort | paste -sd ';' -)"
 
@@ -222,6 +252,8 @@ cat > "${stage_dir}/BUILD-MANIFEST.json" <<EOF
   "llamaCppCommit": "$(json_escape "${llama_commit}")",
   "cmakeFlags": "$(json_escape "${cmake_flags}")",
   "artifact": "$(json_escape "${asset_name}")",
+  "compression": "zstd",
+  "stripped": true,
   "packagedLibraries": $(json_string_array_from_semicolon_list "${packaged_libraries}"),
   "externalRuntimeRequirements": [
     "NVIDIA driver",
@@ -236,10 +268,12 @@ EOF
   find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
 )
 
-tar -C "${stage_dir}" -czf "${out_dir}/${asset_name}" .
+tar -C "${stage_dir}" -cf - . | zstd -T0 -19 -f -o "${out_dir}/${asset_name}"
 sha256sum "${out_dir}/${asset_name}" > "${out_dir}/${asset_name}.sha256"
 
 echo "Packaged llama-bench release asset:"
 echo "  ${out_dir}/${asset_name}"
+echo "Packaged libraries:"
+find "${stage_dir}/lib" -maxdepth 1 -type f -printf '  %f\n' | sort
 echo "SHA256:"
 cat "${out_dir}/${asset_name}.sha256"

@@ -13,6 +13,7 @@ RUN apt-get update \
         ninja-build \
         rsync \
         xz-utils \
+        zstd \
     && rm -rf /var/lib/apt/lists/*
 
 RUN if [ -f /usr/local/cuda/lib64/stubs/libcuda.so ] \
