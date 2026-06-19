@@ -67,8 +67,8 @@ class LlamaCppRuntime:
             str(config.prompt_tokens),
             "-n",
             str(config.generation_tokens),
-            "-c",
-            str(config.context_size),
+            "-d",
+            str(_context_depth(config)),
             "-b",
             str(config.batch_size),
             "-r",
@@ -143,6 +143,7 @@ class LlamaCppRuntime:
                 "llamaBenchCommand": self._last_command,
                 "profile": {
                     "contextSize": config.context_size,
+                    "contextDepth": _context_depth(config),
                     "batchSize": config.batch_size,
                     "ubatchSize": config.ubatch_size,
                     "cacheTypeK": config.cache_type_k,
@@ -212,6 +213,10 @@ def _int_or_none(value: Any) -> int | None:
     if value is None or value == "":
         return None
     return int(value)
+
+
+def _context_depth(config: RuntimeConfig) -> int:
+    return max(config.context_size - config.prompt_tokens, 0)
 
 
 def _format_build(row: Dict[str, Any]) -> str:
