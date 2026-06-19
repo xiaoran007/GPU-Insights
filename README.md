@@ -183,6 +183,9 @@ bash scripts/bootstrap-llm-oscar.sh
 # AutoDL: link models/llm to persistent storage before downloading
 bash scripts/bootstrap-llm-autodl.sh
 
+# Colab: copy an existing Drive GGUF into local runtime storage before running
+bash scripts/bootstrap-llm-colab.sh
+
 # Preview the exact Hugging Face URL and output path
 python3 scripts/download-llm-model.py --dry-run
 
@@ -207,6 +210,22 @@ and does not need to be downloaded again. Override the target with
 On AutoDL, `scripts/bootstrap-llm-autodl.sh` links `models/llm` to
 `/root/autodl-fs/llm`. Override the target with
 `GPU_INSIGHTS_AUTODL_LLM_DIR=/path/to/llm` if needed.
+
+On Colab, `scripts/bootstrap-llm-colab.sh` expects the fixed GGUF to already
+exist in Google Drive at `/content/drive/MyDrive/GPU-Insights/llm`, copies it
+into `/content/gpu-insights-llm`, then links `models/llm` to that local runtime
+cache. This keeps Google Drive as persistent storage while avoiding Drive I/O on
+the benchmark hot path. Mount Drive in the notebook first:
+
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+```
+
+Override the Drive cache with `GPU_INSIGHTS_COLAB_LLM_DIR=/path/to/llm`, or the
+local runtime cache with `GPU_INSIGHTS_COLAB_LOCAL_LLM_DIR=/content/path`. If the
+Drive GGUF is missing or has the wrong byte size, the script exits without
+copying or downloading.
 
 ### Run the LLM benchmark
 
@@ -479,6 +498,7 @@ python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value h
 │   ├── probe_benchmark_env.py  # Host/device metadata probe used by main_auto.py payload export
 │   ├── bootstrap-llm-oscar.sh  # Link models/llm to Oscar persistent storage
 │   ├── bootstrap-llm-autodl.sh # Link models/llm to AutoDL persistent storage
+│   ├── bootstrap-llm-colab.sh  # Copy Drive GGUF into Colab local runtime cache
 │   ├── download-llm-model.py   # Fixed Qwen3.6-27B Q4_K_M GGUF downloader
 │   └── manage-data.py          # Benchmark data management
 ├── Makefile             # Smart launcher and developer convenience targets
