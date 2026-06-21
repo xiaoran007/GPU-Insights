@@ -289,7 +289,7 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
             {entries.map((entry, index) => (
               <tr key={`${entry.device}-${entry.caseName}-${entry.runtime}-${index}`} className="hover:bg-[#f7fbff]">
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5">
-                  <div className="font-semibold">{entry.device}</div>
+                  <div className="font-semibold">{formatLlmDeviceLabel(entry)}</div>
                   <small className="text-[var(--color-muted)]">
                     {toTitleCase(entry.vendor)} · {entry.memory || "N/A"}
                   </small>
@@ -339,6 +339,9 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
                   <small className="text-[var(--color-muted)]">
                     ub {entry.ubatchSize?.toLocaleString() ?? "N/A"} · KV {entry.cacheTypeK || "?"}/{entry.cacheTypeV || "?"} · FA {entry.flashAttention ? "on" : "off"}
                   </small>
+                  <small className="block text-[var(--color-muted)]">
+                    split {entry.splitMode || "N/A"}{entry.heterogeneousDevices ? " · heterogeneous" : ""}
+                  </small>
                 </td>
                 <td className="border-b border-[var(--color-line)] px-2.5 py-2.5 italic text-[var(--color-muted)]">
                   {entry.status === "failed" ? entry.error || "Failed" : entry.note || "N/A"}
@@ -359,4 +362,17 @@ function LlmResultTable({ entries }: { entries: LlmBenchmarkEntry[] }) {
       )}
     </section>
   );
+}
+
+function formatLlmDeviceLabel(entry: LlmBenchmarkEntry): string {
+  const count = entry.deviceIds?.length ?? 0;
+  if (count <= 1 || entry.heterogeneousDevices) {
+    return entry.device || "N/A";
+  }
+
+  const repeatedPrefix = `${count}x `;
+  const baseDevice = entry.device.startsWith(repeatedPrefix)
+    ? entry.device.slice(repeatedPrefix.length)
+    : entry.device;
+  return `${baseDevice} *${count}`;
 }

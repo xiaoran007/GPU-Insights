@@ -20,6 +20,9 @@ class RuntimeConfig:
     repetitions: int
     n_gpu_layers: int
     device: str
+    device_ids: list[int]
+    split_mode: str
+    heterogeneous_devices: bool
     threads: int | None
     cache_type_k: str | None
     cache_type_v: str | None
@@ -49,6 +52,10 @@ class RuntimeResult:
     tgTps: float | None
     tgStddev: float | None
     nGpuLayers: int
+    deviceIds: list[int]
+    llamaDevices: str
+    splitMode: str
+    heterogeneousDevices: bool
     threads: int | None
     backendRaw: str
     cacheTypeK: str

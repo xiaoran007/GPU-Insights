@@ -272,6 +272,9 @@ python3 -m llm_bench.cli --llama-bench /path/to/llama-bench
 # Run one case
 python3 -m llm_bench.cli --case repo_context_plan
 
+# Pin execution and metadata to selected CUDA GPUs
+python3 -m llm_bench.cli --gpu-id 0,1
+
 # List configured cases
 python3 -m llm_bench.cli --list-cases
 ```
@@ -282,6 +285,12 @@ run it prints the selected runtime, model path, per-case progress, PP/TG
 throughput results, a summary, and finally a short import command. `llama-bench`
 stderr is streamed live with a `llama-bench |` prefix so backend/debug messages
 remain visible while stdout is still parsed as JSON.
+
+On CUDA hosts, the LLM launcher uses layer split by default. If `--gpu-id` is
+omitted and multiple NVIDIA GPUs are visible through `nvidia-smi`, it runs
+llama.cpp with all detected CUDA devices, for example `-dev CUDA0/CUDA1 -sm
+layer`. Pass `--gpu-id 0` or `--gpu-id 0,1` to select devices manually; pass
+`--device` only when you want to override the raw llama.cpp `-dev` value.
 
 By default the dashboard import payload is written to `outputs/llm-bench/`, and
 a sidecar `*.debug.json` file keeps the full raw llama-bench rows for debugging:

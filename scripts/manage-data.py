@@ -409,6 +409,10 @@ def build_llm_identity_key(entry: dict) -> tuple:
         entry["batchSize"],
         entry["ubatchSize"],
         entry["nGpuLayers"],
+        tuple(entry["deviceIds"]),
+        entry["llamaDevices"],
+        entry["splitMode"],
+        entry["heterogeneousDevices"],
         entry["cacheTypeK"],
         entry["cacheTypeV"],
         entry["flashAttention"],
@@ -506,6 +510,10 @@ def validate_llm_entry(entry: dict) -> list[str]:
         "tgTps",
         "tgStddev",
         "nGpuLayers",
+        "deviceIds",
+        "llamaDevices",
+        "splitMode",
+        "heterogeneousDevices",
         "threads",
         "backendRaw",
         "cacheTypeK",
@@ -530,6 +538,14 @@ def validate_llm_entry(entry: dict) -> list[str]:
 
     if "flashAttention" in entry and not isinstance(entry["flashAttention"], bool):
         errors.append("flashAttention must be a boolean")
+
+    if "deviceIds" in entry and not (
+        isinstance(entry["deviceIds"], list) and all(isinstance(item, int) for item in entry["deviceIds"])
+    ):
+        errors.append("deviceIds must be an array of integers")
+
+    if "heterogeneousDevices" in entry and not isinstance(entry["heterogeneousDevices"], bool):
+        errors.append("heterogeneousDevices must be a boolean")
 
     for field in ("ppTps", "ppStddev", "tgTps", "tgStddev"):
         if field in entry and entry[field] is not None and not isinstance(entry[field], (int, float)):
@@ -588,6 +604,10 @@ def normalize_llm_payload_entry(payload_entry: dict, payload_host: dict) -> dict
         "tgTps": payload_entry.get("tgTps"),
         "tgStddev": payload_entry.get("tgStddev"),
         "nGpuLayers": _coerce_int(payload_entry.get("nGpuLayers"), 0),
+        "deviceIds": payload_entry.get("deviceIds") or payload_host.get("device_ids", []),
+        "llamaDevices": payload_entry.get("llamaDevices", ""),
+        "splitMode": payload_entry.get("splitMode", ""),
+        "heterogeneousDevices": bool(payload_entry.get("heterogeneousDevices", False)),
         "threads": payload_entry.get("threads"),
         "backendRaw": payload_entry.get("backendRaw", ""),
         "cacheTypeK": payload_entry.get("cacheTypeK", ""),

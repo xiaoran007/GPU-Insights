@@ -7,6 +7,8 @@
     "name": "llama.cpp",
     "nGpuLayers": -1,
     "device": "auto",
+    "autoMultiGpu": true,
+    "splitMode": "layer",
     "cacheTypeK": "f16",
     "cacheTypeV": "f16",
     "flashAttention": true,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import shlex
+import subprocess
 from pathlib import Path
 
 from llm_bench.config import load_config, resolve_model_path, selected_cases
@@ -24,10 +25,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-b", "--batch-size", type=int, help="llama-bench batch size. Defaults to configured value.")
     parser.add_argument("-ub", "--ubatch-size", type=int, help="llama-bench physical batch size. Defaults to configured value.")
     parser.add_argument("-r", "--repetitions", type=int, help="llama-bench repetitions. Defaults to configured value.")
-    parser.add_argument("-dev", "--device", help="llama-bench device selector. Defaults to configured value.")
+    parser.add_argument("-dev", "--device", help="llama-bench device selector. Defaults to configured value or CUDA ids.")
+    parser.add_argument("-sm", "--split-mode", choices=["none", "layer", "row", "tensor"], help="llama-bench split mode. Defaults to configured value.")
     parser.add_argument("-t", "--threads", type=int)
     parser.add_argument("--backend", default="auto", help="Host metadata backend probe.")
-    parser.add_argument("--gpu-id", default="0", help="Comma-separated device ids for metadata probing.")
+    parser.add_argument("--gpu-id", help="Comma-separated CUDA device ids for both llama-bench execution and metadata probing.")
     parser.add_argument("--note", default="")
     parser.add_argument("--output-dir", default="outputs/llm-bench", help="Directory for payload JSON files.")
     parser.add_argument("--output-file", help="Write the dashboard import payload to this JSON file.")
@@ -59,6 +61,11 @@ def main() -> int:
     runtime_config = bench_config["runtime"]
     defaults = bench_config["defaults"]
     model_path = args.model_path or str(resolve_model_path(bench_config))
+    device_ids = _resolve_device_ids(args=args, runtime_config=runtime_config)
+    host = probe_benchmark_env(requested_backend=args.backend, device_ids=device_ids)
+    device = args.device or _resolve_llama_device(runtime_config=runtime_config, host=host, device_ids=device_ids)
+    split_mode = args.split_mode or str(runtime_config.get("splitMode", "layer"))
+    heterogeneous_devices = _is_heterogeneous_device_set(host)
     results = []
 
     print("LLM inference benchmark")
@@ -75,7 +82,8 @@ def main() -> int:
         f"KV={runtime_config.get('cacheTypeK', 'default')}/{runtime_config.get('cacheTypeV', 'default')}, "
         f"FA={'on' if runtime_config.get('flashAttention') else 'off'}, "
         f"batch={args.batch_size or int(defaults['batchSize'])}, "
-        f"ubatch={args.ubatch_size if args.ubatch_size is not None else defaults.get('ubatchSize', 'default')}"
+        f"ubatch={args.ubatch_size if args.ubatch_size is not None else defaults.get('ubatchSize', 'default')}, "
+        f"split={split_mode}, dev={_display_llama_devices(device)}"
     )
     print()
 
@@ -100,7 +108,10 @@ def main() -> int:
             ubatch_size=args.ubatch_size if args.ubatch_size is not None else defaults.get("ubatchSize"),
             repetitions=args.repetitions or int(defaults["repetitions"]),
             n_gpu_layers=int(runtime_config["nGpuLayers"]),
-            device=args.device or runtime_config["device"],
+            device=device,
+            device_ids=device_ids,
+            split_mode=split_mode,
+            heterogeneous_devices=heterogeneous_devices,
             threads=args.threads if args.threads is not None else defaults.get("threads"),
             cache_type_k=runtime_config.get("cacheTypeK"),
             cache_type_v=runtime_config.get("cacheTypeV"),
@@ -119,8 +130,7 @@ def main() -> int:
         results.append(result)
         _print_result(result)
 
-    print("Probing host metadata...")
-    host = probe_benchmark_env(requested_backend=args.backend, device_ids=_parse_device_ids(args.gpu_id))
+    print("Using host metadata from pre-run probe...")
     payload = build_payload(host=host, results=results, note=args.note)
     debug_payload = None if args.no_debug_output else build_payload(
         host=host,
@@ -149,6 +159,76 @@ def _parse_device_ids(value: str) -> list[int]:
     return [int(chunk) for chunk in chunks] or [0]
 
 
+def _resolve_device_ids(*, args: argparse.Namespace, runtime_config: dict) -> list[int]:
+    if args.gpu_id:
+        return _parse_device_ids(args.gpu_id)
+    if args.device:
+        ids = _device_ids_from_llama_device(args.device)
+        if ids:
+            return ids
+    if bool(runtime_config.get("autoMultiGpu", False)):
+        ids = _detect_cuda_device_ids()
+        if ids:
+            return ids
+    return [0]
+
+
+def _detect_cuda_device_ids() -> list[int]:
+    try:
+        output = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return []
+
+    ids = []
+    for line in output.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            ids.append(int(line))
+        except ValueError:
+            continue
+    return ids
+
+
+def _device_ids_from_llama_device(value: str) -> list[int]:
+    ids = []
+    for chunk in value.replace(",", "/").split("/"):
+        chunk = chunk.strip()
+        if not chunk.upper().startswith("CUDA"):
+            continue
+        suffix = chunk[4:]
+        if suffix.isdigit():
+            ids.append(int(suffix))
+    return ids
+
+
+def _resolve_llama_device(*, runtime_config: dict, host: dict, device_ids: list[int]) -> str:
+    configured_device = str(runtime_config.get("device", "auto"))
+    if host.get("backend") == "cuda" and device_ids:
+        return "/".join(f"CUDA{device_id}" for device_id in device_ids)
+    return configured_device
+
+
+def _display_llama_devices(value: str) -> str:
+    return value.replace("/", ",")
+
+
+def _is_heterogeneous_device_set(host: dict) -> bool:
+    device_ids = host.get("device_ids")
+    device = str(host.get("device", ""))
+    if not isinstance(device_ids, list) or len(device_ids) <= 1:
+        return False
+    repeated_prefix = f"{len(device_ids)}x "
+    if not device.startswith(repeated_prefix):
+        return True
+    return "," in device.removeprefix(repeated_prefix)
+
+
 def _failed_result(config: RuntimeConfig, error: str) -> RuntimeResult:
     return RuntimeResult(
         caseName=config.case_name,
@@ -172,6 +252,10 @@ def _failed_result(config: RuntimeConfig, error: str) -> RuntimeResult:
         tgTps=None,
         tgStddev=None,
         nGpuLayers=config.n_gpu_layers,
+        deviceIds=config.device_ids,
+        llamaDevices=config.device,
+        splitMode=config.split_mode,
+        heterogeneousDevices=config.heterogeneous_devices,
         threads=config.threads,
         backendRaw="",
         cacheTypeK=config.cache_type_k or "",

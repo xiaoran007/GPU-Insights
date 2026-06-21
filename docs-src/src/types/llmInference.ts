@@ -35,6 +35,10 @@ export interface LlmBenchmarkEntry {
   tgTps: number | null;
   tgStddev: number | null;
   nGpuLayers: number;
+  deviceIds: number[];
+  llamaDevices: string;
+  splitMode: string;
+  heterogeneousDevices: boolean;
   threads: number | null;
   backendRaw: string;
   cacheTypeK: string;

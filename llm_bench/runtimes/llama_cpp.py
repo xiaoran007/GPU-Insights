@@ -75,6 +75,8 @@ class LlamaCppRuntime:
             str(config.repetitions),
             "-ngl",
             str(config.n_gpu_layers),
+            "-sm",
+            config.split_mode,
             "-dev",
             config.device,
             "-o",
@@ -131,6 +133,10 @@ class LlamaCppRuntime:
             tgTps=_metric(tg_row, "avg_ts"),
             tgStddev=_metric(tg_row, "stddev_ts"),
             nGpuLayers=int(anchor.get("n_gpu_layers") or config.n_gpu_layers),
+            deviceIds=config.device_ids,
+            llamaDevices=_format_devices(anchor, config.device),
+            splitMode=str(anchor.get("split_mode") or config.split_mode),
+            heterogeneousDevices=config.heterogeneous_devices,
             threads=_int_or_none(anchor.get("n_threads")) or config.threads,
             backendRaw=str(anchor.get("backends", "")),
             cacheTypeK=str(anchor.get("type_k") or config.cache_type_k or ""),
@@ -146,6 +152,10 @@ class LlamaCppRuntime:
                     "contextDepth": _context_depth(config),
                     "batchSize": config.batch_size,
                     "ubatchSize": config.ubatch_size,
+                    "deviceIds": config.device_ids,
+                    "llamaDevices": config.device,
+                    "splitMode": config.split_mode,
+                    "heterogeneousDevices": config.heterogeneous_devices,
                     "cacheTypeK": config.cache_type_k,
                     "cacheTypeV": config.cache_type_v,
                     "flashAttention": config.flash_attention,
@@ -217,6 +227,15 @@ def _int_or_none(value: Any) -> int | None:
 
 def _context_depth(config: RuntimeConfig) -> int:
     return max(config.context_size - config.prompt_tokens, 0)
+
+
+def _format_devices(row: Dict[str, Any], fallback: str) -> str:
+    value = row.get("devices")
+    if isinstance(value, list):
+        return "/".join(str(item) for item in value)
+    if value:
+        return str(value)
+    return fallback
 
 
 def _format_build(row: Dict[str, Any]) -> str:
