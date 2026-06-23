@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
@@ -110,6 +111,8 @@ def main() -> int:
 
         downloaded = resume_from
         mode = "ab" if resume_from > 0 and status == 206 else "wb"
+        progress = ProgressReporter(downloaded)
+        progress.update(downloaded, total, force=True)
         with temp_path.open(mode) as handle:
             while True:
                 chunk = response.read(1024 * 1024)
@@ -117,7 +120,8 @@ def main() -> int:
                     break
                 handle.write(chunk)
                 downloaded += len(chunk)
-                _print_progress(downloaded, total)
+                progress.update(downloaded, total)
+        progress.update(downloaded, total, force=True)
     print()
 
     final_size = temp_path.stat().st_size
@@ -136,16 +140,51 @@ def main() -> int:
     return 0
 
 
-def _print_progress(downloaded: int, total: int) -> None:
-    if total > 0:
-        pct = downloaded / total * 100
-        print(
-            f"\r  Downloaded: {_format_bytes(downloaded)} / {_format_bytes(total)} ({pct:5.1f}%)",
-            end="",
-            flush=True,
-        )
-    else:
-        print(f"\r  Downloaded: {_format_bytes(downloaded)}", end="", flush=True)
+class ProgressReporter:
+    def __init__(self, initial_downloaded: int) -> None:
+        self.initial_downloaded = initial_downloaded
+        self.started_at = time.monotonic()
+        self.last_rendered_at = 0.0
+
+    def update(self, downloaded: int, total: int, *, force: bool = False) -> None:
+        now = time.monotonic()
+        if not force and now - self.last_rendered_at < 0.2:
+            return
+
+        self.last_rendered_at = now
+        speed = self._bytes_per_second(downloaded, now)
+        if total > 0:
+            pct = min(downloaded / total, 1.0)
+            print(
+                "\r  Downloaded: "
+                f"{_progress_bar(pct)} "
+                f"{pct * 100:5.1f}% "
+                f"{_format_bytes(downloaded)} / {_format_bytes(total)} "
+                f"@ {_format_rate(speed)}",
+                end="",
+                flush=True,
+            )
+        else:
+            print(
+                "\r  Downloaded: "
+                f"{_format_bytes(downloaded)} "
+                f"@ {_format_rate(speed)}",
+                end="",
+                flush=True,
+            )
+
+    def _bytes_per_second(self, downloaded: int, now: float) -> float:
+        elapsed = max(now - self.started_at, 1e-6)
+        return max(downloaded - self.initial_downloaded, 0) / elapsed
+
+
+def _progress_bar(progress: float, width: int = 28) -> str:
+    filled = min(width, max(0, int(round(progress * width))))
+    return "[" + "#" * filled + "-" * (width - filled) + "]"
+
+
+def _format_rate(bytes_per_second: float) -> str:
+    return f"{_format_bytes(int(bytes_per_second))}/s"
 
 
 def _format_bytes(value: int) -> str:
