@@ -1981,10 +1981,10 @@
       "runtime": "llama.cpp",
       "runtimeVersion": "be4a6a63e (9775)",
       "accelerationBackend": "CUDA",
-      "vendor": "unknown",
-      "architecture": "aarch64",
-      "device": "aarch64",
-      "memory": "",
+      "vendor": "nvidia",
+      "architecture": "Blackwell 2.0",
+      "device": "NVIDIA GB10 (DGX Spark)",
+      "memory": "128 GB (shared memory)",
       "platform": "Linux 6.17.0-1021-nvidia",
       "promptTokens": 2048,
       "generationTokens": 128,
@@ -2010,7 +2010,7 @@
       "flashAttention": true,
       "modelSizeBytes": 16806250496,
       "modelParams": 26895998464,
-      "note": "No accelerator detected.",
+      "note": "CUDA CC 12.1",
       "date": "2026.6.23",
       "rawResult": {}
     }
