@@ -10,6 +10,7 @@ llama_ref="${GPU_INSIGHTS_LLAMA_CPP_REF:-}"
 backend="${GPU_INSIGHTS_LLAMA_CPP_BACKEND:-}"
 jobs="${GPU_INSIGHTS_LLAMA_CPP_JOBS:-}"
 cuda_host_compiler="${GPU_INSIGHTS_LLAMA_CPP_CUDA_HOST_COMPILER:-}"
+native="${GPU_INSIGHTS_LLAMA_CPP_NATIVE:-auto}"
 
 usage() {
   cat <<'USAGE'
@@ -24,6 +25,8 @@ Options:
   --jobs <n>            Parallel build jobs passed to CMake.
   --cuda-host-compiler <path>
                        Host C++ compiler for CUDA builds.
+  --native <auto|on|off>
+                       CPU native optimizations. Default: auto (off for CUDA).
   -h, --help            Show this help text.
 
 Environment overrides:
@@ -34,6 +37,7 @@ Environment overrides:
   GPU_INSIGHTS_LLAMA_CPP_JOBS
   GPU_INSIGHTS_LLAMA_CPP_REPO
   GPU_INSIGHTS_LLAMA_CPP_CUDA_HOST_COMPILER
+  GPU_INSIGHTS_LLAMA_CPP_NATIVE
 USAGE
 }
 
@@ -77,6 +81,11 @@ while [[ $# -gt 0 ]]; do
     --cuda-host-compiler)
       require_option_value "$1" "${2:-}"
       cuda_host_compiler="$2"
+      shift 2
+      ;;
+    --native)
+      require_option_value "$1" "${2:-}"
+      native="$2"
       shift 2
       ;;
     -h|--help)
@@ -131,6 +140,18 @@ normalize_backend() {
     *)
       echo "Unsupported backend: ${backend}"
       echo "Expected one of: cpu, cuda, hip, vulkan, sycl, metal"
+      exit 1
+      ;;
+  esac
+}
+
+normalize_native() {
+  native="$(printf '%s' "${native}" | tr '[:upper:]' '[:lower:]')"
+  case "${native}" in
+    auto|on|off) ;;
+    *)
+      echo "Unsupported native setting: ${native}"
+      echo "Expected one of: auto, on, off"
       exit 1
       ;;
   esac
@@ -307,6 +328,20 @@ configure_and_build() {
   local -a cmake_args
   cmake_args=(-S "${src_dir}" -B "${build_dir}" -DCMAKE_BUILD_TYPE=Release)
 
+  case "${native}" in
+    on)
+      cmake_args+=(-DGGML_NATIVE=ON)
+      ;;
+    off)
+      cmake_args+=(-DGGML_NATIVE=OFF)
+      ;;
+    auto)
+      if [[ "${backend}" == "cuda" ]]; then
+        cmake_args+=(-DGGML_NATIVE=OFF)
+      fi
+      ;;
+  esac
+
   case "${backend}" in
     cpu)
       ;;
@@ -382,12 +417,14 @@ if [[ -z "${llama_ref}" ]]; then
 fi
 prompt_backend
 normalize_backend
+normalize_native
 
 echo "llama.cpp bootstrap configuration:"
 echo "  ref:       ${llama_ref}"
 echo "  backend:   ${backend}"
 echo "  checkout:  ${src_dir}"
 echo "  build dir: ${build_dir}"
+echo "  native:    ${native}"
 if [[ -n "${jobs}" ]]; then
   echo "  jobs:      ${jobs}"
 fi

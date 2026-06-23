@@ -78,6 +78,17 @@ bash scripts/bootstrap-llama-cpp.sh --backend cuda --jobs 16
 bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-commit> --backend cuda --jobs 16
 ```
 
+For CUDA builds, the helper passes `GGML_NATIVE=OFF` by default. GPU-Insights
+runs the LLM track in full-GPU mode, so CPU native kernels are not part of the
+canonical measurement path. Keeping native CPU code off also avoids cluster
+toolchain mismatches where a CPU supports instructions such as AVX512-FP16 but
+the available assembler cannot parse them. Pass `--native on` only when you
+want llama.cpp to build native CPU kernels for the local host:
+
+```shell
+bash scripts/bootstrap-llama-cpp.sh --backend cuda --native on
+```
+
 For Linux amd64 CUDA release assets, build reproducible tarballs in Docker and
 upload them manually to a GitHub Release:
 
