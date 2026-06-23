@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from llm_bench.runtimes.base import RuntimeConfig, RuntimeResult
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_LLAMA_BENCH_CANDIDATES = (
+    ROOT_DIR / "third_party/llama-bench/current/bin/llama-bench",
     ROOT_DIR / "third_party/llama.cpp/build/bin/llama-bench",
     ROOT_DIR / "third_party/llama.cpp/build/bin/Release/llama-bench",
     ROOT_DIR / "third_party/llama.cpp/build/bin/llama-bench.exe",
@@ -35,6 +37,10 @@ class LlamaCppRuntime:
         if self.executable:
             return str(Path(self.executable).expanduser())
 
+        env_executable = os.environ.get("GPU_INSIGHTS_LLAMA_BENCH")
+        if env_executable:
+            return str(Path(env_executable).expanduser())
+
         for candidate in DEFAULT_LLAMA_BENCH_CANDIDATES:
             if candidate.is_file():
                 return str(candidate)
@@ -56,7 +62,8 @@ class LlamaCppRuntime:
             raise FileNotFoundError(
                 "llama-bench executable was not found. "
                 f"Run scripts/bootstrap-llama-cpp.sh, place it at {default_path}, "
-                "make llama-bench available on PATH, or pass --llama-bench."
+                "set GPU_INSIGHTS_LLAMA_BENCH, make llama-bench available on PATH, "
+                "or pass --llama-bench."
             )
 
         command = [

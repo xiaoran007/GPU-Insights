@@ -60,12 +60,15 @@ upstream llama.cpp build guide for your platform:
 - Official build guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md>
 - Intel GPU / SYCL guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/backend/SYCL.md>
 
-GPU-Insights provides a helper that clones llama.cpp, checks out upstream
-`origin/HEAD` by default, asks which backend to build, and builds only
-`llama-bench`. Pass `--ref <git-ref>` only when you want to pin a specific
-llama.cpp commit, branch, or tag. The helper does not install GPU drivers,
-CUDA, ROCm, Vulkan SDK, oneAPI, compilers, or CMake; missing build commands are
-reported before cloning/building.
+GPU-Insights provides a helper that prepares `llama-bench`. For CUDA on Linux
+amd64, it first checks the visible NVIDIA GPU and CUDA major version, then tries
+to install the matching GPU-Insights prebuilt release asset. If that fails in an
+interactive shell, it asks whether to fall back to a source build. Other
+backends go directly to source build. Source builds clone llama.cpp, check out
+upstream `origin/HEAD` by default, and build only `llama-bench`. Pass
+`--ref <git-ref>` only when you want to pin a specific llama.cpp commit, branch,
+or tag. The helper does not install GPU drivers, CUDA, ROCm, Vulkan SDK, oneAPI,
+compilers, or CMake.
 
 ```shell
 # Interactive backend selection
@@ -74,9 +77,21 @@ bash scripts/bootstrap-llama-cpp.sh
 # Non-interactive CUDA example
 bash scripts/bootstrap-llama-cpp.sh --backend cuda --jobs 16
 
+# Force source build, skipping prebuilt release assets
+bash scripts/bootstrap-llama-cpp.sh --backend cuda --prebuilt off
+
+# Require a prebuilt asset and stop if it is unavailable
+bash scripts/bootstrap-llama-cpp.sh --backend cuda --prebuilt on
+
 # Optional pinned-ref build
 bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-commit> --backend cuda --jobs 16
 ```
+
+Prebuilt CUDA assets are installed under `third_party/llama-bench/`, with
+`third_party/llama-bench/current/bin/llama-bench` pointing at the selected
+release. Override the GitHub release source with `--release-repo <owner/repo>`
+or `--release-tag <tag>`. The LLM launcher checks that prebuilt path before the
+source-build path and `PATH`.
 
 For CUDA builds, the helper passes `GGML_NATIVE=OFF` by default. GPU-Insights
 runs the LLM track in full-GPU mode, so CPU native kernels are not part of the
@@ -304,12 +319,14 @@ python3 -m llm_bench.cli --gpu-id 0,1
 python3 -m llm_bench.cli --list-cases
 ```
 
-By default the launcher looks for `llama-bench` in the bootstrap build output
-under `third_party/llama.cpp/build/bin/` before falling back to `PATH`. During a
-run it prints the selected runtime, model path, per-case progress, PP/TG
-throughput results, a summary, and finally a short import command. `llama-bench`
-stderr is streamed live with a `llama-bench |` prefix so backend/debug messages
-remain visible while stdout is still parsed as JSON.
+By default the launcher looks for `llama-bench` in
+`third_party/llama-bench/current/bin/`, then the source bootstrap build output
+under `third_party/llama.cpp/build/bin/`, then `PATH`. Set
+`GPU_INSIGHTS_LLAMA_BENCH` or pass `--llama-bench` to override this order.
+During a run it prints the selected runtime, model path, per-case progress,
+PP/TG throughput results, a summary, and finally a short import command.
+`llama-bench` stderr is streamed live with a `llama-bench |` prefix so
+backend/debug messages remain visible while stdout is still parsed as JSON.
 
 On CUDA hosts, the LLM launcher uses layer split by default. If `--gpu-id` is
 omitted and multiple NVIDIA GPUs are visible through `nvidia-smi`, it runs
