@@ -219,6 +219,9 @@ bash scripts/bootstrap-llm-autodl.sh
 # Colab: copy an existing Drive GGUF into local runtime storage before running
 bash scripts/bootstrap-llm-colab.sh
 
+# Vast.ai: prepare an ephemeral instance workspace before downloading
+bash scripts/bootstrap-llm-vast.sh
+
 # Preview the exact Hugging Face URL and output path
 python3 scripts/download-llm-model.py --dry-run
 
@@ -259,6 +262,17 @@ Override the Drive cache with `GPU_INSIGHTS_COLAB_LLM_DIR=/path/to/llm`, or the
 local runtime cache with `GPU_INSIGHTS_COLAB_LOCAL_LLM_DIR=/content/path`. If the
 Drive GGUF is missing or has the wrong byte size, the script exits without
 copying or downloading.
+
+On Vast.ai, use a CUDA base image such as
+`nvidia/cuda:12.6.3-runtime-ubuntu22.04`, clone the repo into the instance, then
+run `scripts/bootstrap-llm-vast.sh`. The Vast helper only checks the local
+one-shot instance environment, creates `models/llm`, verifies basic tools and
+disk space, and prints the explicit download/build/run commands. It does not
+download the GGUF, install or build llama.cpp, or configure persistent model
+storage. Because Vast instances are usually rented as ephemeral containers, run
+`python3 scripts/download-llm-model.py` on the instance after the bootstrap.
+Override the free-space guard with `GPU_INSIGHTS_VAST_MIN_FREE_GIB=60` if you
+want a larger local disk margin.
 
 ### Run the LLM benchmark
 
@@ -541,6 +555,7 @@ python3 scripts/manage-data.py import-payload '<paste RESULT_PAYLOAD_B64 value h
 │   ├── bootstrap-llm-oscar.sh  # Link models/llm to Oscar persistent storage
 │   ├── bootstrap-llm-autodl.sh # Link models/llm to AutoDL persistent storage
 │   ├── bootstrap-llm-colab.sh  # Copy Drive GGUF into Colab local runtime cache
+│   ├── bootstrap-llm-vast.sh   # Prepare a Vast.ai ephemeral instance workspace
 │   ├── build-llama-bench-release.sh
 │   ├── package-llama-bench-release.sh
 │   ├── download-llm-model.py   # Fixed Qwen3.6-27B Q4_K_M GGUF downloader
