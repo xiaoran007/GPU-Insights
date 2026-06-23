@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "lastUpdated": "2026-06-19",
+    "lastUpdated": "2026-06-23",
     "version": "1.0",
     "description": "LLM inference benchmark results. Current entries are mock development data."
   },
@@ -1744,6 +1744,50 @@
       "llamaDevices": "CUDA0",
       "splitMode": "layer",
       "heterogeneousDevices": false
+    },
+    {
+      "model": "qwen3_6_27b_q4",
+      "caseName": "agent_step_small",
+      "caseDescription": "Short tool result or agent loop step with a compact action response.",
+      "status": "ok",
+      "error": "",
+      "baseModel": "Qwen/Qwen3.6-27B",
+      "artifact": "GGUF Q4_K_M",
+      "runtime": "llama.cpp",
+      "runtimeVersion": "be4a6a63e (9775)",
+      "accelerationBackend": "CUDA",
+      "vendor": "unknown",
+      "architecture": "aarch64",
+      "device": "aarch64",
+      "memory": "",
+      "platform": "Linux 6.17.0-1021-nvidia",
+      "promptTokens": 2048,
+      "generationTokens": 128,
+      "contextSize": 4096,
+      "batchSize": 2048,
+      "ubatchSize": 512,
+      "repetitions": 5,
+      "ppTps": 813.984593,
+      "ppStddev": 0.985376,
+      "tgTps": 12.587994,
+      "tgStddev": 0.00929,
+      "nGpuLayers": -1,
+      "deviceIds": [
+        0
+      ],
+      "llamaDevices": "auto",
+      "splitMode": "layer",
+      "heterogeneousDevices": false,
+      "threads": 20,
+      "backendRaw": "CUDA",
+      "cacheTypeK": "f16",
+      "cacheTypeV": "f16",
+      "flashAttention": true,
+      "modelSizeBytes": 16806250496,
+      "modelParams": 26895998464,
+      "note": "No accelerator detected.",
+      "date": "2026.6.23",
+      "rawResult": {}
     }
   ]
 }
