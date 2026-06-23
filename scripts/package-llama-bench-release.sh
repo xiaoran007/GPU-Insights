@@ -179,6 +179,45 @@ copy_llama_libraries() {
   done < <(ldd "${binary}" | awk '/=>/ {print $(NF-1)} /^[[:space:]]*\// {print $1}')
 }
 
+copy_runtime_libraries() {
+  local target_dir="$1"
+  local lib_path
+  local lib_name
+  while IFS= read -r lib_path; do
+    if [[ ! -f "${lib_path}" ]]; then
+      continue
+    fi
+
+    lib_name="$(basename "${lib_path}")"
+    case "${lib_name}" in
+      libstdc++.so.*|libgcc_s.so.*|libgomp.so.*|libatomic.so.*)
+        cp -L "${lib_path}" "${target_dir}/${lib_name}"
+        ;;
+    esac
+  done < <(
+    {
+      ldd "${stage_dir}/bin/llama-bench.bin"
+      find "${stage_dir}/lib" -maxdepth 1 -type f -name '*.so*' -print0 \
+        | xargs -0 -r ldd
+    } | awk '/=>/ {print $(NF-1)} /^[[:space:]]*\// {print $1}' | sort -u
+  )
+}
+
+copy_runtime_licenses() {
+  if [[ -f /usr/share/doc/libstdc++6/copyright ]]; then
+    cp /usr/share/doc/libstdc++6/copyright "${stage_dir}/licenses/LICENSE.libstdc++"
+  fi
+  if [[ -f /usr/share/doc/libgcc-s1/copyright ]]; then
+    cp /usr/share/doc/libgcc-s1/copyright "${stage_dir}/licenses/LICENSE.libgcc_s"
+  fi
+  if [[ -f /usr/share/doc/libgomp1/copyright ]]; then
+    cp /usr/share/doc/libgomp1/copyright "${stage_dir}/licenses/LICENSE.libgomp"
+  fi
+  if [[ -f /usr/share/doc/libatomic1/copyright ]]; then
+    cp /usr/share/doc/libatomic1/copyright "${stage_dir}/licenses/LICENSE.libatomic"
+  fi
+}
+
 strip_release_binaries() {
   local file
   strip --strip-unneeded "${stage_dir}/bin/llama-bench.bin"
@@ -218,6 +257,7 @@ mkdir -p "${stage_dir}/bin" "${stage_dir}/lib" "${stage_dir}/licenses"
 cp "${llama_bench}" "${stage_dir}/bin/llama-bench.bin"
 write_wrapper "${stage_dir}/bin/llama-bench"
 copy_llama_libraries "${llama_bench}" "${stage_dir}/lib"
+copy_runtime_libraries "${stage_dir}/lib"
 strip_release_binaries
 
 if [[ -f "${src_dir}/LICENSE" ]]; then
@@ -226,6 +266,7 @@ else
   echo "Missing llama.cpp LICENSE at ${src_dir}/LICENSE." >&2
   exit 1
 fi
+copy_runtime_licenses
 
 llama_commit="$(git -C "${src_dir}" rev-parse HEAD)"
 llama_commit_short="$(git -C "${src_dir}" rev-parse --short=12 HEAD)"

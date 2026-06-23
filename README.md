@@ -119,12 +119,16 @@ The CUDA 12 asset is built with `GGML_NATIVE=OFF` and
 The CUDA 13 asset uses `80;86;87;88;89;90;100;103;110;120;121`, covering
 Ampere and later CUDA targets including Blackwell-generation SMs supported by
 CUDA 13 nvcc. Release packages include a `llama-bench` wrapper, the compiled
-`llama-bench.bin`, llama.cpp/ggml shared libraries, `LICENSE.llama.cpp`,
-`BUILD-MANIFEST.json`, and SHA256 checksums. The package script strips release
-binaries and writes `.tar.zst` archives. They intentionally do not bundle
-NVIDIA driver, CUDA runtime, cuBLAS, system libc/libstdc++, or model files.
-The Docker build uses CUDA stub libraries only for link-time `libcuda.so.1`
-resolution; target machines still provide the real NVIDIA driver at runtime.
+`llama-bench.bin`, llama.cpp/ggml shared libraries, the GCC runtime libraries
+needed by the build (`libstdc++.so.*`, `libgcc_s.so.*`, `libgomp.so.*`, and
+`libatomic.so.*` when linked),
+`LICENSE.llama.cpp`, `BUILD-MANIFEST.json`, and SHA256 checksums. Bundling the
+C++ runtime keeps cluster module environments with older `libstdc++` from
+shadowing the ABI required by the release build. The package script strips
+release binaries and writes `.tar.zst` archives. They intentionally do not
+bundle NVIDIA driver, CUDA runtime, cuBLAS, glibc, or model files. The Docker
+build uses CUDA stub libraries only for link-time `libcuda.so.1` resolution;
+target machines still provide the real NVIDIA driver at runtime.
 
 On CUDA systems, if the active GCC is newer than the CUDA toolkit supports,
 load a compatible compiler module first or pass it explicitly:
