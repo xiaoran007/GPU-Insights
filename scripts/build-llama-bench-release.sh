@@ -15,13 +15,14 @@ host_gid="$(id -g)"
 cuda12_image="${GPU_INSIGHTS_LLAMA_BENCH_CUDA12_IMAGE:-nvidia/cuda:12.6.3-devel-ubuntu22.04}"
 cuda13_image="${GPU_INSIGHTS_LLAMA_BENCH_CUDA13_IMAGE:-nvidia/cuda:13.0.2-devel-ubuntu24.04}"
 cuda12_architectures="${GPU_INSIGHTS_LLAMA_BENCH_CUDA12_ARCHS:-80;86;87;89;90}"
+cuda12_legacy_architectures="${GPU_INSIGHTS_LLAMA_BENCH_CUDA12_LEGACY_ARCHS:-60;61;62;70;72;75}"
 cuda13_architectures="${GPU_INSIGHTS_LLAMA_BENCH_CUDA13_ARCHS:-80;86;87;88;89;90;100;103;110;120;121}"
 cuda_stub_dir="/usr/local/cuda/lib64/stubs"
 
 usage() {
   cat <<'USAGE'
 Usage:
-  bash scripts/build-llama-bench-release.sh [--variant <all|cuda12|cuda13>] [--ref <git-ref>]
+  bash scripts/build-llama-bench-release.sh [--variant <all|cuda12|cuda12-legacy|cuda13>] [--ref <git-ref>]
 
 Options:
   --variant <name>        Build one variant or all. Default: all.
@@ -43,6 +44,7 @@ Environment overrides:
   GPU_INSIGHTS_LLAMA_BENCH_CUDA12_IMAGE
   GPU_INSIGHTS_LLAMA_BENCH_CUDA13_IMAGE
   GPU_INSIGHTS_LLAMA_BENCH_CUDA12_ARCHS
+  GPU_INSIGHTS_LLAMA_BENCH_CUDA12_LEGACY_ARCHS
   GPU_INSIGHTS_LLAMA_BENCH_CUDA13_ARCHS
 USAGE
 }
@@ -111,10 +113,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "${variant}" in
-  all|cuda12|cuda13) ;;
+  all|cuda12|cuda12-legacy|cuda13) ;;
   *)
     echo "Unsupported variant: ${variant}"
-    echo "Expected one of: all, cuda12, cuda13"
+    echo "Expected one of: all, cuda12, cuda12-legacy, cuda13"
     exit 1
     ;;
 esac
@@ -136,6 +138,7 @@ build_variant() {
   local cuda_major="$2"
   local image="$3"
   local architectures="$4"
+  local cuda_label="$5"
   local builder_image="gpu-insights-llama-bench-builder:${name}"
   local container_work="/work/${name}"
   local cmake_flags="-DGGML_CUDA=ON -DGGML_NATIVE=OFF -DCMAKE_CUDA_ARCHITECTURES=${architectures} -DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath-link,${cuda_stub_dir} -DCMAKE_BUILD_TYPE=Release"
@@ -145,6 +148,7 @@ build_variant() {
   echo "  variant:        ${name}"
   echo "  docker image:   ${image}"
   echo "  llama.cpp ref:  ${llama_ref}"
+  echo "  cuda label:     ${cuda_label}"
   echo "  architectures: ${architectures}"
   echo "  work volume:   ${work_volume}"
   echo "  output:         ${out_dir}"
@@ -165,6 +169,7 @@ build_variant() {
     -e "LLAMA_REPO=${llama_repo}" \
     -e "LLAMA_REF=${llama_ref}" \
     -e "CUDA_MAJOR=${cuda_major}" \
+    -e "CUDA_LABEL=${cuda_label}" \
     -e "CUDA_ARCHITECTURES=${architectures}" \
     -e "CMAKE_FLAGS=${cmake_flags}" \
     -e "JOBS=${jobs}" \
@@ -216,6 +221,7 @@ bash /workspace/scripts/package-llama-bench-release.sh \
   --platform linux-amd64 \
   --backend cuda \
   --cuda-major "\${CUDA_MAJOR}" \
+  --cuda-label "\${CUDA_LABEL}" \
   --cuda-architectures "\${CUDA_ARCHITECTURES}" \
   --cmake-flags "\${CMAKE_FLAGS}"
 chown -R "\${HOST_UID}:\${HOST_GID}" "/workspace/${out_dir}"
@@ -225,11 +231,15 @@ EOF
 mkdir -p "${out_dir}"
 
 if [[ "${variant}" == "all" || "${variant}" == "cuda12" ]]; then
-  build_variant "linux-amd64-cuda12" "12" "${cuda12_image}" "${cuda12_architectures}"
+  build_variant "linux-amd64-cuda12" "12" "${cuda12_image}" "${cuda12_architectures}" "cuda12"
+fi
+
+if [[ "${variant}" == "all" || "${variant}" == "cuda12-legacy" ]]; then
+  build_variant "linux-amd64-cuda12-legacy" "12" "${cuda12_image}" "${cuda12_legacy_architectures}" "cuda12-legacy"
 fi
 
 if [[ "${variant}" == "all" || "${variant}" == "cuda13" ]]; then
-  build_variant "linux-amd64-cuda13" "13" "${cuda13_image}" "${cuda13_architectures}"
+  build_variant "linux-amd64-cuda13" "13" "${cuda13_image}" "${cuda13_architectures}" "cuda13"
 fi
 
 echo

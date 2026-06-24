@@ -7,6 +7,7 @@ out_dir=""
 platform="linux-amd64"
 backend="cuda"
 cuda_major=""
+cuda_label=""
 cuda_architectures=""
 cmake_flags=""
 asset_prefix="gpu-insights-llama-bench"
@@ -23,6 +24,7 @@ Options:
   --platform <name>             Release platform label. Default: linux-amd64.
   --backend <name>              Backend label. Default: cuda.
   --cuda-major <n>              CUDA major version label.
+  --cuda-label <label>          CUDA asset label. Default: cuda<major>.
   --cuda-architectures <list>   CMake CUDA architectures list.
   --cmake-flags <text>          CMake flags to record in BUILD-MANIFEST.json.
   --asset-prefix <name>         Asset filename prefix.
@@ -70,6 +72,11 @@ while [[ $# -gt 0 ]]; do
     --cuda-major)
       require_option_value "$1" "${2:-}"
       cuda_major="$2"
+      shift 2
+      ;;
+    --cuda-label)
+      require_option_value "$1" "${2:-}"
+      cuda_label="$2"
       shift 2
       ;;
     --cuda-architectures)
@@ -270,10 +277,9 @@ copy_runtime_licenses
 
 llama_commit="$(git -C "${src_dir}" rev-parse HEAD)"
 llama_commit_short="$(git -C "${src_dir}" rev-parse --short=12 HEAD)"
-cuda_label=""
 if [[ -n "${cuda_major}" ]]; then
-  cuda_label="cuda${cuda_major}"
-else
+  cuda_label="${cuda_label:-cuda${cuda_major}}"
+elif [[ -z "${cuda_label}" ]]; then
   cuda_label="${backend}"
 fi
 asset_name="${asset_prefix}-${platform}-${cuda_label}-${llama_commit_short}.tar.zst"
@@ -287,6 +293,7 @@ cat > "${stage_dir}/BUILD-MANIFEST.json" <<EOF
   "platform": "$(json_escape "${platform}")",
   "backend": "$(json_escape "${backend}")",
   "cudaMajor": "$(json_escape "${cuda_major}")",
+  "cudaLabel": "$(json_escape "${cuda_label}")",
   "cudaArchitectures": $(json_string_array_from_semicolon_list "${cuda_architectures}"),
   "ggmlNative": false,
   "llamaCppRepo": "https://github.com/ggml-org/llama.cpp",

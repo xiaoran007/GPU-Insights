@@ -90,18 +90,20 @@ bash scripts/bootstrap-llama-cpp.sh --ref <llama.cpp-commit> --backend cuda --jo
 Prebuilt CUDA assets are installed under `third_party/llama-bench/`, with
 `third_party/llama-bench/current/bin/llama-bench` pointing at the selected
 release. Override the GitHub release source with `--release-repo <owner/repo>`
-or `--release-tag <tag>`. The LLM launcher checks that prebuilt path before the
-source-build path and `PATH`.
+or `--release-tag <tag>`. On CUDA 12 hosts with visible pre-Ampere GPUs, the
+helper selects the `cuda12-legacy` asset automatically. The LLM launcher checks
+that prebuilt path before the source-build path and `PATH`.
 
 For Linux amd64 CUDA release assets, build reproducible tarballs in Docker and
 upload them manually to a GitHub Release:
 
 ```shell
-# Build both linux-amd64-cuda12 and linux-amd64-cuda13 assets
+# Build linux-amd64-cuda12, linux-amd64-cuda12-legacy, and linux-amd64-cuda13 assets
 bash scripts/build-llama-bench-release.sh --ref <llama.cpp-commit> --jobs 16
 
 # Or build one variant
 bash scripts/build-llama-bench-release.sh --variant cuda12 --ref <llama.cpp-commit>
+bash scripts/build-llama-bench-release.sh --variant cuda12-legacy --ref <llama.cpp-commit>
 bash scripts/build-llama-bench-release.sh --variant cuda13 --ref <llama.cpp-commit>
 ```
 
@@ -116,6 +118,10 @@ without `sudo`.
 
 The CUDA 12 asset is built with `GGML_NATIVE=OFF` and
 `CMAKE_CUDA_ARCHITECTURES=80;86;87;89;90`, covering Ampere, Ada, and Hopper.
+The CUDA 12 legacy asset uses `60;61;62;70;72;75`, covering Pascal, Volta, and
+Turing while excluding Ampere. Pascal is kept in the CUDA 12 legacy package;
+CUDA 13 is not used for this target because CUDA 13 library support dropped
+older pre-Turing architectures.
 The CUDA 13 asset uses `80;86;87;88;89;90;100;103;110;120;121`, covering
 Ampere and later CUDA targets including Blackwell-generation SMs supported by
 CUDA 13 nvcc. Release packages include a `llama-bench` wrapper, the compiled

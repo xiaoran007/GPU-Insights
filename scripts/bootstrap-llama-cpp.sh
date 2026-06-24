@@ -370,6 +370,30 @@ detect_cuda_major_for_prebuilt() {
   esac
 }
 
+detect_cuda_asset_label_for_prebuilt() {
+  local cuda_major="$1"
+  local compute_caps
+  local cap_major
+
+  if [[ "${cuda_major}" != "12" ]]; then
+    printf 'cuda%s\n' "${cuda_major}"
+    return
+  fi
+
+  compute_caps="$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null || true)"
+  while IFS= read -r compute_cap; do
+    compute_cap="$(printf '%s' "${compute_cap}" | tr -d '[:space:]')"
+    [[ -n "${compute_cap}" ]] || continue
+    cap_major="${compute_cap%%.*}"
+    if [[ "${cap_major}" =~ ^[0-9]+$ ]] && [[ "${cap_major}" -lt 8 ]]; then
+      printf 'cuda12-legacy\n'
+      return
+    fi
+  done <<< "${compute_caps}"
+
+  printf 'cuda12\n'
+}
+
 release_api_url() {
   if [[ "${prebuilt_release_tag}" == "latest" ]]; then
     printf 'https://api.github.com/repos/%s/releases/latest\n' "${prebuilt_repo}"
@@ -380,8 +404,8 @@ release_api_url() {
 
 select_prebuilt_assets() {
   local platform="$1"
-  local cuda_major="$2"
-  local prefix="gpu-insights-llama-bench-${platform}-cuda${cuda_major}-"
+  local cuda_label="$2"
+  local prefix="gpu-insights-llama-bench-${platform}-${cuda_label}-"
 
   python3 - "$(release_api_url)" "${prefix}" <<'PY'
 import json
@@ -436,6 +460,7 @@ print_prebuilt_result() {
 install_cuda_prebuilt() {
   local platform
   local cuda_major
+  local cuda_label
   local asset_info
   local asset_name
   local archive_url
@@ -459,7 +484,8 @@ install_cuda_prebuilt() {
 
   platform="$(detect_prebuilt_platform)" || return 1
   cuda_major="$(detect_cuda_major_for_prebuilt)" || return 1
-  asset_info="$(select_prebuilt_assets "${platform}" "${cuda_major}")" || return 1
+  cuda_label="$(detect_cuda_asset_label_for_prebuilt "${cuda_major}")"
+  asset_info="$(select_prebuilt_assets "${platform}" "${cuda_label}")" || return 1
 
   asset_name="$(printf '%s\n' "${asset_info}" | sed -n '1p')"
   archive_url="$(printf '%s\n' "${asset_info}" | sed -n '2p')"
@@ -491,6 +517,7 @@ install_cuda_prebuilt() {
   echo "  asset:    ${asset_name}"
   echo "  platform: ${platform}"
   echo "  CUDA:     ${cuda_major}"
+  echo "  label:    ${cuda_label}"
 
   curl -L --fail --retry 3 --output "${archive_path}" "${archive_url}" || return 1
   curl -L --fail --retry 3 --output "${checksum_path}" "${checksum_url}" || return 1
