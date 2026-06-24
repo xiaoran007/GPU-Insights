@@ -12,12 +12,13 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from llm_bench.config import load_config, resolve_model_path
+from llm_bench.config import load_config, resolve_config_path, resolve_model_path
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Download the fixed GPU-Insights LLM benchmark model.")
     parser.add_argument("--config", help="Path to LLM benchmark config JSON.")
+    parser.add_argument("--gemma", action="store_true", help="Use the non-dashboard Gemma 4 12B small-GPU preset.")
     parser.add_argument("--output", help="Override output path. Defaults to the configured localPath.")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing file.")
     parser.add_argument("--dry-run", action="store_true", help="Print the resolved download plan without downloading.")
@@ -26,7 +27,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    config = load_config(args.config)
+    try:
+        config_path = resolve_config_path(config_path=args.config, gemma=args.gemma)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    config = load_config(str(config_path) if config_path else None)
     model = config["model"]
     output_path = Path(args.output).expanduser() if args.output else resolve_model_path(config)
     if not output_path.is_absolute():

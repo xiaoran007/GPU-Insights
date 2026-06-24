@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from llm_bench.config import load_config, resolve_model_path, selected_cases
+from llm_bench.config import load_config, resolve_config_path, resolve_model_path, selected_cases
 from llm_bench.payload import build_payload, encode_payload
 from llm_bench.runtimes.base import RuntimeConfig, RuntimeResult
 from llm_bench.runtimes.llama_cpp import LlamaCppRuntime
@@ -16,6 +16,7 @@ from scripts.probe_benchmark_env import probe_benchmark_env
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Standalone LLM inference benchmark launcher.")
     parser.add_argument("--config", help="Path to LLM benchmark config JSON. Defaults to llm_bench/configs/default.json.")
+    parser.add_argument("--gemma", action="store_true", help="Use the non-dashboard Gemma 4 12B small-GPU preset.")
     parser.add_argument("--runtime", choices=["llama.cpp"], default="llama.cpp")
     parser.add_argument("--case", action="append", help="Case name to run. Repeat to run multiple cases. Defaults to all configured cases.")
     parser.add_argument("--list-cases", action="store_true", help="List configured cases and exit.")
@@ -42,8 +43,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    bench_config = load_config(args.config)
+    try:
+        config_path = resolve_config_path(config_path=args.config, gemma=args.gemma)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    bench_config = load_config(str(config_path) if config_path else None)
     cases = selected_cases(bench_config, args.case)
+    dashboard_eligible = bool(bench_config.get("dashboardEligible", True))
 
     if args.list_cases:
         for case in cases:
@@ -69,6 +75,8 @@ def main() -> int:
     results = []
 
     print("LLM inference benchmark")
+    if not dashboard_eligible:
+        print("  Mode:        non-dashboard auxiliary run")
     print(f"  Runtime:     {runtime.name}")
     if args.mock_result_file:
         print(f"  llama-bench: mock data from {args.mock_result_file}")
@@ -130,25 +138,36 @@ def main() -> int:
         results.append(result)
         _print_result(result)
 
+    _print_summary(results)
+    should_build_payload = dashboard_eligible or bool(args.output_file) or bool(args.emit_base64)
+    if not should_build_payload:
+        print("Non-dashboard run: payload files, debug sidecar, base64 output, and import command skipped.")
+        if args.pretty:
+            print("--pretty ignored because no dashboard payload was requested.")
+        return 0
+
+    if not dashboard_eligible:
+        print("Warning: this preset is not dashboard-eligible; generated payload output is for local inspection only.")
+
     print("Using host metadata from pre-run probe...")
     payload = build_payload(host=host, results=results, note=args.note)
-    debug_payload = None if args.no_debug_output else build_payload(
-        host=host,
-        results=results,
-        note=args.note,
-        include_raw_result=True,
-    )
-
-    _print_summary(results)
     if args.pretty:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
-    payload_file = _resolve_output_file(args=args, model_key=str(model["key"]))
-    _write_json(payload_file, payload)
+    payload_file = None
     debug_file = None
-    if debug_payload is not None:
-        debug_file = _resolve_debug_output_file(args=args, payload_file=payload_file)
-        _write_json(debug_file, debug_payload)
-    _print_payload_outputs(payload_file=payload_file, debug_file=debug_file)
+    if dashboard_eligible or args.output_file:
+        payload_file = _resolve_output_file(args=args, model_key=str(model["key"]))
+        _write_json(payload_file, payload)
+        if not args.no_debug_output:
+            debug_payload = build_payload(
+                host=host,
+                results=results,
+                note=args.note,
+                include_raw_result=True,
+            )
+            debug_file = _resolve_debug_output_file(args=args, payload_file=payload_file)
+            _write_json(debug_file, debug_payload)
+        _print_payload_outputs(payload_file=payload_file, debug_file=debug_file, importable=dashboard_eligible)
     if args.emit_base64:
         print(encode_payload(payload))
     return 0
@@ -342,14 +361,15 @@ def _write_json(path: Path, payload: dict) -> None:
         handle.write("\n")
 
 
-def _print_payload_outputs(*, payload_file: Path, debug_file: Path | None) -> None:
+def _print_payload_outputs(*, payload_file: Path, debug_file: Path | None, importable: bool = True) -> None:
     payload_path = _display_path(payload_file)
     print(f"LLM_RESULT_PAYLOAD_FILE={payload_path}")
     if debug_file is not None:
         print(f"LLM_DEBUG_PAYLOAD_FILE={_display_path(debug_file)}")
-    print()
-    print("Import:")
-    print(f"  python3 scripts/manage-data.py l {shlex.quote(payload_path)}")
+    if importable:
+        print()
+        print("Import:")
+        print(f"  python3 scripts/manage-data.py l {shlex.quote(payload_path)}")
     print()
 
 

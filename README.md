@@ -232,6 +232,41 @@ a tuning matrix: full GPU offload, F16 KV cache, flash attention enabled,
 rounded up from `prompt + generation + 256` tokens. MTP/speculative decoding is
 not part of the canonical baseline.
 
+### Gemma small-GPU auxiliary path
+
+For smaller GPUs, GPU-Insights also provides a non-dashboard Gemma preset:
+
+```shell
+# Preview or download the Gemma GGUF
+python3 scripts/download-llm-model.py --gemma --dry-run
+python3 scripts/download-llm-model.py --gemma
+
+# Run the small-GPU cases
+python3 -m llm_bench.cli --gemma
+
+# List only the Gemma auxiliary cases
+python3 -m llm_bench.cli --gemma --list-cases
+```
+
+This path uses `unsloth/gemma-4-12B-it-qat-GGUF` with
+`gemma-4-12B-it-qat-UD-Q4_K_XL.gguf`, following the repository's
+`UD-Q4_K_XL` llama.cpp recommendation. It is intended for local hardware
+checking only: by default `--gemma` prints per-case results and the summary but
+does not write dashboard payload files, debug sidecars, Base64 payloads, or an
+import command. Pass `--output-file` or `--emit-base64` only when you need a
+local inspection payload; do not import Gemma auxiliary results into the
+dashboard.
+
+Gemma cases:
+
+| Case | Prompt Tokens | Generation Tokens | Purpose |
+|------|--------------:|------------------:|---------|
+| `small_agent_step` | 1,024 | 128 | Compact tool result or short agent loop response |
+| `focused_file_edit` | 4,096 | 384 | One file plus instructions with a small patch |
+| `two_file_patch` | 8,192 | 512 | Two focused files or diff chunks |
+| `compact_repo_plan` | 16,384 | 512 | Condensed repo context with planning or diagnosis |
+| `small_long_context_debug` | 32,768 | 768 | Upper-end small-GPU logs and diffs |
+
 ### Download the fixed GGUF
 
 ```shell
