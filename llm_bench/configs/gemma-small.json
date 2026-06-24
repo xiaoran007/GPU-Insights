@@ -58,20 +58,6 @@
       "tier": "small",
       "promptTokens": 8192,
       "generationTokens": 512
-    },
-    {
-      "name": "compact_repo_plan",
-      "description": "Condensed repository context with planning or diagnosis.",
-      "tier": "small",
-      "promptTokens": 16384,
-      "generationTokens": 512
-    },
-    {
-      "name": "small_long_context_debug",
-      "description": "Upper-end small-GPU logs and diffs with a longer response.",
-      "tier": "small-long",
-      "promptTokens": 32768,
-      "generationTokens": 768
     }
   ]
 }

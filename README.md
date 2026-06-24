@@ -264,8 +264,6 @@ Gemma cases:
 | `small_agent_step` | 1,024 | 128 | Compact tool result or short agent loop response |
 | `focused_file_edit` | 4,096 | 384 | One file plus instructions with a small patch |
 | `two_file_patch` | 8,192 | 512 | Two focused files or diff chunks |
-| `compact_repo_plan` | 16,384 | 512 | Condensed repo context with planning or diagnosis |
-| `small_long_context_debug` | 32,768 | 768 | Upper-end small-GPU logs and diffs |
 
 ### Download the fixed GGUF
 
