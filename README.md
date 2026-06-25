@@ -234,28 +234,34 @@ not part of the canonical baseline.
 
 ### Gemma small-GPU auxiliary path
 
-For smaller GPUs, GPU-Insights also provides a non-dashboard Gemma preset:
+For smaller GPUs, GPU-Insights also provides non-dashboard Gemma presets:
 
 ```shell
-# Preview or download the Gemma GGUF
-python3 scripts/download-llm-model.py --gemma --dry-run
-python3 scripts/download-llm-model.py --gemma
+# Preview or download a Gemma GGUF
+python3 scripts/download-llm-model.py --gemma --12b --dry-run
+python3 scripts/download-llm-model.py --gemma --12b
+python3 scripts/download-llm-model.py --gemma --e2b --dry-run
+python3 scripts/download-llm-model.py --gemma --e2b
 
 # Run the small-GPU cases
-python3 -m llm_bench.cli --gemma
+python3 -m llm_bench.cli --gemma --12b
+python3 -m llm_bench.cli --gemma --e2b
 
 # List only the Gemma auxiliary cases
-python3 -m llm_bench.cli --gemma --list-cases
+python3 -m llm_bench.cli --gemma --12b --list-cases
+python3 -m llm_bench.cli --gemma --e2b --list-cases
 ```
 
-This path uses `unsloth/gemma-4-12B-it-qat-GGUF` with
-`gemma-4-12B-it-qat-UD-Q4_K_XL.gguf`, following the repository's
-`UD-Q4_K_XL` llama.cpp recommendation. It is intended for local hardware
-checking only: by default `--gemma` prints per-case results and the summary but
-does not write dashboard payload files, debug sidecars, Base64 payloads, or an
-import command. Pass `--output-file` or `--emit-base64` only when you need a
-local inspection payload; do not import Gemma auxiliary results into the
-dashboard.
+The 12B path uses `unsloth/gemma-4-12B-it-qat-GGUF` with
+`gemma-4-12B-it-qat-UD-Q4_K_XL.gguf`. The E2B path uses
+`unsloth/gemma-4-E2B-it-qat-GGUF` with
+`gemma-4-E2B-it-qat-UD-Q4_K_XL.gguf`. Both follow the repositories'
+`UD-Q4_K_XL` llama.cpp recommendation. They are intended for local hardware
+checking only: by default Gemma auxiliary runs print per-case results and the
+summary but do not write dashboard payload files, debug sidecars, Base64
+payloads, or an import command. Pass `--output-file` or `--emit-base64` only
+when you need a local inspection payload; do not import Gemma auxiliary results
+into the dashboard.
 
 Gemma cases:
 

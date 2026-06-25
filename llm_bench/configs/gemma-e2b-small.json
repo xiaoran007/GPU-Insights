@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "suite": "small-gpu-coding-agent",
+  "description": "Auxiliary small-GPU llama.cpp benchmark suite for Gemma 4 E2B coding-agent inference throughput.",
+  "dashboardEligible": false,
+  "fullGpuOnly": true,
+  "runtime": {
+    "name": "llama.cpp",
+    "nGpuLayers": -1,
+    "device": "auto",
+    "autoMultiGpu": true,
+    "splitMode": "layer",
+    "cacheTypeK": "f16",
+    "cacheTypeV": "f16",
+    "flashAttention": true,
+    "contextPadding": 256,
+    "contextRounding": 4096,
+    "allowPartialOffload": false
+  },
+  "model": {
+    "key": "gemma4_e2b_qat_ud_q4_k_xl",
+    "displayName": "Gemma 4 E2B IT QAT UD-Q4_K_XL",
+    "baseModel": "google/gemma-4-E2B-it-qat-q4_0-unquantized",
+    "artifact": "GGUF UD-Q4_K_XL",
+    "hfRepo": "unsloth/gemma-4-E2B-it-qat-GGUF",
+    "hfRevision": "main",
+    "filename": "gemma-4-E2B-it-qat-UD-Q4_K_XL.gguf",
+    "localPath": "models/llm/gemma-4-E2B-it-qat-UD-Q4_K_XL.gguf",
+    "sourceUrl": "https://huggingface.co/unsloth/gemma-4-E2B-it-qat-GGUF/blob/main/gemma-4-E2B-it-qat-UD-Q4_K_XL.gguf",
+    "expectedBytes": null,
+    "parameters": "E2B",
+    "contextLength": 131072
+  },
+  "defaults": {
+    "batchSize": 2048,
+    "ubatchSize": 512,
+    "repetitions": 5,
+    "threads": null
+  },
+  "cases": [
+    {
+      "name": "small_agent_step",
+      "description": "Compact tool result or short agent loop response.",
+      "tier": "small",
+      "promptTokens": 1024,
+      "generationTokens": 128
+    },
+    {
+      "name": "focused_file_edit",
+      "description": "One file plus instructions with a small patch.",
+      "tier": "small",
+      "promptTokens": 4096,
+      "generationTokens": 384
+    },
+    {
+      "name": "two_file_patch",
+      "description": "Two focused files or diff chunks with a medium response.",
+      "tier": "small",
+      "promptTokens": 8192,
+      "generationTokens": 512
+    }
+  ]
+}

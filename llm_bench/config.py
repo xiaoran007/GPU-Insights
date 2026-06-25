@@ -7,7 +7,12 @@ from typing import Any, Dict, List
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "default.json"
-GEMMA_SMALL_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "gemma-small.json"
+GEMMA_12B_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "gemma-small.json"
+GEMMA_E2B_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "gemma-e2b-small.json"
+GEMMA_CONFIG_FILES = {
+    "12b": GEMMA_12B_CONFIG_FILE,
+    "e2b": GEMMA_E2B_CONFIG_FILE,
+}
 
 
 def load_config(path: str | None = None) -> Dict[str, Any]:
@@ -16,11 +21,22 @@ def load_config(path: str | None = None) -> Dict[str, Any]:
         return json.load(handle)
 
 
-def resolve_config_path(*, config_path: str | None = None, gemma: bool = False) -> Path | None:
+def resolve_config_path(
+    *,
+    config_path: str | None = None,
+    gemma: bool = False,
+    gemma_variant: str | None = None,
+) -> Path | None:
     if gemma and config_path:
         raise ValueError("--gemma and --config cannot be used together.")
+    if gemma_variant and not gemma:
+        raise ValueError("--12b/--e2b must be used with --gemma.")
     if gemma:
-        return GEMMA_SMALL_CONFIG_FILE
+        if not gemma_variant:
+            raise ValueError("--gemma requires either --12b or --e2b.")
+        if gemma_variant not in GEMMA_CONFIG_FILES:
+            raise ValueError(f"Unsupported Gemma variant: {gemma_variant}. Expected one of: 12b, e2b.")
+        return GEMMA_CONFIG_FILES[gemma_variant]
     if config_path:
         return Path(config_path).expanduser()
     return None

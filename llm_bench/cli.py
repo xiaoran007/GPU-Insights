@@ -16,7 +16,10 @@ from scripts.probe_benchmark_env import probe_benchmark_env
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Standalone LLM inference benchmark launcher.")
     parser.add_argument("--config", help="Path to LLM benchmark config JSON. Defaults to llm_bench/configs/default.json.")
-    parser.add_argument("--gemma", action="store_true", help="Use the non-dashboard Gemma 4 12B small-GPU preset.")
+    parser.add_argument("--gemma", action="store_true", help="Use a non-dashboard Gemma small-GPU preset. Requires --12b or --e2b.")
+    gemma_size = parser.add_mutually_exclusive_group()
+    gemma_size.add_argument("--12b", dest="gemma_variant", action="store_const", const="12b", help="Use the Gemma 4 12B QAT UD-Q4_K_XL preset.")
+    gemma_size.add_argument("--e2b", dest="gemma_variant", action="store_const", const="e2b", help="Use the Gemma 4 E2B QAT UD-Q4_K_XL preset.")
     parser.add_argument("--runtime", choices=["llama.cpp"], default="llama.cpp")
     parser.add_argument("--case", action="append", help="Case name to run. Repeat to run multiple cases. Defaults to all configured cases.")
     parser.add_argument("--list-cases", action="store_true", help="List configured cases and exit.")
@@ -45,7 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_parser().parse_args()
     try:
-        config_path = resolve_config_path(config_path=args.config, gemma=args.gemma)
+        config_path = resolve_config_path(
+            config_path=args.config,
+            gemma=args.gemma,
+            gemma_variant=args.gemma_variant,
+        )
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     bench_config = load_config(str(config_path) if config_path else None)
