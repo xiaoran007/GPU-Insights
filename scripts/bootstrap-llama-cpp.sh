@@ -457,28 +457,6 @@ print_prebuilt_result() {
   printf '  python3 -m llm_bench.cli --llama-bench %q\n' "${executable}"
 }
 
-validate_prebuilt_runtime() {
-  local install_dir="$1"
-  local binary="${install_dir}/bin/llama-bench.bin"
-  local missing
-
-  if [[ ! -x "${binary}" ]]; then
-    echo "Prebuilt llama-bench binary is missing: ${binary}" >&2
-    return 1
-  fi
-
-  missing="$(
-    LD_LIBRARY_PATH="${install_dir}/lib:${LD_LIBRARY_PATH:-}" ldd "${binary}" \
-      | awk '/not found/ {print "  " $0}'
-  )"
-  if [[ -n "${missing}" ]]; then
-    echo "Prebuilt llama-bench has unresolved runtime libraries:" >&2
-    echo "${missing}" >&2
-    echo "The package bundles CUDA user-space runtime libraries, but target machines still need the NVIDIA driver-provided libcuda.so.1." >&2
-    return 1
-  fi
-}
-
 install_cuda_prebuilt() {
   local platform
   local cuda_major
@@ -497,7 +475,7 @@ install_cuda_prebuilt() {
   local tmp_dir
   local current_link
 
-  for command_name in python3 curl zstd tar sha256sum ldd; do
+  for command_name in python3 curl zstd tar sha256sum; do
     if ! command -v "${command_name}" >/dev/null 2>&1; then
       echo "${command_name} is required to install prebuilt llama-bench assets." >&2
       return 1
@@ -517,18 +495,15 @@ install_cuda_prebuilt() {
   current_link="${prebuilt_dir}/current"
 
   if [[ -x "${target_dir}/bin/llama-bench" ]]; then
-    if validate_prebuilt_runtime "${target_dir}"; then
-      mkdir -p "${prebuilt_dir}"
-      if [[ -e "${current_link}" && ! -L "${current_link}" ]]; then
-        echo "Cannot update ${current_link}; it exists and is not a symlink." >&2
-        return 1
-      fi
-      rm -f "${current_link}"
-      ln -s "prebuilt/${asset_stem}" "${current_link}"
-      print_prebuilt_result "$(current_prebuilt_path)"
-      return 0
+    mkdir -p "${prebuilt_dir}"
+    if [[ -e "${current_link}" && ! -L "${current_link}" ]]; then
+      echo "Cannot update ${current_link}; it exists and is not a symlink." >&2
+      return 1
     fi
-    echo "Cached prebuilt failed runtime validation; downloading a fresh copy."
+    rm -f "${current_link}"
+    ln -s "prebuilt/${asset_stem}" "${current_link}"
+    print_prebuilt_result "$(current_prebuilt_path)"
+    return 0
   fi
 
   download_dir="${prebuilt_dir}/downloads"
@@ -566,11 +541,6 @@ install_cuda_prebuilt() {
     rm -rf "${tmp_dir}"
     return 1
   fi
-
-  validate_prebuilt_runtime "${tmp_dir}" || {
-    rm -rf "${tmp_dir}"
-    return 1
-  }
 
   rm -rf "${target_dir}" || return 1
   mv "${tmp_dir}" "${target_dir}" || return 1
