@@ -22,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--list-cases", action="store_true", help="List configured cases and exit.")
     parser.add_argument("--model-path", help="Path to the GGUF model file. Defaults to the configured localPath.")
     parser.add_argument("--llama-bench", help="Path to llama-bench executable.")
+    parser.add_argument("--docker", action="store_true", help="Run prebuilt llama-bench inside a CUDA Docker runtime image.")
     parser.add_argument("--mock-result-file", help="Read llama-bench JSON output from this file.")
     parser.add_argument("-b", "--batch-size", type=int, help="llama-bench batch size. Defaults to configured value.")
     parser.add_argument("-ub", "--ubatch-size", type=int, help="llama-bench physical batch size. Defaults to configured value.")
@@ -59,8 +60,9 @@ def main() -> int:
             )
         return 0
 
+    llama_bench_executable = _resolve_llama_bench_executable(args)
     runtime = LlamaCppRuntime(
-        executable=args.llama_bench,
+        executable=llama_bench_executable,
         mock_result_file=args.mock_result_file,
     )
     model = bench_config["model"]
@@ -176,6 +178,31 @@ def main() -> int:
 def _parse_device_ids(value: str) -> list[int]:
     chunks = [chunk.strip() for chunk in value.split(",") if chunk.strip()]
     return [int(chunk) for chunk in chunks] or [0]
+
+
+def _resolve_llama_bench_executable(args: argparse.Namespace) -> str | None:
+    if not args.docker:
+        return args.llama_bench
+    if args.llama_bench:
+        raise SystemExit("--docker and --llama-bench cannot be used together.")
+    if args.mock_result_file:
+        raise SystemExit("--docker and --mock-result-file cannot be used together.")
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "run-llama-bench-docker.sh"
+    _check_docker_llama_bench_environment(script)
+    return str(script)
+
+
+def _check_docker_llama_bench_environment(script: Path) -> None:
+    if not script.is_file():
+        raise SystemExit(f"Docker llama-bench runner was not found: {script}")
+
+    print("Checking Docker llama-bench environment...")
+    try:
+        subprocess.run([str(script), "--check"], check=True)
+    except subprocess.CalledProcessError as exc:
+        raise SystemExit(f"Docker llama-bench environment check failed with exit code {exc.returncode}.") from exc
+    print()
 
 
 def _resolve_device_ids(*, args: argparse.Namespace, runtime_config: dict) -> list[int]:

@@ -341,6 +341,9 @@ python3 -m llm_bench.cli
 # Use a specific llama-bench binary
 python3 -m llm_bench.cli --llama-bench /path/to/llama-bench
 
+# Run prebuilt llama-bench inside an NVIDIA CUDA Docker runtime image
+python3 -m llm_bench.cli --docker
+
 # Run one case
 python3 -m llm_bench.cli --case repo_context_plan
 
@@ -359,6 +362,16 @@ During a run it prints the selected runtime, model path, per-case progress,
 PP/TG throughput results, a summary, and finally a short import command.
 `llama-bench` stderr is streamed live with a `llama-bench |` prefix so
 backend/debug messages remain visible while stdout is still parsed as JSON.
+
+Pass `--docker` to keep the small prebuilt release package while running it in
+an NVIDIA CUDA runtime container that provides CUDA user-space libraries such as
+`libcudart` and cuBLAS. The launcher checks Docker, the prebuilt install, and
+the selected runtime image before starting benchmark cases. By default the
+Docker image is selected from `third_party/llama-bench/current/BUILD-MANIFEST.json`
+(`nvidia/cuda:12.6.3-runtime-ubuntu22.04` for CUDA 12 assets and
+`nvidia/cuda:13.0.2-runtime-ubuntu24.04` for CUDA 13 assets). Override it with
+`GPU_INSIGHTS_LLAMA_BENCH_DOCKER_IMAGE`, and override the Docker `--gpus` value
+with `GPU_INSIGHTS_LLAMA_BENCH_DOCKER_GPUS`.
 
 On CUDA hosts, the LLM launcher uses layer split by default. If `--gpu-id` is
 omitted and multiple NVIDIA GPUs are visible through `nvidia-smi`, it runs
