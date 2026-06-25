@@ -77,14 +77,15 @@ ensure_image() {
   if docker image inspect "${image}" >/dev/null 2>&1; then
     return
   fi
-  echo "Docker image not found locally; pulling ${image} ..."
-  docker pull "${image}"
+  echo "Docker image not found locally; pulling ${image} ..." >&2
+  docker pull "${image}" >&2
 }
 
 container_smoke_check() {
   local image="$1"
   docker run --rm \
     --gpus "${docker_gpus}" \
+    --entrypoint "" \
     -e "GPU_INSIGHTS_CONTAINER_LLAMA_BENCH=${llama_bench}" \
     -v "${repo_root}:${repo_root}:ro" \
     -w "${repo_root}" \
@@ -109,13 +110,26 @@ check_environment() {
 model_mount_args() {
   local previous=""
   local value
+  local model_dir
+  local real_model_path
+  local real_model_dir
   for value in "$@"; do
     if [[ "${previous}" == "-m" ]]; then
-      if [[ "${value}" == /* && "${value}" != "${repo_root}" && "${value}" != "${repo_root}/"* ]]; then
-        local model_dir
+      if [[ "${value}" == /* ]]; then
         model_dir="$(cd "$(dirname "${value}")" && pwd)"
-        printf '%s\n' "-v"
-        printf '%s\n' "${model_dir}:${model_dir}:ro"
+        if [[ "${model_dir}" != "${repo_root}" && "${model_dir}" != "${repo_root}/"* ]]; then
+          printf '%s\n' "-v"
+          printf '%s\n' "${model_dir}:${model_dir}:ro"
+        fi
+
+        real_model_path="$(realpath "${value}" 2>/dev/null || true)"
+        if [[ "${real_model_path}" == /* ]]; then
+          real_model_dir="$(dirname "${real_model_path}")"
+          if [[ "${real_model_dir}" != "${model_dir}" && "${real_model_dir}" != "${repo_root}" && "${real_model_dir}" != "${repo_root}/"* ]]; then
+            printf '%s\n' "-v"
+            printf '%s\n' "${real_model_dir}:${real_model_dir}:ro"
+          fi
+        fi
       fi
       return
     fi
@@ -135,6 +149,7 @@ run_llama_bench() {
     run
     --rm
     --gpus "${docker_gpus}"
+    --entrypoint ""
     -v "${repo_root}:${repo_root}:ro"
     -w "${repo_root}"
   )
