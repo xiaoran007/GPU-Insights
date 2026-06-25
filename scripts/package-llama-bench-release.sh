@@ -186,28 +186,76 @@ copy_llama_libraries() {
   done < <(ldd "${binary}" | awk '/=>/ {print $(NF-1)} /^[[:space:]]*\// {print $1}')
 }
 
+should_bundle_runtime_library() {
+  local lib_name="$1"
+  case "${lib_name}" in
+    libstdc++.so.*|libgcc_s.so.*|libgomp.so.*|libatomic.so.*)
+      return 0
+      ;;
+    libcudart.so.*|libcublas.so.*|libcublasLt.so.*|libnvJitLink.so.*)
+      return 0
+      ;;
+    libnvrtc.so.*|libnvrtc-builtins.so.*|libcurand.so.*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 copy_runtime_libraries() {
   local target_dir="$1"
+  local scanned_list="${stage_dir}/.runtime-scanned"
+  local pending_list="${stage_dir}/.runtime-pending"
+  local next_list="${stage_dir}/.runtime-next"
+  local deps_list="${stage_dir}/.runtime-deps"
+  local binary
   local lib_path
   local lib_name
-  while IFS= read -r lib_path; do
-    if [[ ! -f "${lib_path}" ]]; then
-      continue
-    fi
+  local copied_any
 
-    lib_name="$(basename "${lib_path}")"
-    case "${lib_name}" in
-      libstdc++.so.*|libgcc_s.so.*|libgomp.so.*|libatomic.so.*)
-        cp -L "${lib_path}" "${target_dir}/${lib_name}"
-        ;;
-    esac
-  done < <(
-    {
-      ldd "${stage_dir}/bin/llama-bench.bin"
-      find "${stage_dir}/lib" -maxdepth 1 -type f -name '*.so*' -print0 \
-        | xargs -0 -r ldd
-    } | awk '/=>/ {print $(NF-1)} /^[[:space:]]*\// {print $1}' | sort -u
-  )
+  : > "${scanned_list}"
+  {
+    printf '%s\n' "${stage_dir}/bin/llama-bench.bin"
+    find "${stage_dir}/lib" -maxdepth 1 -type f -name '*.so*' | sort
+  } > "${pending_list}"
+
+  while [[ -s "${pending_list}" ]]; do
+    : > "${next_list}"
+    copied_any=0
+
+    while IFS= read -r binary; do
+      if [[ ! -f "${binary}" ]] || grep -Fxq "${binary}" "${scanned_list}"; then
+        continue
+      fi
+      printf '%s\n' "${binary}" >> "${scanned_list}"
+
+      ldd "${binary}" \
+        | awk '/=>/ {print $(NF-1)} /^[[:space:]]*\// {print $1}' \
+        | sort -u > "${deps_list}"
+
+      while IFS= read -r lib_path; do
+        if [[ ! -f "${lib_path}" ]]; then
+          continue
+        fi
+
+        lib_name="$(basename "${lib_path}")"
+        if should_bundle_runtime_library "${lib_name}"; then
+          if [[ ! -f "${target_dir}/${lib_name}" ]]; then
+            cp -L "${lib_path}" "${target_dir}/${lib_name}"
+            copied_any=1
+          fi
+          printf '%s\n' "${target_dir}/${lib_name}" >> "${next_list}"
+        fi
+      done < "${deps_list}"
+    done < "${pending_list}"
+
+    if [[ "${copied_any}" -eq 0 ]]; then
+      break
+    fi
+    sort -u "${next_list}" > "${pending_list}"
+  done
 }
 
 copy_runtime_licenses() {
@@ -223,6 +271,30 @@ copy_runtime_licenses() {
   if [[ -f /usr/share/doc/libatomic1/copyright ]]; then
     cp /usr/share/doc/libatomic1/copyright "${stage_dir}/licenses/LICENSE.libatomic"
   fi
+}
+
+copy_cuda_runtime_licenses() {
+  local cuda_license
+  local license_name
+  for cuda_license in \
+    /usr/local/cuda/LICENSE \
+    /usr/local/cuda/EULA.txt \
+    /usr/local/cuda/doc/EULA.txt \
+    /usr/local/cuda/doc/pdf/EULA.pdf
+  do
+    if [[ -f "${cuda_license}" ]]; then
+      case "${cuda_license}" in
+        *.pdf)
+          license_name="LICENSE.cuda-runtime.pdf"
+          ;;
+        *)
+          license_name="LICENSE.cuda-runtime"
+          ;;
+      esac
+      cp "${cuda_license}" "${stage_dir}/licenses/${license_name}"
+      return
+    fi
+  done
 }
 
 strip_release_binaries() {
@@ -274,6 +346,7 @@ else
   exit 1
 fi
 copy_runtime_licenses
+copy_cuda_runtime_licenses
 
 llama_commit="$(git -C "${src_dir}" rev-parse HEAD)"
 llama_commit_short="$(git -C "${src_dir}" rev-parse --short=12 HEAD)"
@@ -304,9 +377,7 @@ cat > "${stage_dir}/BUILD-MANIFEST.json" <<EOF
   "stripped": true,
   "packagedLibraries": $(json_string_array_from_semicolon_list "${packaged_libraries}"),
   "externalRuntimeRequirements": [
-    "NVIDIA driver",
-    "CUDA ${cuda_major} runtime libraries",
-    "cuBLAS/cuBLASLt"
+    "NVIDIA driver with CUDA ${cuda_major} support"
   ]
 }
 EOF
