@@ -361,24 +361,48 @@ CUDA), and development libraries required by the selected upstream revision
 does not install missing system packages. Use `--ref <commit-or-tag>` to pin
 llama.cpp. See the [upstream server documentation](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md).
 
-Defaults are `127.0.0.1:8080`, 32,768 total context tokens, and one concurrent
-request slot. GPU layers, KV cache types, and Flash Attention come from the model
-config; Jinja chat templates are enabled. The Qwen3.8 preset uses UD-Q6_K and leaves
-room for runtime memory on a 48 GB L40S, but actual capacity depends on context,
-concurrency, and other GPU workloads. Model loading and request logs stream
-directly from llama-server. Stop the foreground service with Ctrl+C.
+The listener defaults to `127.0.0.1:18080`. With `--qwen38`, the serving preset
+targets a dedicated 48 GB L40S: **131,072 tokens per request and 4 concurrent
+slots**, with Q8_0 K/V caches, continuous batching, and separate KV buffers per
+slot. The launcher passes 524,288 total tokens to llama-server; each slot's budget
+includes both input and output. Raising concurrency preserves the per-slot context
+and increases memory use. Jinja chat templates are enabled.
+
+Capacity estimate for Qwen3.8 UD-Q6_K: weights are about 20.47 GiB and attention
+KV caches about 17 GiB at 4 x 128K. The KV estimate is
+`16 attention layers x 2 (K,V) x 4 KV heads x 256 dimensions x (34/32 bytes for Q8_0) x 524288 tokens`.
+This follows the [model architecture](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/blob/main/config.json);
+it excludes recurrent states, compute buffers, and allocator overhead. This is a
+capacity-based starting point, not a measured throughput optimum or an OOM
+guarantee. Four long requests share compute and can have high prefill latency.
+Q8 KV caching also introduces quantization error relative to F16. Inspect actual
+server memory and latency on the target node before increasing capacity.
+
+For an 80 GB GPU, 4 x 256K or 8 x 128K with Q8 KV uses about 34 GiB of attention
+KV, before other overheads; choose longer contexts or more concurrent agents to
+match the workload. Faster GPUs with the same 48 GB do not gain memory capacity.
+Other model presets retain 32K/one slot unless their config has a `serving` section.
+Serving overrides do not change benchmark KV settings. Model loading and request
+logs stream directly from llama-server. Stop the foreground service with Ctrl+C.
 
 ```shell
 # Health check (HTTP 200 once the model is ready)
-curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:18080/health
 
-# OpenAI-compatible chat endpoint; base URL for clients: http://127.0.0.1:8080/v1
-curl http://127.0.0.1:8080/v1/chat/completions \
+# OpenAI-compatible chat endpoint; base URL for clients: http://127.0.0.1:18080/v1
+curl http://127.0.0.1:18080/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{"model":"qwen3_8_27b_ud_q6_k","messages":[{"role":"user","content":"Hello"}],"max_tokens":256}'
 
-# Adjust context or port
-python -m llm_bench.serve --qwen38 --ctx-size 16384 --port 8081
+# Explicit L40S capacity: 4 x 128K (same as the Qwen3.8 serving preset)
+python -m llm_bench.serve --qwen38 --ctx-per-slot 131072 --parallel 4
+
+# 80 GB GPU: prioritize longer contexts, or more concurrent agents
+python -m llm_bench.serve --qwen38 --ctx-per-slot 262144 --parallel 4
+python -m llm_bench.serve --qwen38 --ctx-per-slot 131072 --parallel 8
+
+# --ctx-size retains native TOTAL-context semantics; do not confuse it with per-slot context
+python -m llm_bench.serve --qwen38 --ctx-size 524288 --parallel 4 --port 18081
 
 # Other model presets or an explicit source-built binary
 python -m llm_bench.serve --gemma --12b
@@ -398,6 +422,44 @@ Additional native arguments after `--` are appended unchanged. Serving does not
 run benchmark cases or generate dashboard payloads. The downloaded Qwen GGUF is
 used for text serving here; image input additionally requires an appropriate
 multimodal projector and native server options.
+
+#### Access a compute-node service through a login node
+
+Start the service inside your allocated GPU job on the compute node. If SSH to
+that node is allowed, keep the default loopback listener and run this on your
+local computer (replace user and host placeholders):
+
+```shell
+ssh -N -T -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
+  -J USER@LOGIN_HOST \
+  -L 127.0.0.1:18080:127.0.0.1:18080 USER@COMPUTE_HOST
+```
+
+The SSH connection terminates on the compute node; `127.0.0.1` at the far end
+therefore reaches the compute-node server. The login node is only a jump host.
+Use `http://127.0.0.1:18080/v1` locally. The local port can be changed independently
+if occupied, e.g. `-L 127.0.0.1:18081:127.0.0.1:18080`.
+
+If you can SSH only to the login node, and it can reach compute-node TCP ports,
+bind the server to the compute node's internal IP instead:
+
+```shell
+# On the allocated compute node (COMPUTE_INTERNAL_IP must belong to this node)
+python -m llm_bench.serve --qwen38 --device CUDA0 \
+  --host COMPUTE_INTERNAL_IP --port 18080 -- --api-key-file /path/to/api-keys.txt
+
+# On your local computer
+ssh -N -T -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
+  -L 127.0.0.1:18080:COMPUTE_INTERNAL_IP:18080 USER@LOGIN_HOST
+```
+
+In this second layout the login node connects to the compute-node IP, so a
+compute-node loopback listener cannot work. `--host 0.0.0.0` can also be used to
+listen on all compute-node interfaces. Configure the same API key in your client
+(`Authorization: Bearer <key>` for curl). This layout exposes the listener on the
+cluster network, and the login-to-compute HTTP hop is not protected by the local
+SSH tunnel. Prefer the jump-host layout when available. Neither layout runs the
+model on the login node. See [OpenSSH forwarding options](https://man.openbsd.org/ssh).
 
 ### Run the LLM benchmark
 
