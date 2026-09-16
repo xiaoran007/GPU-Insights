@@ -47,10 +47,9 @@ The LLM inference track is separate from the training benchmark path. It uses
 processing (PP) plus token generation (TG) throughput for coding-agent-shaped
 cases.
 
-GPU-Insights does not install or configure llama.cpp, CUDA, ROCm, Vulkan, or
-SYCL. Build/install llama.cpp for your platform first. The launcher checks the
-bootstrap build output under `third_party/llama.cpp/build/bin/`, then `PATH`,
-or you can pass an explicit path with `--llama-bench`.
+Prepare llama.cpp with the helper below or an external installation. GPU-Insights
+does not install GPU drivers or backend toolchains such as CUDA, ROCm, Vulkan,
+or SYCL. The benchmark launcher accepts an explicit binary path with `--llama-bench`.
 
 ### Prepare llama.cpp
 
@@ -65,7 +64,8 @@ amd64, it first checks the visible NVIDIA GPU and CUDA major version, then tries
 to install the matching GPU-Insights prebuilt release asset. If that fails in an
 interactive shell, it asks whether to fall back to a source build. Other
 backends go directly to source build. Source builds clone llama.cpp, check out
-upstream `origin/HEAD` by default, and build only `llama-bench`. Pass
+upstream `origin/HEAD` by default, and build both `llama-bench` and `llama-server`
+with their CMake dependencies. Pass
 `--ref <git-ref>` only when you want to pin a specific llama.cpp commit, branch,
 or tag. The helper does not install GPU drivers, CUDA, ROCm, Vulkan SDK, oneAPI,
 compilers, or CMake.
@@ -337,6 +337,67 @@ storage. Because Vast instances are usually rented as ephemeral containers, run
 `python3 scripts/download-llm-model.py` on the instance after the bootstrap.
 Override the free-space guard with `GPU_INSIGHTS_VAST_MIN_FREE_GIB=60` if you
 want a larger local disk margin.
+
+### Run the llama.cpp API server (source build)
+
+The API service uses `llama-server` directly, with the same model presets as the
+downloader. **Use `--prebuilt off`: existing prebuilt releases and Docker benchmark
+wrappers only provide `llama-bench`; server release packaging is not included.**
+Activate your Python environment and run these commands from the project root:
+
+```shell
+# Source-build both binaries for an NVIDIA GPU, including L40S
+bash scripts/bootstrap-llama-cpp.sh --backend cuda --prebuilt off --jobs 16
+
+# Download Qwen3.8-27B UD-Q6_K (~22 GB), then serve it on one L40S
+python scripts/download-llm-model.py --qwen38
+python -m llm_bench.serve --qwen38 --device CUDA0
+```
+
+The launcher requires only the Python standard library. CMake builds the server's
+native dependencies; the host still needs the compiler, CMake, CUDA toolkit (for
+CUDA), and development libraries required by the selected upstream revision
+(including OpenSSL development files for current upstream defaults). The helper
+does not install missing system packages. Use `--ref <commit-or-tag>` to pin
+llama.cpp. See the [upstream server documentation](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md).
+
+Defaults are `127.0.0.1:8080`, 32,768 total context tokens, and one concurrent
+request slot. GPU layers, KV cache types, and Flash Attention come from the model
+config; Jinja chat templates are enabled. The Qwen3.8 preset uses UD-Q6_K and leaves
+room for runtime memory on a 48 GB L40S, but actual capacity depends on context,
+concurrency, and other GPU workloads. Model loading and request logs stream
+directly from llama-server. Stop the foreground service with Ctrl+C.
+
+```shell
+# Health check (HTTP 200 once the model is ready)
+curl http://127.0.0.1:8080/health
+
+# OpenAI-compatible chat endpoint; base URL for clients: http://127.0.0.1:8080/v1
+curl http://127.0.0.1:8080/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen3_8_27b_ud_q6_k","messages":[{"role":"user","content":"Hello"}],"max_tokens":256}'
+
+# Adjust context or port
+python -m llm_bench.serve --qwen38 --ctx-size 16384 --port 8081
+
+# Other model presets or an explicit source-built binary
+python -m llm_bench.serve --gemma --12b
+python -m llm_bench.serve --config /path/to/config.json \
+  --llama-server /path/to/build/bin/llama-server
+
+# Forward native server options after -- (e.g. authentication for remote access)
+python -m llm_bench.serve --qwen38 --host 0.0.0.0 -- --api-key-file /path/to/api-keys.txt
+```
+
+Without a model selector, the existing default Qwen3.6 preset is used. The API
+model name defaults to the config's `model.key`. `--model-path` overrides the GGUF
+path. The binary defaults to `third_party/llama.cpp/build/bin/llama-server`;
+`GPU_INSIGHTS_LLAMA_CPP_DIR` and `GPU_INSIGHTS_LLAMA_CPP_BUILD_DIR` also apply.
+For custom or multi-configuration build layouts, pass `--llama-server` explicitly.
+Additional native arguments after `--` are appended unchanged. Serving does not
+run benchmark cases or generate dashboard payloads. The downloaded Qwen GGUF is
+used for text serving here; image input additionally requires an appropriate
+multimodal projector and native server options.
 
 ### Run the LLM benchmark
 
