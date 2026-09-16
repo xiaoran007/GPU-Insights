@@ -16,8 +16,9 @@ from llm_bench.config import load_config, resolve_config_path, resolve_model_pat
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Download the fixed GPU-Insights LLM benchmark model.")
+    parser = argparse.ArgumentParser(description="Download a GPU-Insights LLM benchmark model.")
     parser.add_argument("--config", help="Path to LLM benchmark config JSON.")
+    parser.add_argument("--qwen38", action="store_true", help="Use the Qwen3.8-27B UD-Q6_K preset for 48 GB GPUs such as L40S.")
     parser.add_argument("--gemma", action="store_true", help="Use a non-dashboard Gemma small-GPU preset. Requires --12b or --e2b.")
     gemma_size = parser.add_mutually_exclusive_group()
     gemma_size.add_argument("--12b", dest="gemma_variant", action="store_const", const="12b", help="Use the Gemma 4 12B QAT UD-Q4_K_XL preset.")
@@ -35,6 +36,7 @@ def main() -> int:
             config_path=args.config,
             gemma=args.gemma,
             gemma_variant=args.gemma_variant,
+            qwen38=args.qwen38,
         )
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc

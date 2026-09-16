@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "default.json"
+QWEN38_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "qwen3.8-27b.json"
 GEMMA_12B_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "gemma-small.json"
 GEMMA_E2B_CONFIG_FILE = Path(__file__).resolve().parent / "configs" / "gemma-e2b-small.json"
 GEMMA_CONFIG_FILES = {
@@ -26,7 +27,12 @@ def resolve_config_path(
     config_path: str | None = None,
     gemma: bool = False,
     gemma_variant: str | None = None,
+    qwen38: bool = False,
 ) -> Path | None:
+    if qwen38 and (config_path or gemma or gemma_variant):
+        raise ValueError("--qwen38 cannot be combined with --config, --gemma, --12b, or --e2b.")
+    if qwen38:
+        return QWEN38_CONFIG_FILE
     if gemma and config_path:
         raise ValueError("--gemma and --config cannot be used together.")
     if gemma_variant and not gemma:

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "suite": "coding-agent",
+  "description": "Auxiliary Qwen3.8-27B UD-Q6_K benchmark preset targeting 48 GB GPUs such as L40S.",
+  "dashboardEligible": false,
+  "fullGpuOnly": true,
+  "runtime": {
+    "name": "llama.cpp",
+    "nGpuLayers": -1,
+    "device": "auto",
+    "autoMultiGpu": true,
+    "splitMode": "layer",
+    "cacheTypeK": "f16",
+    "cacheTypeV": "f16",
+    "flashAttention": true,
+    "contextPadding": 256,
+    "contextRounding": 4096,
+    "allowPartialOffload": false
+  },
+  "model": {
+    "key": "qwen3_8_27b_ud_q6_k",
+    "displayName": "Qwen3.8-27B UD-Q6_K",
+    "baseModel": "Qwen/Qwen3.8-27B",
+    "artifact": "GGUF UD-Q6_K",
+    "hfRepo": "unsloth/Qwen3.8-27B-GGUF",
+    "hfRevision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "filename": "Qwen3.8-27B-UD-Q6_K.gguf",
+    "localPath": "models/llm/Qwen3.8-27B-UD-Q6_K.gguf",
+    "sourceUrl": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/blob/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q6_K.gguf",
+    "expectedBytes": 21983677344,
+    "parameters": "27B",
+    "contextLength": 262144
+  },
+  "defaults": {
+    "batchSize": 2048,
+    "ubatchSize": 512,
+    "repetitions": 5,
+    "threads": null
+  },
+  "cases": [
+    {
+      "name": "agent_step_small",
+      "description": "Short tool result or agent loop step with a compact action response.",
+      "tier": "core",
+      "promptTokens": 2048,
+      "generationTokens": 128
+    },
+    {
+      "name": "single_file_edit",
+      "description": "One source file plus focused surrounding context with a medium patch.",
+      "tier": "core",
+      "promptTokens": 8192,
+      "generationTokens": 512
+    },
+    {
+      "name": "multi_file_patch",
+      "description": "Multiple source files and instructions with a longer code patch.",
+      "tier": "core",
+      "promptTokens": 16384,
+      "generationTokens": 1024
+    },
+    {
+      "name": "repo_context_plan",
+      "description": "Large repository context with a concise planning or diagnosis response.",
+      "tier": "core",
+      "promptTokens": 32768,
+      "generationTokens": 512
+    },
+    {
+      "name": "long_context_debug",
+      "description": "Long logs, diffs, and repository context with a substantial fix explanation.",
+      "tier": "long",
+      "promptTokens": 65536,
+      "generationTokens": 1024
+    }
+  ]
+}
