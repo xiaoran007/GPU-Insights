@@ -20,6 +20,8 @@ usage() {
 Usage:
   bash scripts/bootstrap-llama-cpp.sh [--backend <backend>] [--ref <git-ref>]
 
+Source builds produce llama-bench and llama-server. Use --prebuilt off for API serving.
+
 Options:
   --ref <git-ref>       llama.cpp tag, branch, or commit to check out. Defaults to origin/HEAD.
   --backend <backend>   One of: cpu, cuda, hip, vulkan, sycl, metal.
@@ -637,7 +639,8 @@ prepare_checkout() {
 
 configure_and_build() {
   local -a cmake_args
-  cmake_args=(-S "${src_dir}" -B "${build_dir}" -DCMAKE_BUILD_TYPE=Release)
+  cmake_args=(-S "${src_dir}" -B "${build_dir}" -DCMAKE_BUILD_TYPE=Release
+    -DLLAMA_BUILD_COMMON=ON -DLLAMA_BUILD_TOOLS=ON -DLLAMA_BUILD_SERVER=ON)
 
   case "${backend}" in
     cpu)
@@ -671,7 +674,7 @@ configure_and_build() {
   fi
 
   local -a build_args
-  build_args=(--build "${build_dir}" --config Release --target llama-bench)
+  build_args=(--build "${build_dir}" --config Release --target llama-bench llama-server)
   if [[ -n "${jobs}" ]]; then
     build_args+=(--parallel "${jobs}")
   else
@@ -679,7 +682,7 @@ configure_and_build() {
   fi
 
   echo
-  echo "Building llama-bench..."
+  echo "Building llama-bench and llama-server (CMake reports build progress)..."
   cmake "${build_args[@]}"
 }
 
@@ -701,6 +704,17 @@ print_result() {
       echo
       echo "Run GPU-Insights LLM benchmark with:"
       printf '  python3 -m llm_bench.cli --llama-bench %q\n' "${candidate}"
+      local server_candidate="${candidate%/*}/llama-server"
+      if [[ "${candidate}" == *.exe ]]; then
+        server_candidate+=".exe"
+      fi
+      if [[ ! -f "${server_candidate}" ]]; then
+        echo "Could not locate llama-server: ${server_candidate}" >&2
+        exit 1
+      fi
+      echo
+      echo "Run the LLM API server with:"
+      printf '  python3 -m llm_bench.serve --llama-server %q\n' "${server_candidate}"
       return
     fi
   done
