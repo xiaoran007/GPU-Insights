@@ -18,9 +18,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--llama-server", help="Path to the source-built llama-server binary.")
     parser.add_argument("--model-path", help="Override the configured GGUF path.")
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8080)
-    parser.add_argument("--ctx-size", type=int, default=32768, help="Total context tokens (default: 32768).")
-    parser.add_argument("--parallel", type=int, default=1, help="Concurrent request slots (default: 1).")
+    parser.add_argument("--port", type=int, default=18080)
+    context = parser.add_mutually_exclusive_group()
+    context.add_argument("--ctx-size", type=int, help="Total context tokens across all slots; must divide evenly by --parallel.")
+    context.add_argument("--ctx-per-slot", type=int, help="Context tokens per request, including output. Defaults to the serving preset.")
+    parser.add_argument("--parallel", type=int, help="Concurrent request slots. Defaults to the serving preset.")
+    parser.add_argument("--cache-type-k", help="Override the serving preset's K cache type.")
+    parser.add_argument("--cache-type-v", help="Override the serving preset's V cache type.")
     parser.add_argument("--device", help="llama.cpp device selection, e.g. CUDA0.")
     parser.add_argument("server_args", nargs=argparse.REMAINDER, help="Extra llama-server arguments after --.")
     return parser
@@ -31,8 +35,6 @@ def main() -> int:
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("--port must be between 1 and 65535.")
-    if args.ctx_size <= 0 or args.parallel <= 0:
-        parser.error("--ctx-size and --parallel must be positive.")
     try:
         config_path = resolve_config_path(
             config_path=args.config,
@@ -43,6 +45,17 @@ def main() -> int:
     except ValueError as exc:
         parser.error(str(exc))
     config = load_config(str(config_path) if config_path else None)
+    serving = config.get("serving", {})
+    parallel = args.parallel if args.parallel is not None else serving.get("parallel", 1)
+    context_per_slot = args.ctx_per_slot if args.ctx_per_slot is not None else serving.get("contextPerSlot", 32768)
+    if parallel <= 0 or context_per_slot <= 0:
+        parser.error("--parallel and --ctx-per-slot must be positive.")
+    context_size = args.ctx_size if args.ctx_size is not None else context_per_slot * parallel
+    if context_size <= 0 or context_size % parallel:
+        parser.error("--ctx-size must be positive and divide evenly by --parallel.")
+    context_per_slot = context_size // parallel
+    if context_per_slot > config["model"]["contextLength"]:
+        parser.error("Per-slot context exceeds the configured model contextLength.")
     model_path = Path(args.model_path).expanduser().resolve() if args.model_path else resolve_model_path(config)
     if not model_path.is_file():
         parser.error(f"Model not found: {model_path}. Download the selected model with scripts/download-llm-model.py first.")
@@ -63,11 +76,12 @@ def main() -> int:
         str(executable), "--model", str(model_path),
         "--alias", config["model"]["key"],
         "--host", args.host, "--port", str(args.port),
-        "--ctx-size", str(args.ctx_size), "--parallel", str(args.parallel),
+        "--ctx-size", str(context_size), "--parallel", str(parallel),
+        "--no-kv-unified", "--cont-batching",
         "--n-gpu-layers", str(runtime["nGpuLayers"]),
         "--split-mode", runtime["splitMode"],
-        "--cache-type-k", runtime["cacheTypeK"],
-        "--cache-type-v", runtime["cacheTypeV"],
+        "--cache-type-k", args.cache_type_k or serving.get("cacheTypeK", runtime["cacheTypeK"]),
+        "--cache-type-v", args.cache_type_v or serving.get("cacheTypeV", runtime["cacheTypeV"]),
         "--flash-attn", "on" if runtime["flashAttention"] else "off",
         "--jinja",
     ]
@@ -81,6 +95,8 @@ def main() -> int:
 
     print(f"Starting llama-server: {config['model']['displayName']}", flush=True)
     print(f"Model: {model_path}", flush=True)
+    print(f"Context: {context_per_slot:,} tokens/slot x {parallel} slots = {context_size:,} total", flush=True)
+    print(f"Listen: {args.host}:{args.port}", flush=True)
     # Replace the launcher so the server receives termination signals directly.
     os.execv(str(executable), command)
     return 0

@@ -4,6 +4,12 @@
   "description": "Auxiliary Qwen3.8-27B UD-Q6_K benchmark preset targeting 48 GB GPUs such as L40S.",
   "dashboardEligible": false,
   "fullGpuOnly": true,
+  "serving": {
+    "contextPerSlot": 131072,
+    "parallel": 4,
+    "cacheTypeK": "q8_0",
+    "cacheTypeV": "q8_0"
+  },
   "runtime": {
     "name": "llama.cpp",
     "nGpuLayers": -1,
