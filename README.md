@@ -368,6 +368,20 @@ slot. The launcher passes 524,288 total tokens to llama-server; each slot's budg
 includes both input and output. Raising concurrency preserves the per-slot context
 and increases memory use. Jinja chat templates are enabled.
 
+The Qwen3.8 serving preset loads `llm_bench/templates/qwen3.8-agent.jinja`, based
+on Unsloth's template at revision `3ea932cee0a432ae86e9c7826cbe8aef52323a28`.
+It preserves later system/developer messages in place as system blocks instead
+of raising `System message must be at the beginning.` This addresses HTTP 500
+from agent requests containing such messages while retaining the upstream tool
+and reasoning formats. It is a compatibility modification, not a guarantee of
+model adherence to instructions. Use `--chat-template-file /path/to/template.jinja`
+to supply another template. No GGUF download or native rebuild is required for
+this change; restart the server after updating the checkout.
+
+If the server reports `Invalid API Key`, rerun the local connection helper and
+use its newly printed Claude Code command: each compute-helper restart generates
+a new key. Authentication errors are separate from Jinja/template HTTP 500 errors.
+
 Capacity estimate for Qwen3.8 UD-Q6_K: weights are about 20.47 GiB and attention
 KV caches about 17 GiB at 4 x 128K. The KV estimate is
 `16 attention layers x 2 (K,V) x 4 KV heads x 256 dimensions x (34/32 bytes for Q8_0) x 524288 tokens`.

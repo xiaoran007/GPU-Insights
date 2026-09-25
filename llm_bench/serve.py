@@ -26,6 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--parallel", type=int, help="Concurrent request slots. Defaults to the serving preset.")
     parser.add_argument("--cache-type-k", help="Override the serving preset's K cache type.")
     parser.add_argument("--cache-type-v", help="Override the serving preset's V cache type.")
+    parser.add_argument("--chat-template-file", help="Override the serving preset's Jinja chat template.")
     parser.add_argument("--device", help="llama.cpp device selection, e.g. CUDA0.")
     parser.add_argument("server_args", nargs=argparse.REMAINDER, help="Extra llama-server arguments after --.")
     return parser
@@ -90,6 +91,15 @@ def main() -> int:
         "--jinja",
     ]
     device = args.device or runtime.get("device")
+    template_file = args.chat_template_file or serving.get("chatTemplateFile")
+    if template_file:
+        template_path = Path(template_file).expanduser()
+        if not template_path.is_absolute():
+            template_path = (Path.cwd() if args.chat_template_file else ROOT_DIR) / template_path
+        if not template_path.is_file():
+            parser.error(f"Chat template not found: {template_path}")
+        command.extend(["--chat-template-file", str(template_path)])
+        print(f"Chat template: {template_path}", flush=True)
     if device and device != "auto":
         command.extend(["--device", device])
     extra_args = args.server_args

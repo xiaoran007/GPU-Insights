@@ -5,6 +5,7 @@
   "dashboardEligible": false,
   "fullGpuOnly": true,
   "serving": {
+    "chatTemplateFile": "llm_bench/templates/qwen3.8-agent.jinja",
     "contextPerSlot": 131072,
     "parallel": 4,
     "cacheTypeK": "q8_0",
