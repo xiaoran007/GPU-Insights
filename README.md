@@ -425,6 +425,60 @@ multimodal projector and native server options.
 
 #### Access a compute-node service through a login node
 
+For the existing Oscar/Jupyter-style workflow, use the two repository helpers.
+They reuse your `oscar` SSH alias, including any outer tunnel it already needs:
+
+```shell
+# Compute node: inside an interact GPU allocation, with project venv/conda activated
+# Run from the GPU-Insights checkout. Defaults to Qwen3.8 and remote port 18080.
+bash scripts/llm-interact.sh --device CUDA0
+
+# Local Mac, terminal 1: existing outer tunnel, if required by your oscar alias
+bash ~/brown_oscar.sh
+
+# Local Mac, terminal 2: run from your local GPU-Insights checkout
+bash scripts/oscar-llm-connect.sh
+
+# Or use the direct login alias without the outer tunnel
+OSCAR_HOST=oscar-direct bash scripts/oscar-llm-connect.sh
+
+# Optional port overrides (local and remote ports need not match)
+# Compute node:
+LLM_PORT=18081 bash scripts/llm-interact.sh --device CUDA0
+# Local Mac:
+LOCAL_PORT=18082 bash scripts/oscar-llm-connect.sh
+```
+
+The compute helper requires `SLURM_JOB_ID`, an activated Python environment,
+and `openssl` for key generation. It binds to the internal IPv4 address returned
+by `hostname -i`, generates a fresh API key, and atomically publishes job/node/port
+and credentials under `~/.cache/oscar-llm/active/current.env`. This requires the
+compute and login nodes to share your home directory. Files are private (0600),
+and the active directory is 0700. The helper stays in the foreground, forwards
+termination to the server, and removes its connection information on normal exit,
+Ctrl+C, or SIGTERM. A second registered session is rejected. After an uncatchable
+termination or node failure, check that the old job/service has ended before
+manually removing the stale `~/.cache/oscar-llm/active` directory.
+
+The local helper reads metadata as data, checks that the Slurm job is RUNNING,
+prints the client base URL and API key, and keeps the SSH forward in the foreground.
+It neither opens a browser nor starts an allocation. Local port conflicts fail
+through `ExitOnForwardFailure`; use `LOCAL_PORT` to choose another port. Closing
+the local tunnel does not stop the remote model. Metadata is published during
+startup, so wait for the server's model-ready log before sending agent requests.
+For a readiness check, request `/health` through the local tunnel with the printed
+key in `Authorization: Bearer <key>`. The helpers do not alter your existing
+Jupyter scripts, SSH configuration, or home-directory command installations.
+
+The compute helper defaults to `--qwen38`; `--gemma --12b`, `--gemma --e2b`, or
+`--config` selects another model. Launcher options such as `--parallel`,
+`--ctx-per-slot`, and `--llama-server` pass through. Host, port, and authentication
+are managed by the helper; native arguments after `--` are not accepted. Use
+`python -m llm_bench.serve` directly for manual networking or native options.
+This login-to-compute layout uses the cluster network for its final HTTP hop,
+as in the Jupyter helper. The manual jump-host alternative below keeps that hop
+inside SSH when the cluster permits SSH to compute nodes.
+
 Start the service inside your allocated GPU job on the compute node. If SSH to
 that node is allowed, keep the default loopback listener and run this on your
 local computer (replace user and host placeholders):
