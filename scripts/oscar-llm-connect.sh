@@ -55,6 +55,11 @@ Opening the LLM tunnel via ${oscar_host}:
 Set the base URL and API key in your agent client.
 SSH forwarding does not imply model readiness; wait for the compute-node server's ready log.
 Keep this terminal open. Ctrl+C closes only the tunnel, leaving the model running.
+
+Claude Code: copy this command into another terminal in your project directory.
+Settings apply only to this invocation; "local" targets the server's single loaded model.
+
+claude --model local --settings '{"env":{"ANTHROPIC_BASE_URL":"http://127.0.0.1:${local_port}","ANTHROPIC_AUTH_TOKEN":"${api_key}","ANTHROPIC_DEFAULT_HAIKU_MODEL":"local","ANTHROPIC_DEFAULT_SONNET_MODEL":"local","ANTHROPIC_DEFAULT_OPUS_MODEL":"local"}}'
 EOF
 rm -f "$info_file"
 trap - EXIT INT TERM

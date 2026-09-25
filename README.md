@@ -462,6 +462,12 @@ manually removing the stale `~/.cache/oscar-llm/active` directory.
 
 The local helper reads metadata as data, checks that the Slurm job is RUNNING,
 prints the client base URL and API key, and keeps the SSH forward in the foreground.
+It also prints a copyable `claude --model local --settings '{...}'` command for
+another terminal. The inline settings contain the current tunnel address and key
+under Claude Code's `env` settings field; no shell exports or persistent settings
+files are needed. Claude Code uses the server root URL (without `/v1`) for its
+Anthropic-compatible Messages API. The `local` model identifier and the
+Haiku/Sonnet/Opus aliases all target this single-model server.
 It neither opens a browser nor starts an allocation. Local port conflicts fail
 through `ExitOnForwardFailure`; use `LOCAL_PORT` to choose another port. Closing
 the local tunnel does not stop the remote model. Metadata is published during
