@@ -20,7 +20,7 @@ if ! ssh "$oscar_host" 'cat "$HOME/.cache/oscar-llm/active/current.env"' > "$inf
 fi
 
 # Read data, never execute the remote connection-information file as shell code.
-job_id="" node_host="" node_ip="" remote_port="" api_key=""
+job_id="" node_host="" node_ip="" remote_port="" api_key="" model_key=""
 while IFS='=' read -r key value; do
   case "$key" in
     JOB_ID) job_id="$value" ;;
@@ -28,9 +28,14 @@ while IFS='=' read -r key value; do
     NODE_IP) node_ip="$value" ;;
     REMOTE_PORT) remote_port="$value" ;;
     API_KEY) api_key="$value" ;;
+    MODEL_KEY) model_key="$value" ;;
     *) echo "Unexpected connection-information field: ${key}" >&2; exit 1 ;;
   esac
 done < "$info_file"
+if [[ ! "$model_key" =~ ^[a-zA-Z0-9][a-zA-Z0-9_./:-]*$ ]]; then
+  echo "Missing or invalid MODEL_KEY. Restart the compute-node service with the updated llm-interact.sh." >&2
+  exit 1
+fi
 if [[ ! "$job_id" =~ ^[0-9]+$ || ! "$node_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ || ! "$remote_port" =~ ^[0-9]{1,5}$ || ! "$api_key" =~ ^[0-9a-f]{64}$ ]]; then
   echo "Invalid LLM connection information." >&2
   exit 1
@@ -51,15 +56,16 @@ Opening the LLM tunnel via ${oscar_host}:
   Node:     ${node_host} (${node_ip}:${remote_port})
   Base URL: http://127.0.0.1:${local_port}/v1
   API key:  ${api_key}
+  Model:    ${model_key}
 
 Set the base URL and API key in your agent client.
 SSH forwarding does not imply model readiness; wait for the compute-node server's ready log.
 Keep this terminal open. Ctrl+C closes only the tunnel, leaving the model running.
 
 Claude Code: copy this command into another terminal in your project directory.
-Settings apply only to this invocation; "local" targets the server's single loaded model.
+Settings apply only to this invocation and use the server's configured model name.
 
-claude --model local --settings '{"env":{"ANTHROPIC_BASE_URL":"http://127.0.0.1:${local_port}","ANTHROPIC_AUTH_TOKEN":"${api_key}","ANTHROPIC_DEFAULT_HAIKU_MODEL":"local","ANTHROPIC_DEFAULT_SONNET_MODEL":"local","ANTHROPIC_DEFAULT_OPUS_MODEL":"local"}}'
+claude --model '${model_key}' --settings '{"env":{"ANTHROPIC_BASE_URL":"http://127.0.0.1:${local_port}","ANTHROPIC_AUTH_TOKEN":"${api_key}","ANTHROPIC_DEFAULT_HAIKU_MODEL":"${model_key}","ANTHROPIC_DEFAULT_SONNET_MODEL":"${model_key}","ANTHROPIC_DEFAULT_OPUS_MODEL":"${model_key}"}}'
 EOF
 rm -f "$info_file"
 trap - EXIT INT TERM

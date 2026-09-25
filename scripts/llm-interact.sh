@@ -73,6 +73,7 @@ printf '%s\n' "$api_key" > "${session_dir}/api-key"
 cd "$repo_root"
 # Without a model selector, use the L40S Qwen3.8 serving preset.
 if [[ "$model_selected" == false ]]; then set -- --qwen38 "$@"; fi
+model_key="$(python -m llm_bench.serve "$@" --print-model-key)"
 python -m llm_bench.serve "$@" --host "$node_ip" --port "$port" \
   -- --api-key-file "${session_dir}/api-key" &
 server_pid=$!
@@ -83,6 +84,7 @@ server_pid=$!
   printf 'NODE_IP=%s\n' "$node_ip"
   printf 'REMOTE_PORT=%s\n' "$port"
   printf 'API_KEY=%s\n' "$api_key"
+  printf 'MODEL_KEY=%s\n' "$model_key"
 } > "${session_dir}/current.env.tmp"
 mv "${session_dir}/current.env.tmp" "${session_dir}/current.env"
 
@@ -91,6 +93,7 @@ LLM service starting (wait for llama-server's model-ready log):
   Slurm job:   ${SLURM_JOB_ID}
   Node:        ${node_host}
   Listen:      ${node_ip}:${port}
+  Model:       ${model_key}
   Credentials: ${session_dir}/current.env (private)
 
 On your local Mac, run from GPU-Insights:

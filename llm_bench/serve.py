@@ -17,6 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     gemma_size.add_argument("--e2b", dest="gemma_variant", action="store_const", const="e2b")
     parser.add_argument("--llama-server", help="Path to the source-built llama-server binary.")
     parser.add_argument("--model-path", help="Override the configured GGUF path.")
+    parser.add_argument("--print-model-key", action="store_true", help="Print the configured API model name and exit.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=18080)
     context = parser.add_mutually_exclusive_group()
@@ -45,6 +46,9 @@ def main() -> int:
     except ValueError as exc:
         parser.error(str(exc))
     config = load_config(str(config_path) if config_path else None)
+    if args.print_model_key:
+        print(config["model"]["key"])
+        return 0
     serving = config.get("serving", {})
     parallel = args.parallel if args.parallel is not None else serving.get("parallel", 1)
     context_per_slot = args.ctx_per_slot if args.ctx_per_slot is not None else serving.get("contextPerSlot", 32768)
