@@ -1,8 +1,9 @@
-type ViewKey = "benchmarks" | "llm-inference" | "nvidia-specs";
+type ViewKey = "benchmarks" | "llm-inference" | "llm-api" | "nvidia-specs";
 
 const PAGES: { key: ViewKey; label: string }[] = [
   { key: "benchmarks", label: "Benchmarks" },
   { key: "llm-inference", label: "LLM Inference" },
+  { key: "llm-api", label: "LLM API" },
   { key: "nvidia-specs", label: "NVIDIA Specs" },
 ];
 

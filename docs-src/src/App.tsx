@@ -7,6 +7,7 @@ import {
   useFilters,
 } from "./hooks/useBenchmarkData";
 import { useLlmInferenceData } from "./hooks/useLlmInferenceData";
+import { useLlmApiData } from "./hooks/useLlmApiData";
 import { useNvidiaSpecsData } from "./hooks/useNvidiaSpecsData";
 
 import Layout from "./components/Layout";
@@ -23,12 +24,14 @@ import EmptyState from "./components/EmptyState";
 import ArchivePage from "./components/ArchivePage";
 import NvidiaSpecsPage from "./components/NvidiaSpecsPage";
 import LlmInferencePage from "./components/LlmInferencePage";
+import LlmApiPage from "./components/LlmApiPage";
 
 type TabKey = ModelKey | "archive";
-type ViewKey = "benchmarks" | "llm-inference" | "nvidia-specs";
+type ViewKey = "benchmarks" | "llm-inference" | "llm-api" | "nvidia-specs";
 
 function parseViewFromHash(hash: string): ViewKey {
   if (hash === "#/llm-inference") return "llm-inference";
+  if (hash === "#/llm-api") return "llm-api";
   return hash === "#/nvidia-specs" ? "nvidia-specs" : "benchmarks";
 }
 
@@ -45,6 +48,7 @@ export default function App() {
     error: llmError,
     loading: llmLoading,
   } = useLlmInferenceData();
+  const { data: apiData, error: apiError, loading: apiLoading } = useLlmApiData();
   const [activeTab, setActiveTab] = useState<TabKey>("vit");
   const [activeView, setActiveView] = useState<ViewKey>(() =>
     parseViewFromHash(window.location.hash),
@@ -79,6 +83,8 @@ export default function App() {
       window.location.hash = "#/nvidia-specs";
     } else if (view === "llm-inference") {
       window.location.hash = "#/llm-inference";
+    } else if (view === "llm-api") {
+      window.location.hash = "#/llm-api";
     } else {
       window.location.hash = "#/benchmarks";
     }
@@ -102,9 +108,30 @@ export default function App() {
             description:
               "Prompt processing and token generation throughput for llama.cpp and future runtime adapters.",
           }
+      : activeView === "llm-api"
+        ? {
+            lastUpdated: apiData?.metadata.lastUpdated ?? "—",
+            eyebrow: "Service Benchmark Track",
+            title: "LLM API Performance",
+            description: "Client-observed latency and carefully labeled prefill and decode estimates across hosted and local APIs.",
+          }
       : {
           lastUpdated: data?.metadata.lastUpdated ?? "—",
         };
+
+  if (activeView === "llm-api") {
+    return (
+      <Layout>
+        <Hero {...heroProps} />
+        <PageTabs activeView={activeView} onViewChange={handleViewChange} />
+        {apiLoading ? (
+          <div className="flex min-h-[60vh] items-center justify-center text-[var(--color-muted)]">Loading API results…</div>
+        ) : apiError || !apiData ? (
+          <div className="flex min-h-[60vh] items-center justify-center text-red-600">Failed to load API results: {apiError ?? "Unknown error"}</div>
+        ) : <LlmApiPage data={apiData} />}
+      </Layout>
+    );
+  }
 
   if (activeView === "llm-inference") {
     if (llmLoading) {
