@@ -13,6 +13,7 @@ export interface LlmApiSummary {
   serverPrefillTps: Percentiles | null;
   effectivePrefillTps: number | null;
   prefillFitR2: number | null;
+  requestThroughputRps: number | null;
   promptTokens: Percentiles | null;
   outputTokens: Percentiles | null;
 }
@@ -25,6 +26,7 @@ export interface LlmApiEntry {
   endpointHost: string;
   promptChars: number[];
   repetitions: number;
+  concurrency: number;
   decodeOutputTokens: number;
   streamUsageRequested: boolean;
   summary: LlmApiSummary;
