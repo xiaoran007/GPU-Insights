@@ -16,6 +16,11 @@ from llm_bench.api.protocol import make_request, normalize_event, parse_sse, tok
 PROMPT_UNIT = "Analyze the following project note and keep the answer concise. A benchmark must report measured latency, request conditions, and uncertainty. "
 
 
+class NoRedirect(request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def make_prompt(char_count: int) -> str:
     prefix = f"Run identifier: {uuid.uuid4().hex}.\n"
     body = (PROMPT_UNIT * ((char_count // len(PROMPT_UNIT)) + 1))[:char_count]
@@ -71,12 +76,13 @@ def measure_request(
     usage: dict[str, Any] = {}
     timings: dict[str, Any] = {}
     complete = False
+    opener = request.build_opener(NoRedirect)
     started = time.perf_counter()
     try:
         http_request = request.Request(
             spec.url, data=spec.body, headers=spec.headers, method="POST"
         )
-        with request.urlopen(http_request, timeout=timeout) as response:
+        with opener.open(http_request, timeout=timeout) as response:
             sample["headersMs"] = _ms(time.perf_counter() - started)
             for event_name, data in parse_sse(response):
                 now = time.perf_counter()
