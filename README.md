@@ -613,6 +613,58 @@ python3 -m llm_bench.cli \
   --pretty
 ```
 
+## LLM API benchmark
+
+This separate track measures the API service seen by a client, including network and
+queue time. It supports OpenAI Chat Completions, OpenAI Responses, Claude Messages,
+Gemini native streaming, DeepSeek, vLLM, llama.cpp, and a custom OpenAI-compatible
+base URL. The existing `llm_bench.cli` track still measures local `llama-bench`
+engine throughput.
+
+Preview the request count and output token cap without contacting a service:
+
+```shell
+python -m llm_bench.api.cli --provider openai-chat --model YOUR_MODEL --dry-run
+```
+
+For a real run, select the provider and model and omit `--dry-run`. Credentials are
+resolved in this order: `--api-key`, an environment variable, then a repository-local
+`.env` file (or `--env-file PATH`). The default variable names are
+`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, and
+`LLM_API_KEY` for custom and local endpoints. Local servers may run without a key.
+The `.env` file is Git-ignored. A command-line key can be visible in shell history
+and process listings, so the environment or `.env` form is preferable.
+
+```shell
+# Hosted API
+OPENAI_API_KEY=... python -m llm_bench.api.cli --provider openai-chat --model YOUR_MODEL
+
+# Local OpenAI-compatible API
+python -m llm_bench.api.cli --provider vllm --model YOUR_MODEL \
+  --base-url http://127.0.0.1:8000/v1
+
+# Custom service that rejects stream_options
+python -m llm_bench.api.cli --provider compatible --model YOUR_MODEL \
+  --base-url https://example.com/v1 --no-stream-usage
+```
+
+The command writes a JSON result to `outputs/llm-api-bench/`. It stores timing,
+usage, and generic failure status, without API keys, prompt text, or response text.
+After reviewing the result, import its summary for the `#/llm-api` GitHub Pages
+view:
+
+```shell
+python scripts/manage-data.py import-api-payload outputs/llm-api-bench/RESULT.json --dry-run
+python scripts/manage-data.py import-api-payload outputs/llm-api-bench/RESULT.json
+```
+
+The default workload uses three input sizes and repeated requests, plus a separate
+longer output case. Decode metrics come from server timings when available, or from
+provider token usage and the visible streaming interval. Effective prefill is
+estimated from the slope of token count against time to first visible text. It is
+left blank when token counts, enough successful samples, or a stable slope are
+unavailable. The dashboard labels server values and client estimates separately.
+
 ## Models
 
 | Model | Parameters | Input Size | Task | Aliases |

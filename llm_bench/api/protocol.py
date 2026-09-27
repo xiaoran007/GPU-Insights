@@ -138,7 +138,10 @@ def token_usage(provider: str, usage: dict[str, Any] | None) -> tuple[int | None
         return (prompt or None, usage.get("output_tokens"),
                 (usage.get("output_tokens_details") or {}).get("thinking_tokens"))
     if provider == "gemini":
-        return usage.get("promptTokenCount"), usage.get("candidatesTokenCount"), usage.get("thoughtsTokenCount")
+        candidates = usage.get("candidatesTokenCount")
+        thoughts = usage.get("thoughtsTokenCount")
+        output = candidates + (thoughts or 0) if candidates is not None else None
+        return usage.get("promptTokenCount"), output, thoughts
     if provider == "openai-responses":
         return (usage.get("input_tokens"), usage.get("output_tokens"),
                 (usage.get("output_tokens_details") or {}).get("reasoning_tokens"))

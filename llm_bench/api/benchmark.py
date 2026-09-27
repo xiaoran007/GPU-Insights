@@ -65,7 +65,7 @@ def measure_request(
             raise ValueError("Stream ended without a completion event")
     except error.HTTPError as exc:
         sample["status"], sample["error"] = "failed", f"HTTP {exc.code}"
-    except (error.URLError, TimeoutError, ValueError, UnicodeError) as exc:
+    except (OSError, ValueError, UnicodeError) as exc:
         sample["status"], sample["error"] = "failed", type(exc).__name__
     finally:
         sample["totalMs"] = _ms(time.perf_counter() - started)
@@ -160,17 +160,20 @@ def _prefill_regression(samples: list[dict[str, Any]]) -> tuple[float | None, fl
 def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
     measured = [s for s in samples if s["phase"] != "warmup"]
     success = [s for s in measured if s["status"] == "ok"]
+    decode_samples = [s for s in success if s["phase"] == "decode"]
+    prefill_samples = [s for s in success if s["phase"] == "prefill"]
     prefill_rate, fit = _prefill_regression(success)
-    def rates(key: str) -> dict[str, float] | None:
-        return _distribution([s[key] for s in success if s[key] is not None])
+    def rates(key: str, group: list[dict[str, Any]]) -> dict[str, float] | None:
+        return _distribution([s[key] for s in group if s[key] is not None])
     return {
         "successes": len(success), "failures": len(measured) - len(success),
-        "ttftMs": rates("ttftMs"), "totalMs": rates("totalMs"),
-        "clientDecodeTps": rates("clientDecodeTps"),
-        "serverDecodeTps": rates("serverDecodeTps"),
-        "serverPrefillTps": rates("serverPrefillTps"),
+        "ttftMs": rates("ttftMs", decode_samples), "totalMs": rates("totalMs", decode_samples),
+        "clientDecodeTps": rates("clientDecodeTps", decode_samples),
+        "serverDecodeTps": rates("serverDecodeTps", decode_samples),
+        "serverPrefillTps": rates("serverPrefillTps", prefill_samples),
         "effectivePrefillTps": prefill_rate, "prefillFitR2": fit,
-        "promptTokens": rates("promptTokens"), "outputTokens": rates("outputTokens"),
+        "promptTokens": rates("promptTokens", decode_samples),
+        "outputTokens": rates("outputTokens", decode_samples),
     }
 
 
