@@ -1,0 +1,8 @@
+{
+  "metadata": {
+    "lastUpdated": null,
+    "version": "1.0",
+    "description": "Client-observed LLM API benchmark results; no API keys, prompts, or responses."
+  },
+  "benchmarks": []
+}

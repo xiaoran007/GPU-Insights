@@ -17,8 +17,10 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR.parent))
 DEFAULT_DATA_FILE = SCRIPT_DIR.parent / "docs-src" / "public" / "data" / "benchmark-data.json"
 DEFAULT_LLM_DATA_FILE = SCRIPT_DIR.parent / "docs-src" / "public" / "data" / "llm-inference-data.json"
+DEFAULT_LLM_API_DATA_FILE = SCRIPT_DIR.parent / "docs-src" / "public" / "data" / "llm-api-data.json"
 PAYLOAD_PREFIX = "RESULT_PAYLOAD_B64="
 LLM_PAYLOAD_PREFIX = "LLM_RESULT_PAYLOAD_B64="
 
@@ -893,6 +895,13 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"LLM inference data JSON file. Default: {DEFAULT_LLM_DATA_FILE}",
     )
 
+    api_import_parser = subparsers.add_parser(
+        "import-api-payload", help="Import an llm_bench.api.cli result JSON file",
+    )
+    api_import_parser.add_argument("payload_file", type=Path)
+    api_import_parser.add_argument("--api-data-file", type=Path, default=DEFAULT_LLM_API_DATA_FILE)
+    api_import_parser.add_argument("--dry-run", action="store_true")
+
     decode_parser = subparsers.add_parser(
         "decode-payload",
         help="Decode a Base64 payload or print a payload JSON envelope",
@@ -929,6 +938,14 @@ def main() -> int:
         return 0 if import_payload(args) else 1
     if args.command in {"import-llm-payload", "l"}:
         return 0 if import_llm_payload(args) else 1
+    if args.command == "import-api-payload":
+        from llm_bench.api.data import import_payload as import_api_payload
+        try:
+            print(import_api_payload(args.payload_file, args.api_data_file, args.dry_run))
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            print(f"❌ API payload import failed: {exc}")
+            return 1
+        return 0
     if args.command == "decode-payload":
         return 0 if decode_payload_command(args) else 1
     if args.command == "migrate-version":
