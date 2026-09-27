@@ -33,36 +33,58 @@ class StreamEvent:
 
 
 def make_request(
-    provider: str, base_url: str, model: str, prompt: str,
-    max_output_tokens: int, api_key: str | None, include_usage: bool,
+    provider: str,
+    base_url: str,
+    model: str,
+    prompt: str,
+    max_output_tokens: int,
+    api_key: str | None,
+    include_usage: bool,
 ) -> RequestSpec:
     base = base_url.rstrip("/")
     headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
     if provider == "anthropic":
         url = f"{base}/messages"
         headers.update({"x-api-key": api_key or "", "anthropic-version": "2023-06-01"})
-        body = {"model": model, "max_tokens": max_output_tokens, "stream": True,
-                "messages": [{"role": "user", "content": prompt}]}
+        body = {
+            "model": model,
+            "max_tokens": max_output_tokens,
+            "stream": True,
+            "messages": [{"role": "user", "content": prompt}],
+        }
     elif provider == "gemini":
         url = f"{base}/models/{quote(model, safe='')}:streamGenerateContent?alt=sse"
         headers["x-goog-api-key"] = api_key or ""
-        body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                "generationConfig": {"maxOutputTokens": max_output_tokens}}
+        body = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": max_output_tokens},
+        }
     elif provider == "openai-responses":
         url = f"{base}/responses"
         headers["Authorization"] = f"Bearer {api_key}"
-        body = {"model": model, "input": prompt, "max_output_tokens": max_output_tokens,
-                "stream": True}
+        body = {
+            "model": model,
+            "input": prompt,
+            "max_output_tokens": max_output_tokens,
+            "stream": True,
+        }
     else:
         url = f"{base}/chat/completions"
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
-        body = {"model": model, "messages": [{"role": "user", "content": prompt}],
-                "stream": True}
-        body["max_completion_tokens" if provider == "openai-chat" else "max_tokens"] = max_output_tokens
+        body = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": True,
+        }
+        body["max_completion_tokens" if provider == "openai-chat" else "max_tokens"] = (
+            max_output_tokens
+        )
         if include_usage:
             body["stream_options"] = {"include_usage": True}
-    return RequestSpec(url, headers, json.dumps(body, ensure_ascii=False).encode("utf-8"))
+    return RequestSpec(
+        url, headers, json.dumps(body, ensure_ascii=False).encode("utf-8")
+    )
 
 
 def parse_sse(lines: Iterator[bytes]) -> Iterator[tuple[str, str]]:
@@ -94,10 +116,16 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
             return StreamEvent("done")
         if kind == "content_block_delta":
             delta = data.get("delta") or {}
-            return StreamEvent("content", text=delta.get("text", "") if delta.get("type") == "text_delta" else "")
+            return StreamEvent(
+                "content",
+                text=delta.get("text", "") if delta.get("type") == "text_delta" else "",
+            )
         if kind == "content_block_start":
             block = data.get("content_block") or {}
-            return StreamEvent("content", text=block.get("text", "") if block.get("type") == "text" else "")
+            return StreamEvent(
+                "content",
+                text=block.get("text", "") if block.get("type") == "text" else "",
+            )
         if kind == "message_start":
             return StreamEvent("usage", usage=(data.get("message") or {}).get("usage"))
         if kind == "message_delta":
@@ -105,10 +133,17 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
     elif provider == "gemini":
         if "error" in data:
             return StreamEvent("error")
-        parts = ((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
-        finished = any(candidate.get("finishReason") for candidate in data.get("candidates") or [])
-        return StreamEvent("done" if finished else "content", text="".join(part.get("text", "") for part in parts),
-                           usage=data.get("usageMetadata"))
+        parts = ((data.get("candidates") or [{}])[0].get("content") or {}).get(
+            "parts"
+        ) or []
+        finished = any(
+            candidate.get("finishReason") for candidate in data.get("candidates") or []
+        )
+        return StreamEvent(
+            "done" if finished else "content",
+            text="".join(part.get("text", "") for part in parts),
+            usage=data.get("usageMetadata"),
+        )
     elif provider == "openai-responses":
         kind = data.get("type", event_name)
         if kind in {"error", "response.failed", "response.incomplete"}:
@@ -117,33 +152,55 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
             return StreamEvent("content", text=data.get("delta", ""))
         if kind == "response.completed":
             response = data.get("response") or {}
-            return StreamEvent("done", usage=response.get("usage"), timings=response.get("metrics"))
+            return StreamEvent(
+                "done", usage=response.get("usage"), timings=response.get("metrics")
+            )
     else:
         if "error" in data:
             return StreamEvent("error")
         choices = data.get("choices") or []
         delta = (choices[0].get("delta") or {}) if choices else {}
-        return StreamEvent("content", text=delta.get("content") or "",
-                           usage=data.get("usage"),
-                           timings=data.get("timings") or data.get("metrics"))
+        return StreamEvent(
+            "content",
+            text=delta.get("content") or "",
+            usage=data.get("usage"),
+            timings=data.get("timings") or data.get("metrics"),
+        )
     return StreamEvent("other")
 
 
-def token_usage(provider: str, usage: dict[str, Any] | None) -> tuple[int | None, int | None, int | None]:
+def token_usage(
+    provider: str, usage: dict[str, Any] | None
+) -> tuple[int | None, int | None, int | None]:
     if not usage:
         return None, None, None
     if provider == "anthropic":
-        prompt = sum(int(usage.get(key) or 0) for key in
-                     ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
-        return (prompt or None, usage.get("output_tokens"),
-                (usage.get("output_tokens_details") or {}).get("thinking_tokens"))
+        prompt = sum(
+            int(usage.get(key) or 0)
+            for key in (
+                "input_tokens",
+                "cache_creation_input_tokens",
+                "cache_read_input_tokens",
+            )
+        )
+        return (
+            prompt or None,
+            usage.get("output_tokens"),
+            (usage.get("output_tokens_details") or {}).get("thinking_tokens"),
+        )
     if provider == "gemini":
         candidates = usage.get("candidatesTokenCount")
         thoughts = usage.get("thoughtsTokenCount")
         output = candidates + (thoughts or 0) if candidates is not None else None
         return usage.get("promptTokenCount"), output, thoughts
     if provider == "openai-responses":
-        return (usage.get("input_tokens"), usage.get("output_tokens"),
-                (usage.get("output_tokens_details") or {}).get("reasoning_tokens"))
-    return (usage.get("prompt_tokens"), usage.get("completion_tokens"),
-            (usage.get("completion_tokens_details") or {}).get("reasoning_tokens"))
+        return (
+            usage.get("input_tokens"),
+            usage.get("output_tokens"),
+            (usage.get("output_tokens_details") or {}).get("reasoning_tokens"),
+        )
+    return (
+        usage.get("prompt_tokens"),
+        usage.get("completion_tokens"),
+        (usage.get("completion_tokens_details") or {}).get("reasoning_tokens"),
+    )
