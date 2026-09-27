@@ -34,7 +34,7 @@ class StreamEvent:
 
 def make_request(
     provider: str, base_url: str, model: str, prompt: str,
-    max_output_tokens: int, api_key: str | None,
+    max_output_tokens: int, api_key: str | None, include_usage: bool,
 ) -> RequestSpec:
     base = base_url.rstrip("/")
     headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
@@ -58,8 +58,9 @@ def make_request(
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
         body = {"model": model, "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": max_output_tokens, "stream": True}
-        if provider in {"openai-chat", "deepseek", "vllm"}:
+                "stream": True}
+        body["max_completion_tokens" if provider == "openai-chat" else "max_tokens"] = max_output_tokens
+        if include_usage:
             body["stream_options"] = {"include_usage": True}
     return RequestSpec(url, headers, json.dumps(body, ensure_ascii=False).encode("utf-8"))
 
@@ -94,6 +95,9 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
         if kind == "content_block_delta":
             delta = data.get("delta") or {}
             return StreamEvent("content", text=delta.get("text", "") if delta.get("type") == "text_delta" else "")
+        if kind == "content_block_start":
+            block = data.get("content_block") or {}
+            return StreamEvent("content", text=block.get("text", "") if block.get("type") == "text" else "")
         if kind == "message_start":
             return StreamEvent("usage", usage=(data.get("message") or {}).get("usage"))
         if kind == "message_delta":
@@ -102,7 +106,8 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
         if "error" in data:
             return StreamEvent("error")
         parts = ((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
-        return StreamEvent("content", text="".join(part.get("text", "") for part in parts),
+        finished = any(candidate.get("finishReason") for candidate in data.get("candidates") or [])
+        return StreamEvent("done" if finished else "content", text="".join(part.get("text", "") for part in parts),
                            usage=data.get("usageMetadata"))
     elif provider == "openai-responses":
         kind = data.get("type", event_name)
