@@ -634,6 +634,8 @@ resolved in this order: `--api-key`, an environment variable, then a repository-
 `LLM_API_KEY` for custom and local endpoints. Local servers may run without a key.
 The `.env` file is Git-ignored. A command-line key can be visible in shell history
 and process listings, so the environment or `.env` form is preferable.
+Sending a key to a non-loopback plain HTTP endpoint requires
+`--allow-insecure-http`; loopback servers work with HTTP by default.
 
 ```shell
 # Hosted API
@@ -646,6 +648,10 @@ python -m llm_bench.api.cli --provider vllm --model YOUR_MODEL \
 # Custom service that rejects stream_options
 python -m llm_bench.api.cli --provider compatible --model YOUR_MODEL \
   --base-url https://example.com/v1 --no-stream-usage
+
+# Separate concurrent load mode (decode workload only)
+python -m llm_bench.api.cli --provider vllm --model YOUR_MODEL \
+  --concurrency 4 --repetitions 5
 ```
 
 The command writes a JSON result to `outputs/llm-api-bench/`. It stores timing,
@@ -663,7 +669,9 @@ longer output case. Decode metrics come from server timings when available, or f
 provider token usage and the visible streaming interval. Effective prefill is
 estimated from the slope of token count against time to first visible text. It is
 left blank when token counts, enough successful samples, or a stable slope are
-unavailable. The dashboard labels server values and client estimates separately.
+unavailable. Concurrent mode runs only the longer output case and reports successful
+requests per second; it does not estimate prefill. The dashboard labels server values
+and client estimates separately.
 
 ## Models
 
