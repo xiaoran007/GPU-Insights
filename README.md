@@ -639,7 +639,8 @@ Sending a key to a non-loopback plain HTTP endpoint requires
 
 ```shell
 # Hosted API
-OPENAI_API_KEY=... python -m llm_bench.api.cli --provider openai-chat --model YOUR_MODEL
+OPENAI_API_KEY=... python -m llm_bench.api.cli --provider openai-chat \
+  --model YOUR_MODEL --region us-east
 
 # Local OpenAI-compatible API
 python -m llm_bench.api.cli --provider vllm --model YOUR_MODEL \

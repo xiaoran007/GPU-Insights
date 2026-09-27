@@ -228,6 +228,15 @@ def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
     decode_samples = [s for s in success if s["phase"] == "decode"]
     prefill_samples = [s for s in success if s["phase"] == "prefill"]
     prefill_rate, fit = _prefill_regression(success)
+    cache_counts = [s["cachedPromptTokens"] for s in decode_samples]
+    if any(count is not None and count > 0 for count in cache_counts):
+        cache_status = (
+            "mixed" if any(count == 0 for count in cache_counts) else "cached"
+        )
+    elif cache_counts and all(count == 0 for count in cache_counts):
+        cache_status = "uncached"
+    else:
+        cache_status = "unknown"
 
     def rates(key: str, group: list[dict[str, Any]]) -> dict[str, float] | None:
         return _distribution([s[key] for s in group if s[key] is not None])
@@ -235,6 +244,7 @@ def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "successes": len(success),
         "failures": len(measured) - len(success),
+        "cacheStatus": cache_status,
         "ttftMs": rates("ttftMs", decode_samples),
         "totalMs": rates("totalMs", decode_samples),
         "clientDecodeTps": rates("clientDecodeTps", decode_samples),
@@ -261,6 +271,7 @@ def run_benchmark(
     timeout: float,
     include_usage: bool,
     concurrency: int,
+    region: str,
 ) -> dict[str, Any]:
     if concurrency == 1:
         work = [
@@ -363,6 +374,7 @@ def run_benchmark(
             "decodePromptChars": decode_prompt_chars,
             "timeoutSeconds": timeout,
             "concurrency": concurrency,
+            "clientRegion": region,
         },
         "summary": summary,
         "samples": samples,

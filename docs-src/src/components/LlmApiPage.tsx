@@ -97,21 +97,21 @@ function EmptyResults() {
 
 function ResultsTable({ entries }: { entries: LlmApiEntry[] }) {
   return <div className="mt-4 overflow-x-auto">
-    <table className="w-full min-w-[1440px] border-collapse text-left text-sm">
+    <table className="w-full min-w-[1550px] border-collapse text-left text-sm">
       <thead className="border-b border-[var(--color-line)] text-xs uppercase tracking-wider text-[var(--color-muted)]">
-        <tr>{["Provider / Model", "Endpoint", "Concurrency", "TTFT p50 / p95", "Total p50", "Decode p50", "Prefill", "Requests/s", "Samples", "Input / output", "Date"].map((heading) => <th key={heading} className="px-3 py-3">{heading}</th>)}</tr>
+        <tr>{["Provider / Model", "Endpoint / client", "Concurrency", "TTFT p50 / p95", "Total p50", "Decode p50", "Prefill", "Requests/s", "Samples", "Input / output", "Date"].map((heading) => <th key={heading} className="px-3 py-3">{heading}</th>)}</tr>
       </thead>
       <tbody>
         {entries.map((entry) => <tr key={entry.runId} className="border-b border-[var(--color-line)] align-top last:border-0">
           <td className="px-3 py-3"><span className="block font-semibold">{entry.model}</span><span className="text-xs text-[var(--color-muted)]">{entry.provider}</span></td>
-          <td className="px-3 py-3 font-[var(--font-mono)] text-xs">{entry.endpointHost}</td>
+          <td className="px-3 py-3 font-[var(--font-mono)] text-xs">{entry.endpointHost}<span className="block text-[var(--color-muted)]">{entry.clientRegion || "Region unspecified"}</span></td>
           <td className="px-3 py-3 font-[var(--font-mono)]">{entry.concurrency}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{entry.summary.ttftMs ? `${number(entry.summary.ttftMs.p50)} / ${number(entry.summary.ttftMs.p95)} ms` : "—"}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{p50(entry.summary.totalMs, "ms")}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{p50(decode(entry), "tok/s")}<span className="block text-xs text-[var(--color-muted)]">{entry.summary.serverDecodeTps ? "server" : entry.summary.clientDecodeTps ? "client estimate" : ""}</span></td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{prefill(entry) != null ? `${number(prefill(entry))} tok/s` : "—"}<span className="block text-xs text-[var(--color-muted)]">{entry.summary.serverPrefillTps ? "server" : entry.summary.effectivePrefillTps ? `TTFT slope · R² ${number(entry.summary.prefillFitR2, 2)}` : ""}</span></td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{number(entry.summary.requestThroughputRps)}</td>
-          <td className="px-3 py-3">{entry.summary.successes} ok<span className="block text-xs text-[var(--color-muted)]">{entry.summary.failures} failed</span></td>
+          <td className="px-3 py-3">{entry.summary.successes} ok<span className="block text-xs text-[var(--color-muted)]">{entry.summary.failures} failed · cache {entry.summary.cacheStatus}</span></td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{number(entry.summary.promptTokens?.p50, 0)} / {number(entry.summary.outputTokens?.p50, 0)}<span className="block text-xs text-[var(--color-muted)]">median tokens</span></td>
           <td className="px-3 py-3 whitespace-nowrap">{entry.createdAt.slice(0, 10)}</td>
         </tr>)}

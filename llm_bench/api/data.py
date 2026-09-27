@@ -79,6 +79,10 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Invalid config.concurrency")
     if type(config.get("streamUsageRequested")) is not bool:
         raise ValueError("Invalid config.streamUsageRequested")
+    if not isinstance(config.get("clientRegion"), str):
+        raise ValueError("Invalid config.clientRegion")
+    if summary.get("cacheStatus") not in {"unknown", "uncached", "cached", "mixed"}:
+        raise ValueError("Invalid summary.cacheStatus")
     if not isinstance(payload.get("samples"), list):
         raise ValueError("Payload must contain a samples array")
     identity = {
@@ -96,6 +100,7 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
         "provider": config["provider"],
         "model": config["model"],
         "endpointHost": config["endpointHost"],
+        "clientRegion": config["clientRegion"],
         "promptChars": config["promptChars"],
         "repetitions": config["repetitions"],
         "concurrency": config["concurrency"],
@@ -106,6 +111,7 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
             for key in (
                 "successes",
                 "failures",
+                "cacheStatus",
                 *METRICS,
                 "effectivePrefillTps",
                 "prefillFitR2",

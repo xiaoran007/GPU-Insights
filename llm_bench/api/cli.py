@@ -17,6 +17,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--provider", required=True, choices=sorted(KEY_VARIABLES))
     parser.add_argument("--model", required=True)
     parser.add_argument(
+        "--region", default="", help="Client location label for dashboard comparisons."
+    )
+    parser.add_argument(
         "--base-url", help="API base URL, including /v1 where required."
     )
     parser.add_argument(
@@ -169,6 +172,7 @@ def main() -> int:
             timeout=args.timeout,
             include_usage=not args.no_stream_usage,
             concurrency=args.concurrency,
+            region=args.region,
         )
     except RuntimeError as exc:
         raise SystemExit(str(exc)) from exc

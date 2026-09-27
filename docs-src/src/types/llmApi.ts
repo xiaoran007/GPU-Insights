@@ -6,6 +6,7 @@ export interface Percentiles {
 export interface LlmApiSummary {
   successes: number;
   failures: number;
+  cacheStatus: "unknown" | "uncached" | "cached" | "mixed";
   ttftMs: Percentiles | null;
   totalMs: Percentiles | null;
   clientDecodeTps: Percentiles | null;
@@ -24,6 +25,7 @@ export interface LlmApiEntry {
   provider: string;
   model: string;
   endpointHost: string;
+  clientRegion: string;
   promptChars: number[];
   repetitions: number;
   concurrency: number;
