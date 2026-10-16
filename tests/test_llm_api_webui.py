@@ -20,6 +20,9 @@ class FakeProvider(BaseHTTPRequestHandler):
     def do_POST(self):
         self.rfile.read(int(self.headers["Content-Length"]))
         self.server.calls += 1
+        if getattr(self.server, "reject", False):
+            self.send_error(401)
+            return
         self.server.started.set()
         self.server.release.wait(5)
         events = [
@@ -107,6 +110,28 @@ class WorkbenchTests(unittest.TestCase):
         for path in self.root.rglob("*.json"):
             self.assertNotIn("test-session-key", path.read_text())
         self.assertNotIn("test-session-key", json.dumps(job))
+
+    def test_failed_warmup_is_visible_without_a_collectable_result(self):
+        self.provider.reject = True
+        self.call("/api/run", {"config": self.config})
+        job = self.finish()
+        self.assertEqual(job["status"], "failed")
+        self.assertEqual(job["error"], "Warmup failed: HTTP 401")
+        self.assertIsNone(job["resultFile"])
+        self.assertEqual(self.call("/api/history"), [])
+        self.assertEqual(self.provider.calls, 1)
+
+    def test_concurrent_run_matches_planned_request_count(self):
+        config = {**self.config, "concurrency": 2}
+        plan = self.call("/api/preview", {"config": config})
+        self.call("/api/run", {"config": config})
+        job = self.finish()
+        self.assertEqual(job["completed"], plan["requests"])
+        self.assertEqual(job["status"], "completed")
+        result = self.call("/api/results/" + job["resultFile"])["payload"]
+        self.assertEqual(result["summary"]["successes"], 4)
+        self.assertGreater(result["summary"]["requestThroughputRps"], 0)
+        self.assertIsNone(result["summary"]["effectivePrefillTps"])
 
     def test_cancel_while_warmup_running_and_reject_duplicate(self):
         self.provider.release.clear()

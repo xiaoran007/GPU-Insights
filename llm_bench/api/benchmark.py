@@ -107,6 +107,7 @@ def measure_request(
             raise ValueError("Stream ended without a completion event")
     except error.HTTPError as exc:
         sample["status"], sample["error"] = "failed", f"HTTP {exc.code}"
+        exc.close()
     except (OSError, ValueError, UnicodeError) as exc:
         sample["status"], sample["error"] = "failed", type(exc).__name__
     finally:
