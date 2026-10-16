@@ -1,4 +1,4 @@
-.PHONY: smart tpu tpu-multi calibrate docs docs-dev deps deps-dry-run help
+.PHONY: smart tpu tpu-multi calibrate docs docs-dev deps deps-dry-run api-ui api-ui-build help
 
 MODEL ?= resnet50
 SIZE ?= 1024
@@ -11,6 +11,9 @@ TPU_CORES ?= 8
 TPU_ARGS ?=
 
 CALIBRATE_ARGS ?= --json
+API_PYTHON ?= .venv/bin/python
+API_UI_ARGS ?=
+
 DEPS_ARGS ?=
 
 smart:
@@ -27,6 +30,12 @@ calibrate:
 
 docs:
 	cd docs-src && npm ci && npm run build
+
+api-ui-build:
+	cd docs-src && npm run build:workbench
+
+api-ui:
+	$(API_PYTHON) -m llm_bench.api.webui $(API_UI_ARGS)
 
 docs-dev:
 	cd docs-src && npm run dev
@@ -50,6 +59,8 @@ help:
 	@echo "  make tpu-multi  - TPU multi-core benchmark"
 	@echo "  make calibrate  - Run memory calibration"
 	@echo "  make docs       - Build visualization website to docs/"
+	@echo "  make api-ui-build - Build the local LLM API workbench"
+	@echo "  make api-ui     - Open the local API workbench (uses .venv)"
 	@echo "  make docs-dev   - Start docs dev server with hot reload"
 	@echo "  make deps       - Check/install Python deps for the detected backend"
 	@echo "  make deps-dry-run - Preview dependency install commands"
