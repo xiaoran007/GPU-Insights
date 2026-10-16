@@ -22,6 +22,8 @@ METRICS = (
 def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
     if payload.get("kind") != "llm-api" or payload.get("schemaVersion") != "1.0":
         raise ValueError("Expected an llm-api version 1.0 payload")
+    if payload.get("runStatus", "completed") != "completed":
+        raise ValueError("Cannot publish an incomplete run; finish the full workload first")
     config, summary = payload.get("config"), payload.get("summary")
     if not isinstance(config, dict) or not isinstance(summary, dict):
         raise ValueError("Payload must contain config and summary objects")

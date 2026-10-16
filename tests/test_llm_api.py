@@ -49,7 +49,8 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(measure.call_count, 2)
         self.assertEqual(payload["runStatus"], "cancelled")
         self.assertEqual(payload["summary"]["successes"], 1)
-        self.assertEqual(dashboard_entry(payload)["model"], "test")
+        with self.assertRaisesRegex(ValueError, "incomplete run"):
+            dashboard_entry(payload)
         self.assertNotIn("secret", str(payload))
         self.assertEqual(events[-1]["completed"], 2)
 
