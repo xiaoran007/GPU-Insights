@@ -64,11 +64,12 @@ def _fit(points: list[tuple[int, float, float]], groups_required: int, min_span:
     residual = sum((y - intercept - slope * x) ** 2 for x, y in centers)
     r2 = 1 - residual / variation if variation else 0
     # Cross-length repeat pairs expose jitter hidden by fitting group medians.
+    # Their IQR tolerates isolated outliers, consistent with the median estimator.
     slopes = []
     for (g1, x1, y1), (g2, x2, y2) in combinations(points, 2):
         if g1 != g2 and abs(x2 - x1) >= span / 4:
             slopes.append((y2 - y1) / (x2 - x1))
-    spread = (_quantile(slopes, 0.9) - _quantile(slopes, 0.1)) / (2 * slope)
+    spread = (_quantile(slopes, 0.75) - _quantile(slopes, 0.25)) / (2 * slope)
     evidence.update(fitR2=round(r2, 4), relativeSlopeSpread=round(spread, 4))
     if r2 < MIN_R2 or spread > MAX_SLOPE_SPREAD:
         return _result("unstable", "Length/latency relationship is noisy or nonlinear", **evidence)

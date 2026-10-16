@@ -53,6 +53,16 @@ class EstimationTests(unittest.TestCase):
                     self.assertEqual(result[name]["status"], "ok")
                     self.assertLess(abs(result[name]["value"] / reference - 1), 0.05)
 
+    def test_isolated_delays_do_not_overrule_repeated_consistent_measurements(self):
+        for phase in ("decode", "prefill"):
+            samples = synthetic_samples(jitter=5)
+            next(sample for sample in samples if sample["phase"] == phase)["totalMs"] += 1000
+            result = estimate(samples)
+            for metric, reference in (("decode", 100), ("prefill", 2000)):
+                with self.subTest(delayed_phase=phase, metric=metric):
+                    self.assertEqual(result[metric]["status"], "ok")
+                    self.assertLess(abs(result[metric]["value"] / reference - 1), 0.03)
+
     def test_original_short_output_failure_is_not_reported_as_throughput(self):
         samples = synthetic_samples()
         for sample in samples:

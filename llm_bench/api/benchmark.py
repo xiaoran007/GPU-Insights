@@ -114,8 +114,8 @@ def measure_request(
     sample["outputTokens"] = output_tokens
     sample["reasoningTokens"] = reasoning_tokens
     sample["cachedPromptTokens"] = _cached_tokens(provider, usage, timings)
-    if sample["status"] == "ok" and sample["ttftMs"] is None:
-        sample["status"], sample["error"] = "failed", "No visible text in stream"
+    if sample["status"] == "ok" and sample["ttftMs"] is None and not (type(output_tokens) is int and output_tokens > 0):
+        sample["status"], sample["error"] = "failed", "No generated tokens or visible text in stream"
     return sample
 
 
