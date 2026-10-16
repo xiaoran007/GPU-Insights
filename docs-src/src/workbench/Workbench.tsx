@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { api, errorMessage } from "./client";
 import ResultPanel from "./ResultPanel";
-import type { Bootstrap, Config, Job, Plan } from "./types";
+import type { Bootstrap, Config, Job } from "./types";
 import { useWorkbench } from "./useWorkbench";
 
 export default function WorkbenchRoot() {
@@ -24,12 +24,10 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
   const progressRef = useRef<HTMLElement>(null);
   const { job, setJob, history, result, setResult, loadResult, error, setError } = useWorkbench(token);
   const [config, setConfig] = useState(bootstrap.defaults);
-  const [sizes, setSizes] = useState(bootstrap.defaults.prompt_chars.join(", "));
   const [profiles, setProfiles] = useState(bootstrap.profiles);
   const [profileName, setProfileName] = useState("");
   const [key, setKey] = useState("");
   const [useSavedKey, setUseSavedKey] = useState(false);
-  const [plan, setPlan] = useState<Plan | null>(null);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState("");
   const running = job?.status === "running" || job?.status === "stopping";
@@ -39,11 +37,6 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
 
   function update<K extends keyof Config>(name: K, value: Config[K]) {
     setConfig((previous) => ({ ...previous, [name]: value }));
-    setPlan(null);
-  }
-
-  function values(): Config {
-    return { ...config, prompt_chars: sizes.split(",").map((size) => Number(size.trim())) };
   }
 
   async function action(task: () => Promise<void>) {
@@ -56,9 +49,9 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (!plan || busy) return;
+    if (busy) return;
     void action(async () => {
-      const next = await api<Job>("run", token, { config: values(), apiKey: key || null, useSavedKey });
+      const next = await api<Job>("run", token, { config, apiKey: key || null, useSavedKey });
       setResult(null);
       setJob(next);
       setKey("");
@@ -78,14 +71,14 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
     <div className="wb-layout">
       <div className="wb-config-column">
         <form className="wb-card" onSubmit={submit}>
-          <div className="wb-section-head"><div><span className="wb-eyebrow">01 / Configure</span><h2>Connection & workload</h2></div></div>
+          <div className="wb-section-head"><div><span className="wb-eyebrow">01 / Configure</span><h2>Connection</h2></div></div>
           <fieldset disabled={busy}>
             <Field label="Saved connection">
               <select aria-label="Saved connection" defaultValue="" onChange={(event) => {
                 const name = event.target.value;
                 if (!name) return;
-                setConfig(profiles[name]); setSizes(profiles[name].prompt_chars.join(", "));
-                setProfileName(name); setKey(""); setUseSavedKey(false); setPlan(null);
+                setConfig(profiles[name]);
+                setProfileName(name); setKey(""); setUseSavedKey(false);
               }}>
                 <option value="">Choose a saved profile</option>
                 {Object.keys(profiles).map((name) => <option key={name} value={name}>{name}</option>)}
@@ -95,7 +88,7 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
               <select value={config.provider} onChange={(event) => {
                 const selected = bootstrap.providers.find((item) => item.id === event.target.value)!;
                 setConfig((previous) => ({ ...previous, provider: selected.id, base_url: selected.baseUrl }));
-                setKey(""); setUseSavedKey(false); setPlan(null);
+                setKey(""); setUseSavedKey(false);
               }}>
                 {bootstrap.providers.map((item) => <option key={item.id} value={item.id}>{item.id}</option>)}
               </select>
@@ -111,38 +104,23 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
             {!useSavedKey && <Field label="Session API key" hint="Optional for local servers. Used for this run; never saved in profiles or payloads."><input type="password" autoComplete="off" spellCheck={false} value={key} onChange={(event) => setKey(event.target.value)} placeholder="Enter key if required" /></Field>}
             <Field label="Client region" hint="A comparison label, such as us-east or home-network."><input value={config.region} onChange={(event) => update("region", event.target.value)} placeholder="Where this computer is running" /></Field>
             <div className="wb-profile-save"><input aria-label="Profile name" placeholder="Connection profile name" maxLength={100} value={profileName} onChange={(event) => setProfileName(event.target.value)} /><button type="button" disabled={!profileName.trim()} onClick={() => void action(async () => {
-              setProfiles(await api<Record<string, Config>>("profiles", token, { name: profileName, config: values() }));
+              setProfiles(await api<Record<string, Config>>("profiles", token, { name: profileName, config }));
               setNotice("Connection profile saved without credentials.");
             })}>Save profile</button></div>
-            <div className="wb-divider" />
-            <Field label="Test mode">
-              <select value={config.concurrency === 1 ? "single" : "concurrent"} onChange={(event) => update("concurrency", event.target.value === "single" ? 1 : 4)}>
-                <option value="single">Latency & throughput · single request</option><option value="concurrent">Concurrent load · decode only</option>
-              </select>
-            </Field>
-            {config.concurrency > 1 && <><NumberField label="Concurrency" value={config.concurrency} min={2} onChange={(value) => update("concurrency", value)} /><p className="wb-notice">Concurrent mode measures decode and successful requests/s. It does not estimate prefill.</p></>}
-            <div className="wb-field-grid">
-              <NumberField label="Repetitions" value={config.repetitions} min={2} onChange={(value) => update("repetitions", value)} />
-              <NumberField label="Decode output tokens" value={config.decode_output_tokens} onChange={(value) => update("decode_output_tokens", value)} />
-            </div>
-            <details className="wb-advanced"><summary>Advanced workload & limits</summary>
-              <Field label="Prefill input sizes (characters)"><input value={sizes} onChange={(event) => { setSizes(event.target.value); setPlan(null); }} /></Field>
-              <div className="wb-field-grid">
-                <NumberField label="Probe output tokens" value={config.probe_output_tokens} onChange={(value) => update("probe_output_tokens", value)} />
-                <NumberField label="Decode input characters" value={config.decode_prompt_chars} onChange={(value) => update("decode_prompt_chars", value)} />
-                <NumberField label="Request timeout (seconds)" value={config.timeout} onChange={(value) => update("timeout", value)} />
-                <NumberField label="Maximum requests" value={config.max_requests} onChange={(value) => update("max_requests", value)} />
-                <NumberField label="Maximum input characters" value={config.max_prompt_chars} onChange={(value) => update("max_prompt_chars", value)} />
-                <NumberField label="Maximum output tokens" value={config.max_output_tokens} onChange={(value) => update("max_output_tokens", value)} />
-              </div>
-              <label className="wb-check"><input type="checkbox" checked={config.include_usage} onChange={(event) => update("include_usage", event.target.checked)} />Request stream usage (compatible endpoints)</label>
+            <details className="wb-advanced"><summary>Connection compatibility</summary>
+              <label className="wb-check"><input type="checkbox" checked={config.include_usage} onChange={(event) => update("include_usage", event.target.checked)} />Request stream usage (required for token-rate estimates)</label>
               <label className="wb-check"><input type="checkbox" checked={config.allow_insecure_http} onChange={(event) => update("allow_insecure_http", event.target.checked)} />Allow sending a key to a non-local HTTP endpoint</label>
             </details>
           </fieldset>
-          <div className="wb-plan" aria-live="polite">
-            {plan ? <><strong>{plan.requests} requests · up to {plan.outputTokens.toLocaleString()} output tokens</strong><span>{plan.promptChars.toLocaleString()} configured input characters · includes warmup · not a price estimate</span></> : <span>Preview the workload before starting. Preview sends no API requests.</span>}
+          <div className="wb-plan" aria-label="Standard suite">
+            <span className="wb-eyebrow">{bootstrap.suite.id}</span>
+            <strong>{bootstrap.suite.requests} requests · up to {bootstrap.suite.outputTokens.toLocaleString()} output tokens</strong>
+            <span>{bootstrap.suite.warmups} excluded warmups · {bootstrap.suite.repetitions} repetitions at every length</span>
+            <span>Input scan: {bootstrap.suite.inputSizes.join(" / ")} characters</span>
+            <span>Output scan: {bootstrap.suite.outputLimits.join(" / ")} tokens</span>
+            <span>Fixed workload · no requests until you click Run · not a price estimate</span>
           </div>
-          <div className="wb-actions wb-run-actions"><button type="button" disabled={busy} onClick={() => void action(async () => setPlan(await api<Plan>("preview", token, { config: values() })))}>Preview workload</button><button className="wb-primary" type="submit" disabled={busy || !plan}>{running ? "Benchmark running…" : "Run benchmark"}</button></div>
+          <div className="wb-actions wb-run-actions"><button className="wb-primary" type="submit" disabled={busy}>{running ? "Benchmark running…" : "Run standard suite"}</button></div>
         </form>
         <section className="wb-card"><div className="wb-section-head"><div><span className="wb-eyebrow">Saved on this computer</span><h2>Run history <small>{history.length}</small></h2></div></div>
           <p className="wb-muted wb-history-path">{bootstrap.outputDir}</p>
@@ -162,7 +140,7 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
           {samples.length > 0 ? <div className="wb-sample-scroll"><table><thead><tr><th>Phase</th><th>Status</th><th>Input chars</th><th>TTFT</th><th>Total</th></tr></thead><tbody>{samples.map((sample, index) => <tr key={index}><td>{sample.phase}</td><td className={sample.status === "ok" ? "wb-ok" : "wb-failed"}>{sample.status}{sample.error && ` · ${sample.error}`}</td><td>{sample.promptChars.toLocaleString()}</td><td>{sample.ttftMs == null ? "—" : `${sample.ttftMs.toFixed(1)} ms`}</td><td>{sample.totalMs == null ? "—" : `${sample.totalMs.toFixed(1)} ms`}</td></tr>)}</tbody></table></div> : <p className="wb-muted">Warmup and per-request measurements appear here as they finish.</p>}
         </section>
         <ResultPanel key={result?.path ?? "empty"} result={result} />
-        <footer className="wb-footer">Measured locally · missing metrics stay blank · payloads contain no API keys, prompts, or response text</footer>
+        <footer className="wb-footer">Measured locally · estimates require stable length/latency evidence · payloads contain no API keys, prompts, or response text</footer>
       </div>
     </div>
   </main>;
@@ -172,6 +150,3 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   return <label className="wb-field"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
 
-function NumberField({ label, value, onChange, min = 1 }: { label: string; value: number; onChange: (value: number) => void; min?: number }) {
-  return <Field label={label}><input type="number" min={min} required value={Number.isFinite(value) ? value : ""} onChange={(event) => onChange(event.target.valueAsNumber)} /></Field>;
-}

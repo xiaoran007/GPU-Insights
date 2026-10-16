@@ -168,6 +168,17 @@ class WorkbenchTests(unittest.TestCase):
         self.assertEqual(other.profiles(), profiles)
         self.assertEqual(BenchmarkConfig.from_dict(profiles["Local server"]).plan()["requests"], 23)
 
+    def test_legacy_profile_migration_only_preserves_connections(self):
+        self.workbench.state_dir.mkdir()
+        (self.workbench.state_dir / "profiles.json").write_text(json.dumps({
+            "Previous profile": {**self.config, "repetitions": 20, "concurrency": 4, "prompt_chars": [1, 2, 3]},
+        }))
+        bootstrap = self.call("/api/bootstrap")
+        self.assertEqual(bootstrap["suite"]["id"], "api-standard-v2")
+        self.assertEqual(bootstrap["profiles"]["Previous profile"]["model"], "fixture-model")
+        self.assertNotIn("repetitions", bootstrap["profiles"]["Previous profile"])
+        self.assertNotIn("concurrency", bootstrap["defaults"])
+
 
 if __name__ == "__main__":
     unittest.main()

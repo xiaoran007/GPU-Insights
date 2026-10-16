@@ -3,7 +3,20 @@ export interface Percentiles {
   p95: number;
 }
 
+export interface EstimateEvidence {
+  value: number | null;
+  status: "ok" | "insufficient" | "unstable";
+  reason: string;
+  samples: number;
+  groups?: number;
+  tokenSpan?: number;
+  fitR2?: number;
+  relativeSlopeSpread?: number;
+}
+
 export interface LlmApiSummary {
+  decodeTps?: number | null;
+  estimates?: { decode: EstimateEvidence; prefill: EstimateEvidence };
   successes: number;
   failures: number;
   cacheStatus: "unknown" | "uncached" | "cached" | "mixed";
@@ -21,6 +34,7 @@ export interface LlmApiSummary {
 
 export interface LlmApiEntry {
   runId: string;
+  suiteId?: string;
   createdAt: string;
   provider: string;
   model: string;

@@ -16,7 +16,8 @@ export default function ResultPanel({ result }: { result: Result | null }) {
   const { payload, path } = result;
   const summary = payload.summary;
   const text = JSON.stringify(payload, null, 2) + "\n";
-  const decode = summary.serverDecodeTps ?? summary.clientDecodeTps;
+  const standard = payload.config.suiteId === "api-standard-v2";
+  const decode = standard ? summary.decodeTps : (summary.serverDecodeTps ?? summary.clientDecodeTps)?.p50;
 
   async function copy() {
     try {
@@ -42,15 +43,24 @@ export default function ResultPanel({ result }: { result: Result | null }) {
       <div><span className="wb-eyebrow">Results & collection</span><h2>{payload.config.model}</h2></div>
       <span className={`wb-badge ${payload.runStatus === "cancelled" ? "wb-amber" : ""}`}>{payload.runStatus === "cancelled" ? "Partial · stopped" : "Completed"}</span>
     </div>
-    <p className="wb-muted">{payload.config.provider} · {payload.config.endpointHost} · concurrency {payload.config.concurrency} · {new Date(payload.createdAt).toLocaleString()}</p>
+    <p className="wb-muted">{payload.config.suiteId ?? "Legacy suite"} · {payload.config.provider} · {payload.config.endpointHost} · {new Date(payload.createdAt).toLocaleString()}</p>
     {payload.runStatus === "cancelled" && <p className="wb-notice">This run stopped early. Its payload preserves completed samples; run the full workload before collecting comparable results.</p>}
     <div className="wb-metrics">
       <div><span>TTFT · p50</span><strong>{metric(summary.ttftMs?.p50, "ms")}</strong></div>
-      <div><span>Decode · p50</span><strong>{metric(decode?.p50, "tok/s")}</strong><small>{summary.serverDecodeTps ? "Server reported" : "Client estimate"}</small></div>
-      <div><span>Prefill</span><strong>{metric(summary.serverPrefillTps?.p50 ?? summary.effectivePrefillTps, "tok/s")}</strong><small>{summary.serverPrefillTps ? "Server reported" : "TTFT slope estimate"}</small></div>
-      <div><span>Measured samples</span><strong>{summary.successes} / {summary.successes + summary.failures}</strong><small>successful · warmup excluded</small></div>
+      <div><span>{standard ? "Decode estimate" : "Legacy decode · p50"}</span><strong>{metric(decode, "tok/s")}</strong><small>{standard ? "Completion-length slope" : "Legacy method"}</small></div>
+      <div><span>Prefill</span><strong>{metric(summary.serverPrefillTps?.p50 ?? summary.effectivePrefillTps, "tok/s")}</strong><small>{standard ? "Input-length slope" : "Legacy method"}</small></div>
+      <div><span>Measured samples</span><strong>{summary.successes} / {summary.successes + summary.failures}</strong><small>successful · warmups excluded</small></div>
     </div>
-    {payload.config.concurrency > 1 && <p className="wb-muted">Request throughput: {metric(summary.requestThroughputRps, "requests/s")} · concurrent mode does not estimate prefill.</p>}
+    {summary.estimates && <div className="wb-quality" aria-label="Estimate quality">
+      {(["decode", "prefill"] as const).map((name) => {
+        const evidence = summary.estimates![name];
+        return <p key={name} className={evidence.status === "ok" ? "wb-muted" : "wb-notice"}>
+          <strong>{name === "decode" ? "Decode" : "Prefill"}: {evidence.status === "ok" ? "usable estimate" : evidence.status === "unstable" ? "unstable evidence" : "insufficient evidence"}</strong>
+          {evidence.reason ? ` — ${evidence.reason}` : ` · ${evidence.samples} samples · ${evidence.groups} lengths · R² ${evidence.fitR2?.toFixed(3)} · slope spread ${((evidence.relativeSlopeSpread ?? 0) * 100).toFixed(1)}%`}
+        </p>;
+      })}
+      <p className="wb-muted">Token rates are service-level length/latency estimates. Chunk timing and server timing extensions do not determine them.</p>
+    </div>}
     <div className="wb-payload-head">
       <div><h3>Collection payload</h3><p>The complete result JSON, compatible with the existing import workflow.</p></div>
       <div className="wb-actions"><button className="wb-primary" onClick={() => void copy()}>Copy payload</button><button onClick={download}>Download JSON</button></div>

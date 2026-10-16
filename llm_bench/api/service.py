@@ -14,6 +14,7 @@ from llm_bench.api.benchmark import run_benchmark
 from llm_bench.api.config import BenchmarkConfig
 from llm_bench.api.credentials import KEY_VARIABLES, read_env_file, resolve_api_key
 from llm_bench.api.protocol import DEFAULT_URLS
+from llm_bench.api.suite import description
 
 
 class Workbench:
@@ -30,6 +31,7 @@ class Workbench:
         env_values = read_env_file(self.env_file)
         return {
             "defaults": asdict(BenchmarkConfig()),
+            "suite": description(),
             "providers": [
                 {"id": provider, "baseUrl": DEFAULT_URLS.get(provider, ""),
                  "keyConfigured": bool(os.environ.get(variable) or env_values.get(variable))}
@@ -41,7 +43,19 @@ class Workbench:
 
     def profiles(self) -> dict[str, Any]:
         path = self.state_dir / "profiles.json"
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        if not path.exists():
+            return {}
+        profiles = json.loads(path.read_text(encoding="utf-8"))
+        # Explicit migration of v1 profiles: keep connections, retire workload knobs.
+        retired = {
+            "prompt_chars", "repetitions", "concurrency", "probe_output_tokens",
+            "decode_output_tokens", "decode_prompt_chars", "timeout", "max_requests",
+            "max_prompt_chars", "max_output_tokens",
+        }
+        return {
+            name: asdict(BenchmarkConfig.from_dict({key: value for key, value in values.items() if key not in retired}))
+            for name, values in profiles.items()
+        }
 
     def save_profile(self, name: str, config: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(name, str) or not 1 <= len(name.strip()) <= 100:

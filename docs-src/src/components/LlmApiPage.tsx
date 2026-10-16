@@ -18,21 +18,23 @@ function p50(value: Percentiles | null, unit: string) {
 }
 
 function decode(entry: LlmApiEntry) {
-  return entry.summary.serverDecodeTps ?? entry.summary.clientDecodeTps;
+  return entry.suiteId === "api-standard-v2" ? entry.summary.decodeTps : (entry.summary.serverDecodeTps ?? entry.summary.clientDecodeTps)?.p50;
 }
 
 function prefill(entry: LlmApiEntry) {
-  return entry.summary.serverPrefillTps?.p50 ?? entry.summary.effectivePrefillTps;
+  return entry.suiteId === "api-standard-v2" ? entry.summary.effectivePrefillTps : entry.summary.serverPrefillTps?.p50 ?? entry.summary.effectivePrefillTps;
 }
 
 export default function LlmApiPage({ data }: { data: LlmApiData }) {
   const [provider, setProvider] = useState("all");
+  const [suite, setSuite] = useState("api-standard-v2");
   const providers = useMemo(() => [...new Set(data.benchmarks.map((entry) => entry.provider))].sort(), [data.benchmarks]);
   const entries = data.benchmarks
+    .filter((entry) => (entry.suiteId ?? "legacy") === suite)
     .filter((entry) => provider === "all" || entry.provider === provider)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const ttftValues = entries.map((entry) => entry.summary.ttftMs?.p50).filter((value): value is number => value != null);
-  const decodeValues = entries.map((entry) => decode(entry)?.p50).filter((value): value is number => value != null);
+  const decodeValues = entries.map((entry) => decode(entry)).filter((value): value is number => value != null);
 
   return (
     <div className="grid min-w-0 gap-4">
@@ -40,7 +42,7 @@ export default function LlmApiPage({ data }: { data: LlmApiData }) {
         <p className="m-0 text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-brand)]">API benchmark track</p>
         <h2 className="mt-2 mb-2 font-[var(--font-display)] text-2xl font-bold">Measure the service you actually call</h2>
         <p className="m-0 max-w-3xl text-[var(--color-muted)]">
-          End-to-end latency includes network and queue time. Engine-reported throughput and client estimates are labeled separately.
+          End-to-end latency includes network and queue time. The standard suite estimates token rates from complete-request latency across controlled token lengths.
           The benchmark runs locally; only reviewed summaries are published here.
         </p>
       </section>
@@ -49,15 +51,22 @@ export default function LlmApiPage({ data }: { data: LlmApiData }) {
         <Metric label="Published runs" value={number(entries.length, 0)} />
         <Metric label="Providers" value={number(new Set(entries.map((entry) => entry.provider)).size, 0)} />
         <Metric label="Best median TTFT" value={ttftValues.length ? `${number(Math.min(...ttftValues))} ms` : "—"} />
-        <Metric label="Top median decode" value={decodeValues.length ? `${number(Math.max(...decodeValues))} tok/s` : "—"} />
+        <Metric label="Top decode estimate" value={decodeValues.length ? `${number(Math.max(...decodeValues))} tok/s` : "—"} />
       </section>
 
       <section className={cardClass}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="m-0 font-[var(--font-display)] text-lg font-semibold">Results</h2>
-            <p className="m-0 mt-1 text-sm text-[var(--color-muted)]">Compare runs with similar input size, output size, region, and concurrency.</p>
+            <p className="m-0 mt-1 text-sm text-[var(--color-muted)]">Compare results from the same suite and similar client regions. Legacy results use a different measurement method.</p>
           </div>
+          <label className="text-sm font-semibold text-[var(--color-muted)]">
+            Suite
+            <select className="ml-2 rounded-lg border border-[var(--color-line)] bg-white px-3 py-2" value={suite} onChange={(event) => setSuite(event.target.value)}>
+              <option value="api-standard-v2">Standard v2</option>
+              <option value="legacy">Legacy v1</option>
+            </select>
+          </label>
           <label className="text-sm font-semibold text-[var(--color-muted)]">
             Provider
             <select className="ml-2 rounded-lg border border-[var(--color-line)] bg-white px-3 py-2 text-[var(--color-text)]" value={provider} onChange={(event) => setProvider(event.target.value)}>
@@ -73,8 +82,8 @@ export default function LlmApiPage({ data }: { data: LlmApiData }) {
 
       <section className={`${cardClass} grid gap-4 md:grid-cols-3`}>
         <Method title="Measured" text="TTFT starts when the client sends a request and ends at the first visible text. Total latency ends when the response stream completes." />
-        <Method title="Server reported" text="When vLLM or llama.cpp provides per-request timings, its prefill and decode values are shown as server metrics." />
-        <Method title="Estimated" text="Without server timings, prefill uses the slope of TTFT across three input sizes. Decode uses output token usage and the visible stream interval. Missing or weak evidence stays blank." />
+        <Method title="Fixed suite" text="Two excluded warmups, four input lengths, and three output limits. Every length is repeated three times in interleaved blocks." />
+        <Method title="Estimated" text="Decode uses completion latency versus actual output tokens. Prefill uses input-length latency after accounting for output cost. Missing, short, cached, noisy, or nonlinear evidence does not produce a rate." />
       </section>
     </div>
   );
@@ -99,7 +108,7 @@ function ResultsTable({ entries }: { entries: LlmApiEntry[] }) {
   return <div className="mt-4 overflow-x-auto">
     <table className="w-full min-w-[1550px] border-collapse text-left text-sm">
       <thead className="border-b border-[var(--color-line)] text-xs uppercase tracking-wider text-[var(--color-muted)]">
-        <tr>{["Provider / Model", "Endpoint / client", "Concurrency", "TTFT p50 / p95", "Total p50", "Decode p50", "Prefill", "Requests/s", "Samples", "Input / output", "Date"].map((heading) => <th key={heading} className="px-3 py-3">{heading}</th>)}</tr>
+        <tr>{["Provider / Model", "Endpoint / client", "Concurrency", "TTFT p50 / p95", "Total p50", "Decode", "Prefill", "Requests/s", "Samples", "Input / output", "Date"].map((heading) => <th key={heading} className="px-3 py-3">{heading}</th>)}</tr>
       </thead>
       <tbody>
         {entries.map((entry) => <tr key={entry.runId} className="border-b border-[var(--color-line)] align-top last:border-0">
@@ -108,8 +117,8 @@ function ResultsTable({ entries }: { entries: LlmApiEntry[] }) {
           <td className="px-3 py-3 font-[var(--font-mono)]">{entry.concurrency}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{entry.summary.ttftMs ? `${number(entry.summary.ttftMs.p50)} / ${number(entry.summary.ttftMs.p95)} ms` : "—"}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{p50(entry.summary.totalMs, "ms")}</td>
-          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{p50(decode(entry), "tok/s")}<span className="block text-xs text-[var(--color-muted)]">{entry.summary.serverDecodeTps ? "server" : entry.summary.clientDecodeTps ? "client estimate" : ""}</span></td>
-          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{prefill(entry) != null ? `${number(prefill(entry))} tok/s` : "—"}<span className="block text-xs text-[var(--color-muted)]">{entry.summary.serverPrefillTps ? "server" : entry.summary.effectivePrefillTps ? `TTFT slope · R² ${number(entry.summary.prefillFitR2, 2)}` : ""}</span></td>
+          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{decode(entry) == null ? "—" : `${number(decode(entry))} tok/s`}<span className="block text-xs text-[var(--color-muted)]">{entry.suiteId === "api-standard-v2" ? entry.summary.estimates?.decode.status === "ok" ? "length slope estimate" : entry.summary.estimates?.decode.status : "legacy p50"}</span></td>
+          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{prefill(entry) != null ? `${number(prefill(entry))} tok/s` : "—"}<span className="block text-xs text-[var(--color-muted)]">{entry.suiteId === "api-standard-v2" ? entry.summary.estimates?.prefill.status === "ok" ? `length slope · R² ${number(entry.summary.prefillFitR2, 2)}` : entry.summary.estimates?.prefill.status : "legacy method"}</span></td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{number(entry.summary.requestThroughputRps)}</td>
           <td className="px-3 py-3">{entry.summary.successes} ok<span className="block text-xs text-[var(--color-muted)]">{entry.summary.failures} failed · cache {entry.summary.cacheStatus}</span></td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{number(entry.summary.promptTokens?.p50, 0)} / {number(entry.summary.outputTokens?.p50, 0)}<span className="block text-xs text-[var(--color-muted)]">median tokens</span></td>

@@ -5,22 +5,22 @@ export interface Config {
   model: string;
   base_url: string;
   region: string;
-  prompt_chars: number[];
-  repetitions: number;
-  concurrency: number;
-  probe_output_tokens: number;
-  decode_output_tokens: number;
-  decode_prompt_chars: number;
-  timeout: number;
-  max_requests: number;
-  max_prompt_chars: number;
-  max_output_tokens: number;
   include_usage: boolean;
   allow_insecure_http: boolean;
 }
 
 export interface Bootstrap {
   token: string;
+  suite: {
+    id: string;
+    warmups: number;
+    repetitions: number;
+    inputSizes: number[];
+    outputLimits: number[];
+    requests: number;
+    promptChars: number;
+    outputTokens: number;
+  };
   defaults: Config;
   providers: { id: string; baseUrl: string; keyConfigured: boolean }[];
   profiles: Record<string, Config>;
@@ -53,6 +53,7 @@ export interface Payload {
   createdAt: string;
   runStatus?: "completed" | "cancelled";
   config: {
+    suiteId?: string;
     provider: string;
     model: string;
     endpointHost: string;
