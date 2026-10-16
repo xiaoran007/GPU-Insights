@@ -4,9 +4,10 @@ import random
 import statistics
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import datetime, timezone
-from typing import Any
+from threading import Event
+from typing import Any, Callable
 from urllib import error, request
 from urllib.parse import urlsplit
 
@@ -278,6 +279,8 @@ def run_benchmark(
     include_usage: bool,
     concurrency: int,
     region: str,
+    on_progress: Callable[[dict[str, Any]], None] | None = None,
+    cancel: Event | None = None,
 ) -> dict[str, Any]:
     if concurrency == 1:
         work = [
@@ -294,69 +297,57 @@ def run_benchmark(
         work = [("decode", decode_prompt_chars, decode_output_tokens)] * (
             concurrency * repetitions
         )
-    print(f"[1/{len(work) + 1}] Warmup", flush=True)
-    samples = [
-        measure_request(
-            provider=provider,
-            base_url=base_url,
-            model=model,
-            api_key=api_key,
-            prompt_chars=decode_prompt_chars,
-            max_output_tokens=probe_output_tokens,
-            phase="warmup",
-            timeout=timeout,
-            include_usage=include_usage,
+    stop = cancel if cancel is not None else Event()
+    total = len(work) + 1
+    samples: list[dict[str, Any]] = []
+
+    def report(phase: str, sample: dict[str, Any] | None = None) -> None:
+        if on_progress is not None:
+            on_progress({"completed": len(samples), "total": total, "phase": phase, "sample": sample})
+        elif sample is not None:
+            print(f"[{len(samples)}/{total}] {phase}: {sample['status']}; TTFT={sample['ttftMs']} ms, total={sample['totalMs']} ms", flush=True)
+        else:
+            print(f"[{len(samples) + 1}/{total}] {phase}", flush=True)
+
+    def measure(phase: str, size: int, limit: int) -> dict[str, Any]:
+        return measure_request(
+            provider=provider, base_url=base_url, model=model, api_key=api_key,
+            prompt_chars=size, max_output_tokens=limit, phase=phase,
+            timeout=timeout, include_usage=include_usage,
         )
-    ]
-    if samples[0]["status"] != "ok":
-        raise RuntimeError(f"Warmup failed: {samples[0]['error']}")
+
+    report("warmup")
+    if not stop.is_set():
+        samples.append(measure("warmup", decode_prompt_chars, probe_output_tokens))
+        report("warmup", samples[-1])
+        if samples[0]["status"] != "ok":
+            raise RuntimeError(f"Warmup failed: {samples[0]['error']}")
     started = time.perf_counter()
     if concurrency == 1:
-        for index, (phase, size, limit) in enumerate(work, 2):
-            print(
-                f"[{index}/{len(work) + 1}] {phase}: {size} prompt characters, {limit} output tokens",
-                flush=True,
-            )
-            sample = measure_request(
-                provider=provider,
-                base_url=base_url,
-                model=model,
-                api_key=api_key,
-                prompt_chars=size,
-                max_output_tokens=limit,
-                phase=phase,
-                timeout=timeout,
-                include_usage=include_usage,
-            )
-            samples.append(sample)
-            print(
-                f"  {sample['status']}: TTFT={sample['ttftMs']} ms, total={sample['totalMs']} ms",
-                flush=True,
-            )
+        for phase, size, limit in work:
+            if stop.is_set():
+                break
+            report(phase)
+            samples.append(measure(phase, size, limit))
+            report(phase, samples[-1])
     else:
+        # Keep only the active batch submitted so stopping cannot launch queued requests.
+        pending_work = iter(work)
         with ThreadPoolExecutor(max_workers=concurrency) as pool:
-            futures = [
-                pool.submit(
-                    measure_request,
-                    provider=provider,
-                    base_url=base_url,
-                    model=model,
-                    api_key=api_key,
-                    prompt_chars=size,
-                    max_output_tokens=limit,
-                    phase=phase,
-                    timeout=timeout,
-                    include_usage=include_usage,
-                )
-                for phase, size, limit in work
-            ]
-            for index, future in enumerate(as_completed(futures), 2):
-                sample = future.result()
-                samples.append(sample)
-                print(
-                    f"[{index}/{len(work) + 1}] {sample['status']}: TTFT={sample['ttftMs']} ms, total={sample['totalMs']} ms",
-                    flush=True,
-                )
+            pending = set()
+            while True:
+                while len(pending) < concurrency and not stop.is_set():
+                    item = next(pending_work, None)
+                    if item is None:
+                        break
+                    pending.add(pool.submit(measure, *item))
+                if not pending:
+                    break
+                done, pending = wait(pending, return_when=FIRST_COMPLETED)
+                for future in done:
+                    sample = future.result()
+                    samples.append(sample)
+                    report(sample["phase"], sample)
     elapsed = time.perf_counter() - started
     summary = summarize(samples)
     summary["requestThroughputRps"] = (
@@ -367,6 +358,7 @@ def run_benchmark(
     return {
         "schemaVersion": "1.0",
         "kind": "llm-api",
+        "runStatus": "cancelled" if stop.is_set() and len(samples) < total else "completed",
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "config": {
             "provider": provider,

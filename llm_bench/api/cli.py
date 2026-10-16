@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from llm_bench.api.config import BenchmarkConfig
+
 from llm_bench.api.benchmark import run_benchmark
 from llm_bench.api.credentials import KEY_VARIABLES, resolve_api_key
-from llm_bench.api.protocol import DEFAULT_URLS
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -70,6 +71,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Show the workload without making API requests.",
     )
+    defaults = BenchmarkConfig()
+    parser.set_defaults(**{
+        name: getattr(defaults, name)
+        for name in (
+            "repetitions", "concurrency", "probe_output_tokens", "decode_output_tokens",
+            "decode_prompt_chars", "timeout", "max_requests", "max_prompt_chars", "max_output_tokens",
+        )
+    }, prompt_chars=",".join(map(str, defaults.prompt_chars)))
     return parser
 
 
@@ -81,100 +90,29 @@ def main() -> int:
         raise SystemExit(
             "--prompt-chars must contain comma-separated integers"
         ) from exc
-    if len(set(sizes)) < 3 or any(size <= 0 for size in sizes):
-        raise SystemExit("--prompt-chars needs at least three distinct positive sizes")
-    if (
-        args.repetitions < 2
-        or args.concurrency < 1
-        or min(
-            args.probe_output_tokens,
-            args.decode_output_tokens,
-            args.decode_prompt_chars,
-        )
-        <= 0
-        or args.timeout <= 0
-    ):
-        raise SystemExit(
-            "Repetitions must be >= 2; concurrency, output limits, decode prompt size, and timeout must be positive"
-        )
-    if args.concurrency == 1:
-        request_count = 1 + args.repetitions * (len(sizes) + 1)
-        total_prompt_chars = args.decode_prompt_chars * (
-            args.repetitions + 1
-        ) + args.repetitions * sum(sizes)
-        total_output_tokens = (
-            args.probe_output_tokens * (1 + args.repetitions * len(sizes))
-            + args.decode_output_tokens * args.repetitions
-        )
-    else:
-        request_count = 1 + args.repetitions * args.concurrency
-        total_prompt_chars = args.decode_prompt_chars * request_count
-        total_output_tokens = (
-            args.probe_output_tokens
-            + args.decode_output_tokens * args.repetitions * args.concurrency
-        )
-    if (
-        request_count > args.max_requests
-        or total_prompt_chars > args.max_prompt_chars
-        or total_output_tokens > args.max_output_tokens
-    ):
-        raise SystemExit(
-            "Planned workload exceeds a configured request, input, or output limit"
-        )
-    if args.provider == "compatible" and not args.base_url:
-        raise SystemExit("--base-url is required for --provider compatible")
-    base_url = args.base_url or DEFAULT_URLS[args.provider]
-    parsed_url = urlsplit(base_url)
-    if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
-        raise SystemExit("--base-url must start with http:// or https://")
-    if (
-        parsed_url.username
-        or parsed_url.password
-        or parsed_url.query
-        or parsed_url.fragment
-    ):
-        raise SystemExit(
-            "--base-url cannot contain credentials, query parameters, or fragments"
-        )
-    print(
-        f"Provider: {args.provider}; model: {args.model}; endpoint: {parsed_url.netloc}"
-    )
-    print(
-        f"Planned requests: {request_count}; concurrency: {args.concurrency}; prompt characters: {total_prompt_chars}; maximum output tokens: {total_output_tokens}"
-    )
-    if args.dry_run:
-        return 0
-    api_key = resolve_api_key(args.provider, args.api_key, args.env_file)
-    if args.provider not in {"compatible", "vllm", "llama-cpp"} and not api_key:
-        raise SystemExit(
-            f"Missing key: use --api-key, {KEY_VARIABLES[args.provider]}, or {args.env_file}"
-        )
-    if (
-        api_key
-        and parsed_url.scheme == "http"
-        and parsed_url.hostname not in {"localhost", "127.0.0.1", "::1"}
-        and not args.allow_insecure_http
-    ):
-        raise SystemExit(
-            "Refusing to send an API key over non-loopback HTTP; use HTTPS or --allow-insecure-http"
-        )
     try:
-        payload = run_benchmark(
-            provider=args.provider,
-            base_url=base_url,
-            model=args.model,
-            api_key=api_key,
-            prompt_chars=sizes,
-            repetitions=args.repetitions,
-            probe_output_tokens=args.probe_output_tokens,
+        config = BenchmarkConfig(
+            provider=args.provider, model=args.model, base_url=args.base_url or "",
+            region=args.region, prompt_chars=sizes, repetitions=args.repetitions,
+            concurrency=args.concurrency, probe_output_tokens=args.probe_output_tokens,
             decode_output_tokens=args.decode_output_tokens,
-            decode_prompt_chars=args.decode_prompt_chars,
-            timeout=args.timeout,
-            include_usage=not args.no_stream_usage,
-            concurrency=args.concurrency,
-            region=args.region,
+            decode_prompt_chars=args.decode_prompt_chars, timeout=args.timeout,
+            max_requests=args.max_requests, max_prompt_chars=args.max_prompt_chars,
+            max_output_tokens=args.max_output_tokens, include_usage=not args.no_stream_usage,
+            allow_insecure_http=args.allow_insecure_http,
+        ).validated()
+        plan = config.plan()
+        print(f"Provider: {config.provider}; model: {config.model}; endpoint: {urlsplit(config.base_url).netloc}")
+        print(
+            f"Planned requests: {plan['requests']}; concurrency: {config.concurrency}; "
+            f"prompt characters: {plan['promptChars']}; maximum output tokens: {plan['outputTokens']}"
         )
-    except RuntimeError as exc:
+        if args.dry_run:
+            return 0
+        api_key = resolve_api_key(config.provider, args.api_key, args.env_file)
+        config.validate_key(api_key)
+        payload = run_benchmark(**config.run_options(), api_key=api_key)
+    except (ValueError, RuntimeError) as exc:
         raise SystemExit(str(exc)) from exc
     output = (
         args.output_file
