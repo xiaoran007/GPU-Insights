@@ -30,6 +30,7 @@ class StreamEvent:
     text: str = ""
     usage: dict[str, Any] | None = None
     timings: dict[str, Any] | None = None
+    finish_reason: str | None = None
 
 
 def make_request(
@@ -129,7 +130,7 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
         if kind == "message_start":
             return StreamEvent("usage", usage=(data.get("message") or {}).get("usage"))
         if kind == "message_delta":
-            return StreamEvent("usage", usage=data.get("usage"))
+            return StreamEvent("usage", usage=data.get("usage"), finish_reason=(data.get("delta") or {}).get("stop_reason"))
     elif provider == "gemini":
         if "error" in data:
             return StreamEvent("error")
@@ -143,17 +144,23 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
             "done" if finished else "content",
             text="".join(part.get("text", "") for part in parts),
             usage=data.get("usageMetadata"),
+            finish_reason=next((candidate["finishReason"] for candidate in data.get("candidates") or [] if candidate.get("finishReason")), None),
         )
     elif provider == "openai-responses":
         kind = data.get("type", event_name)
-        if kind in {"error", "response.failed", "response.incomplete"}:
+        if kind == "response.incomplete":
+            response = data.get("response") or {}
+            if (response.get("incomplete_details") or {}).get("reason") == "max_output_tokens":
+                return StreamEvent("done", usage=response.get("usage"), finish_reason="length")
+            return StreamEvent("error")
+        if kind in {"error", "response.failed"}:
             return StreamEvent("error")
         if kind == "response.output_text.delta":
             return StreamEvent("content", text=data.get("delta", ""))
         if kind == "response.completed":
             response = data.get("response") or {}
             return StreamEvent(
-                "done", usage=response.get("usage"), timings=response.get("metrics")
+                "done", usage=response.get("usage"), timings=response.get("metrics"), finish_reason="stop"
             )
     else:
         if "error" in data:
@@ -165,6 +172,7 @@ def normalize_event(provider: str, event_name: str, raw_data: str) -> StreamEven
             text=delta.get("content") or "",
             usage=data.get("usage"),
             timings=data.get("timings") or data.get("metrics"),
+            finish_reason=choices[0].get("finish_reason") if choices else None,
         )
     return StreamEvent("other")
 

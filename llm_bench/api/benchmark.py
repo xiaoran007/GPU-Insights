@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import random
 import statistics
 import time
-import uuid
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import datetime, timezone
 from threading import Event
 from typing import Any, Callable
@@ -12,24 +9,16 @@ from urllib import error, request
 from urllib.parse import urlsplit
 
 from llm_bench.api.protocol import make_request, normalize_event, parse_sse, token_usage
-
-
-PROMPT_UNIT = "Analyze the following project note and keep the answer concise. A benchmark must report measured latency, request conditions, and uncertainty. "
+from llm_bench.api.estimation import estimate
+from llm_bench.api.suite import (
+    DECODE_INPUT_CHARS, INPUT_SIZES, OUTPUT_LIMITS, PROBE_OUTPUT_TOKENS,
+    REPETITIONS, REQUEST_TIMEOUT, SUITE_ID, cases, make_prompt,
+)
 
 
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
-
-
-def make_prompt(char_count: int) -> str:
-    prefix = f"Run identifier: {uuid.uuid4().hex}.\n"
-    body = (PROMPT_UNIT * ((char_count // len(PROMPT_UNIT)) + 1))[:char_count]
-    return (
-        prefix
-        + body
-        + "\nGive a numbered list of practical observations. Continue until the output limit."
-    )
 
 
 def measure_request(
@@ -64,6 +53,8 @@ def measure_request(
         "lastContentMs": None,
         "totalMs": None,
         "contentEvents": 0,
+        "contentTimeline": [],
+        "finishReason": None,
         "outputChars": 0,
         "promptTokens": None,
         "outputTokens": None,
@@ -87,7 +78,11 @@ def measure_request(
             sample["headersMs"] = _ms(time.perf_counter() - started)
             for event_name, data in parse_sse(response):
                 now = time.perf_counter()
+                if now - started > timeout:
+                    raise TimeoutError("Request exceeded suite deadline")
                 event = normalize_event(provider, event_name, data)
+                if event.finish_reason is not None:
+                    sample["finishReason"] = event.finish_reason
                 if event.usage:
                     usage.update(event.usage)
                 if event.timings:
@@ -95,6 +90,7 @@ def measure_request(
                 if event.text:
                     sample["contentEvents"] += 1
                     sample["outputChars"] += len(event.text)
+                    sample["contentTimeline"].append({"timeMs": _ms(now - started), "chars": len(event.text)})
                     if sample["ttftMs"] is None:
                         sample["ttftMs"] = _ms(now - started)
                     sample["lastContentMs"] = _ms(now - started)
@@ -118,18 +114,8 @@ def measure_request(
     sample["outputTokens"] = output_tokens
     sample["reasoningTokens"] = reasoning_tokens
     sample["cachedPromptTokens"] = _cached_tokens(provider, usage, timings)
-    sample["serverPrefillTps"], sample["serverDecodeTps"], sample["serverQueueMs"] = (
-        _server_rates(timings, output_tokens)
-    )
     if sample["status"] == "ok" and sample["ttftMs"] is None:
         sample["status"], sample["error"] = "failed", "No visible text in stream"
-    if sample["status"] == "ok" and output_tokens is not None:
-        visible_tokens = output_tokens - (reasoning_tokens or 0)
-        window_ms = sample["lastContentMs"] - sample["ttftMs"]
-        if visible_tokens >= 2 and sample["contentEvents"] >= 2 and window_ms > 0:
-            sample["clientDecodeTps"] = round(
-                (visible_tokens - 1) * 1000 / window_ms, 3
-            )
     return sample
 
 
@@ -153,35 +139,6 @@ def _cached_tokens(
     return (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
 
 
-def _server_rates(
-    timings: dict[str, Any], output_tokens: int | None
-) -> tuple[float | None, float | None, float | None]:
-    if "prompt_ms" in timings:
-        prompt_ms, predicted_ms = timings.get("prompt_ms"), timings.get("predicted_ms")
-        pp = (
-            (timings.get("prompt_n") or 0) * 1000 / prompt_ms
-            if prompt_ms and prompt_ms > 0
-            else None
-        )
-        tg = (
-            (timings.get("predicted_n") or 0) * 1000 / predicted_ms
-            if predicted_ms and predicted_ms > 0
-            else None
-        )
-        return _round_rate(pp), _round_rate(tg), None
-    generation_ms = timings.get("generation_time_ms")
-    tg = (
-        (output_tokens - 1) * 1000 / generation_ms
-        if output_tokens and output_tokens > 1 and generation_ms and generation_ms > 0
-        else None
-    )
-    return None, _round_rate(tg), timings.get("queue_time_ms")
-
-
-def _round_rate(value: float | None) -> float | None:
-    return round(value, 3) if value is not None else None
-
-
 def _distribution(values: list[float]) -> dict[str, float] | None:
     if not values:
         return None
@@ -194,48 +151,11 @@ def _distribution(values: list[float]) -> dict[str, float] | None:
     return {"p50": round(statistics.median(ordered), 3), "p95": round(p95, 3)}
 
 
-def _prefill_regression(
-    samples: list[dict[str, Any]],
-) -> tuple[float | None, float | None]:
-    groups: dict[int, list[tuple[int, float]]] = {}
-    for sample in samples:
-        if (
-            sample["phase"] != "prefill"
-            or sample["status"] != "ok"
-            or sample["promptTokens"] is None
-            or sample["cachedPromptTokens"] not in (None, 0)
-        ):
-            continue
-        groups.setdefault(sample["promptChars"], []).append(
-            (sample["promptTokens"], sample["ttftMs"])
-        )
-    points = [
-        (statistics.median(x for x, _ in group), statistics.median(y for _, y in group))
-        for group in groups.values()
-        if len(group) >= 2
-    ]
-    if len(points) < 3:
-        return None, None
-    xbar = statistics.mean(x for x, _ in points)
-    ybar = statistics.mean(y for _, y in points)
-    x_variance = sum((x - xbar) ** 2 for x, _ in points)
-    if x_variance == 0:
-        return None, None
-    slope = sum((x - xbar) * (y - ybar) for x, y in points) / x_variance
-    total = sum((y - ybar) ** 2 for _, y in points)
-    residual = sum((y - (ybar + slope * (x - xbar))) ** 2 for x, y in points)
-    r2 = 1 - residual / total if total > 0 else 0
-    if slope <= 0 or r2 < 0.7:
-        return None, round(r2, 3)
-    return round(1000 / slope, 3), round(r2, 3)
-
-
 def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
     measured = [s for s in samples if s["phase"] != "warmup"]
     success = [s for s in measured if s["status"] == "ok"]
     decode_samples = [s for s in success if s["phase"] == "decode"]
-    prefill_samples = [s for s in success if s["phase"] == "prefill"]
-    prefill_rate, fit = _prefill_regression(success)
+    estimates = estimate(measured)
     cache_counts = [s["cachedPromptTokens"] for s in decode_samples]
     if any(count is not None and count > 0 for count in cache_counts):
         cache_status = (
@@ -255,52 +175,28 @@ def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
         "cacheStatus": cache_status,
         "ttftMs": rates("ttftMs", decode_samples),
         "totalMs": rates("totalMs", decode_samples),
-        "clientDecodeTps": rates("clientDecodeTps", decode_samples),
-        "serverDecodeTps": rates("serverDecodeTps", decode_samples),
-        "serverPrefillTps": rates("serverPrefillTps", prefill_samples),
-        "effectivePrefillTps": prefill_rate,
-        "prefillFitR2": fit,
+        "clientDecodeTps": None,
+        "serverDecodeTps": None,
+        "serverPrefillTps": None,
+        "decodeTps": estimates["decode"]["value"],
+        "effectivePrefillTps": estimates["prefill"]["value"],
+        "prefillFitR2": estimates["prefill"].get("fitR2"),
+        "estimates": estimates,
         "promptTokens": rates("promptTokens", decode_samples),
         "outputTokens": rates("outputTokens", decode_samples),
     }
 
 
 def run_benchmark(
-    *,
-    provider: str,
-    base_url: str,
-    model: str,
-    api_key: str | None,
-    prompt_chars: list[int],
-    repetitions: int,
-    probe_output_tokens: int,
-    decode_output_tokens: int,
-    decode_prompt_chars: int,
-    timeout: float,
-    include_usage: bool,
-    concurrency: int,
-    region: str,
+    *, provider: str, base_url: str, model: str, api_key: str | None,
+    include_usage: bool, region: str,
     on_progress: Callable[[dict[str, Any]], None] | None = None,
     cancel: Event | None = None,
 ) -> dict[str, Any]:
-    if concurrency == 1:
-        work = [
-            ("prefill", size, probe_output_tokens)
-            for size in prompt_chars
-            for _ in range(repetitions)
-        ]
-        work += [
-            ("decode", decode_prompt_chars, decode_output_tokens)
-            for _ in range(repetitions)
-        ]
-        random.Random(0).shuffle(work)
-    else:
-        work = [("decode", decode_prompt_chars, decode_output_tokens)] * (
-            concurrency * repetitions
-        )
+    work = cases()
     stop = cancel if cancel is not None else Event()
-    total = len(work) + 1
     samples: list[dict[str, Any]] = []
+    total = len(work)
 
     def report(phase: str, sample: dict[str, Any] | None = None) -> None:
         if on_progress is not None:
@@ -310,71 +206,35 @@ def run_benchmark(
         else:
             print(f"[{len(samples) + 1}/{total}] {phase}", flush=True)
 
-    def measure(phase: str, size: int, limit: int) -> dict[str, Any]:
-        return measure_request(
+    for case in work:
+        if stop.is_set():
+            break
+        report(case.phase)
+        sample = measure_request(
             provider=provider, base_url=base_url, model=model, api_key=api_key,
-            prompt_chars=size, max_output_tokens=limit, phase=phase,
-            timeout=timeout, include_usage=include_usage,
+            prompt_chars=case.prompt_chars, max_output_tokens=case.output_limit,
+            phase=case.phase, timeout=REQUEST_TIMEOUT, include_usage=include_usage,
         )
-
-    report("warmup")
-    if not stop.is_set():
-        samples.append(measure("warmup", decode_prompt_chars, probe_output_tokens))
-        report("warmup", samples[-1])
-        if samples[0]["status"] != "ok":
-            raise RuntimeError(f"Warmup failed: {samples[0]['error']}")
-    started = time.perf_counter()
-    if concurrency == 1:
-        for phase, size, limit in work:
-            if stop.is_set():
-                break
-            report(phase)
-            samples.append(measure(phase, size, limit))
-            report(phase, samples[-1])
-    else:
-        # Keep only the active batch submitted so stopping cannot launch queued requests.
-        pending_work = iter(work)
-        with ThreadPoolExecutor(max_workers=concurrency) as pool:
-            pending = set()
-            while True:
-                while len(pending) < concurrency and not stop.is_set():
-                    item = next(pending_work, None)
-                    if item is None:
-                        break
-                    pending.add(pool.submit(measure, *item))
-                if not pending:
-                    break
-                done, pending = wait(pending, return_when=FIRST_COMPLETED)
-                for future in done:
-                    sample = future.result()
-                    samples.append(sample)
-                    report(sample["phase"], sample)
-    elapsed = time.perf_counter() - started
+        samples.append(sample)
+        report(case.phase, sample)
+        if case.phase == "warmup" and sample["status"] != "ok":
+            raise RuntimeError(f"Warmup failed: {sample['error']}")
     summary = summarize(samples)
-    summary["requestThroughputRps"] = (
-        round(summary["successes"] / elapsed, 3)
-        if concurrency > 1 and elapsed > 0
-        else None
-    )
+    summary["requestThroughputRps"] = None
     return {
-        "schemaVersion": "1.0",
-        "kind": "llm-api",
+        "schemaVersion": "2.0", "kind": "llm-api",
         "runStatus": "cancelled" if stop.is_set() and len(samples) < total else "completed",
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "config": {
-            "provider": provider,
-            "model": model,
+            "suiteId": SUITE_ID, "provider": provider, "model": model,
             "endpointHost": urlsplit(base_url).hostname,
-            "promptChars": prompt_chars,
-            "repetitions": repetitions,
+            "promptChars": list(INPUT_SIZES), "repetitions": REPETITIONS,
             "streamUsageRequested": include_usage,
-            "probeOutputTokens": probe_output_tokens,
-            "decodeOutputTokens": decode_output_tokens,
-            "decodePromptChars": decode_prompt_chars,
-            "timeoutSeconds": timeout,
-            "concurrency": concurrency,
-            "clientRegion": region,
+            "probeOutputTokens": PROBE_OUTPUT_TOKENS,
+            "decodeOutputTokens": max(OUTPUT_LIMITS),
+            "decodeOutputLimits": list(OUTPUT_LIMITS),
+            "decodePromptChars": DECODE_INPUT_CHARS,
+            "timeoutSeconds": REQUEST_TIMEOUT, "concurrency": 1, "clientRegion": region,
         },
-        "summary": summary,
-        "samples": samples,
+        "summary": summary, "samples": samples,
     }

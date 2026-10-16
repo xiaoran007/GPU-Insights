@@ -20,8 +20,8 @@ METRICS = (
 
 
 def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
-    if payload.get("kind") != "llm-api" or payload.get("schemaVersion") != "1.0":
-        raise ValueError("Expected an llm-api version 1.0 payload")
+    if payload.get("kind") != "llm-api" or payload.get("schemaVersion") not in {"1.0", "2.0"}:
+        raise ValueError("Expected an llm-api version 1.0 or 2.0 payload")
     if payload.get("runStatus", "completed") != "completed":
         raise ValueError("Cannot publish an incomplete run; finish the full workload first")
     config, summary = payload.get("config"), payload.get("summary")
@@ -50,7 +50,7 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
                 or item < 0
             ):
                 raise ValueError(f"Invalid summary.{key}.{percentile}")
-    for key in ("effectivePrefillTps", "prefillFitR2", "requestThroughputRps"):
+    for key in ("effectivePrefillTps", "prefillFitR2", "requestThroughputRps", "decodeTps"):
         value = summary.get(key)
         if value is not None and (
             isinstance(value, bool)
@@ -87,6 +87,21 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Invalid summary.cacheStatus")
     if not isinstance(payload.get("samples"), list):
         raise ValueError("Payload must contain a samples array")
+    if payload["schemaVersion"] == "2.0":
+        if config.get("suiteId") != "api-standard-v2":
+            raise ValueError("Unknown version 2 API suite")
+        estimates = summary.get("estimates")
+        if not isinstance(estimates, dict):
+            raise ValueError("Version 2 results must contain estimate evidence")
+        for name, field in (("decode", "decodeTps"), ("prefill", "effectivePrefillTps")):
+            evidence = estimates.get(name)
+            if not isinstance(evidence, dict) or evidence.get("status") not in {"ok", "insufficient", "unstable"}:
+                raise ValueError(f"Invalid {name} estimate evidence")
+            value = summary.get(field)
+            if evidence.get("value") != value or (evidence["status"] == "ok") != (value is not None):
+                raise ValueError(f"Inconsistent {name} estimate evidence")
+            if value is not None and value <= 0:
+                raise ValueError(f"Invalid {name} estimate rate")
     identity = {
         "createdAt": payload.get("createdAt"),
         "config": config,
@@ -98,6 +113,7 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
     ).hexdigest()[:20]
     return {
         "runId": run_id,
+        **({"suiteId": config["suiteId"]} if payload["schemaVersion"] == "2.0" else {}),
         "createdAt": payload["createdAt"],
         "provider": config["provider"],
         "model": config["model"],
@@ -118,6 +134,7 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
                 "effectivePrefillTps",
                 "prefillFitR2",
                 "requestThroughputRps",
+                *( ("decodeTps", "estimates") if payload["schemaVersion"] == "2.0" else () ),
             )
         },
     }

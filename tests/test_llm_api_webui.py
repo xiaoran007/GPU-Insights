@@ -60,7 +60,6 @@ class WorkbenchTests(unittest.TestCase):
         self.config = {
             "provider": "compatible", "model": "fixture-model",
             "base_url": f"http://127.0.0.1:{self.provider.server_port}/v1",
-            "repetitions": 2,
         }
 
     def tearDown(self):
@@ -93,18 +92,18 @@ class WorkbenchTests(unittest.TestCase):
 
     def test_ui_to_provider_to_payload_and_history(self):
         plan = self.call("/api/preview", {"config": self.config})
-        self.assertEqual(plan["requests"], 9)
+        self.assertEqual(plan["requests"], 23)
         self.assertEqual(self.provider.calls, 0)
         self.call("/api/run", {"config": self.config, "apiKey": "test-session-key"})
         job = self.finish()
         self.assertEqual(job["status"], "completed")
-        self.assertEqual(job["completed"], 9)
-        self.assertEqual(self.provider.calls, 9)
+        self.assertEqual(job["completed"], 23)
+        self.assertEqual(self.provider.calls, 23)
         history = self.call("/api/history")
         self.assertEqual(len(history), 1)
         result = self.call("/api/results/" + history[0]["file"])
         payload = result["payload"]
-        self.assertEqual(payload["summary"]["successes"], 8)
+        self.assertEqual(payload["summary"]["successes"], 21)
         self.assertEqual(dashboard_entry(payload)["model"], "fixture-model")
         self.assertEqual(json.loads(Path(result["path"]).read_text()), payload)
         for path in self.root.rglob("*.json"):
@@ -121,17 +120,11 @@ class WorkbenchTests(unittest.TestCase):
         self.assertEqual(self.call("/api/history"), [])
         self.assertEqual(self.provider.calls, 1)
 
-    def test_concurrent_run_matches_planned_request_count(self):
-        config = {**self.config, "concurrency": 2}
-        plan = self.call("/api/preview", {"config": config})
-        self.call("/api/run", {"config": config})
-        job = self.finish()
-        self.assertEqual(job["completed"], plan["requests"])
-        self.assertEqual(job["status"], "completed")
-        result = self.call("/api/results/" + job["resultFile"])["payload"]
-        self.assertEqual(result["summary"]["successes"], 4)
-        self.assertGreater(result["summary"]["requestThroughputRps"], 0)
-        self.assertIsNone(result["summary"]["effectivePrefillTps"])
+    def test_workload_overrides_are_rejected_at_the_http_boundary(self):
+        with self.assertRaises(error.HTTPError) as caught:
+            self.call("/api/run", {"config": {**self.config, "repetitions": 2}})
+        self.assertEqual(caught.exception.code, 400)
+        self.assertEqual(self.provider.calls, 0)
 
     def test_cancel_while_warmup_running_and_reject_duplicate(self):
         self.provider.release.clear()
@@ -173,7 +166,7 @@ class WorkbenchTests(unittest.TestCase):
         self.assertEqual(profiles["Local server"]["model"], "fixture-model")
         other = Workbench(self.workbench.output_dir, self.workbench.state_dir, self.workbench.env_file)
         self.assertEqual(other.profiles(), profiles)
-        self.assertEqual(BenchmarkConfig.from_dict(profiles["Local server"]).plan()["requests"], 9)
+        self.assertEqual(BenchmarkConfig.from_dict(profiles["Local server"]).plan()["requests"], 23)
 
 
 if __name__ == "__main__":
