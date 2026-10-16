@@ -83,7 +83,7 @@ export default function LlmApiPage({ data }: { data: LlmApiData }) {
       <section className={`${cardClass} grid gap-4 md:grid-cols-3`}>
         <Method title="Measured" text="TTFT starts when the client sends a request and ends at the first visible text. Total latency ends when the response stream completes." />
         <Method title="Fixed suite" text="Two excluded warmups, four input lengths, and three output limits. Every length is repeated three times in interleaved blocks." />
-        <Method title="Estimated" text="Decode uses completion latency versus actual output tokens. Prefill uses input-length latency after accounting for output cost. Missing, short, cached, noisy, or nonlinear evidence does not produce a rate." />
+        <Method title="Estimated" text="Decode uses completion latency versus actual output tokens. Prefill uses input-length latency after accounting for output cost. Missing, short, known-cached, noisy, or nonlinear evidence does not produce a rate." />
       </section>
     </div>
   );

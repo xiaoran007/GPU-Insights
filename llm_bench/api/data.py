@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from llm_bench.api.suite import SUITE_ID
+
 
 METRICS = (
     "ttftMs",
@@ -88,7 +90,7 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(payload.get("samples"), list):
         raise ValueError("Payload must contain a samples array")
     if payload["schemaVersion"] == "2.0":
-        if config.get("suiteId") != "api-standard-v2":
+        if config.get("suiteId") != SUITE_ID:
             raise ValueError("Unknown version 2 API suite")
         estimates = summary.get("estimates")
         if not isinstance(estimates, dict):
@@ -134,7 +136,7 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
                 "effectivePrefillTps",
                 "prefillFitR2",
                 "requestThroughputRps",
-                *( ("decodeTps", "estimates") if payload["schemaVersion"] == "2.0" else () ),
+                *(("decodeTps", "estimates") if payload["schemaVersion"] == "2.0" else ()),
             )
         },
     }

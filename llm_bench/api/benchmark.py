@@ -66,7 +66,6 @@ def measure_request(
         "serverQueueMs": None,
     }
     usage: dict[str, Any] = {}
-    timings: dict[str, Any] = {}
     complete = False
     opener = request.build_opener(NoRedirect)
     started = time.perf_counter()
@@ -85,8 +84,6 @@ def measure_request(
                     sample["finishReason"] = event.finish_reason
                 if event.usage:
                     usage.update(event.usage)
-                if event.timings:
-                    timings.update(event.timings)
                 if event.text:
                     sample["contentEvents"] += 1
                     sample["outputChars"] += len(event.text)
@@ -113,7 +110,7 @@ def measure_request(
     sample["promptTokens"] = prompt_tokens
     sample["outputTokens"] = output_tokens
     sample["reasoningTokens"] = reasoning_tokens
-    sample["cachedPromptTokens"] = _cached_tokens(provider, usage, timings)
+    sample["cachedPromptTokens"] = _cached_tokens(provider, usage)
     if sample["status"] == "ok" and sample["ttftMs"] is None and not (type(output_tokens) is int and output_tokens > 0):
         sample["status"], sample["error"] = "failed", "No generated tokens or visible text in stream"
     return sample
@@ -124,7 +121,7 @@ def _ms(seconds: float) -> float:
 
 
 def _cached_tokens(
-    provider: str, usage: dict[str, Any], timings: dict[str, Any]
+    provider: str, usage: dict[str, Any]
 ) -> int | None:
     if provider == "anthropic":
         return usage.get("cache_read_input_tokens")
@@ -134,8 +131,6 @@ def _cached_tokens(
         return (usage.get("input_tokens_details") or {}).get("cached_tokens")
     if "prompt_cache_hit_tokens" in usage:
         return usage["prompt_cache_hit_tokens"]
-    if "tokens_cached" in timings:
-        return timings["tokens_cached"]
     return (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
 
 

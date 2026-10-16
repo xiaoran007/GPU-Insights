@@ -17,6 +17,7 @@ export default function ResultPanel({ result }: { result: Result | null }) {
   const summary = payload.summary;
   const text = JSON.stringify(payload, null, 2) + "\n";
   const standard = payload.config.suiteId === "api-standard-v2";
+  const prefill = standard ? summary.effectivePrefillTps : summary.serverPrefillTps?.p50 ?? summary.effectivePrefillTps;
   const decode = standard ? summary.decodeTps : (summary.serverDecodeTps ?? summary.clientDecodeTps)?.p50;
 
   async function copy() {
@@ -48,9 +49,10 @@ export default function ResultPanel({ result }: { result: Result | null }) {
     <div className="wb-metrics">
       <div><span>TTFT · p50</span><strong>{metric(summary.ttftMs?.p50, "ms")}</strong></div>
       <div><span>{standard ? "Decode estimate" : "Legacy decode · p50"}</span><strong>{metric(decode, "tok/s")}</strong><small>{standard ? "Completion-length slope" : "Legacy method"}</small></div>
-      <div><span>Prefill</span><strong>{metric(summary.serverPrefillTps?.p50 ?? summary.effectivePrefillTps, "tok/s")}</strong><small>{standard ? "Input-length slope" : "Legacy method"}</small></div>
+      <div><span>Prefill</span><strong>{metric(prefill, "tok/s")}</strong><small>{standard ? "Input-length slope" : "Legacy method"}</small></div>
       <div><span>Measured samples</span><strong>{summary.successes} / {summary.successes + summary.failures}</strong><small>successful · warmups excluded</small></div>
     </div>
+    {standard && !summary.ttftMs && <p className="wb-notice">No visible text arrived in the decode scan, so TTFT is unavailable. Generated-token counts can include reasoning tokens reported by the service.</p>}
     {summary.estimates && <div className="wb-quality" aria-label="Estimate quality">
       {(["decode", "prefill"] as const).map((name) => {
         const evidence = summary.estimates![name];

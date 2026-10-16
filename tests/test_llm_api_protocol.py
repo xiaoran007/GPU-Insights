@@ -17,7 +17,7 @@ class Response:
         events = [
             {"choices": [{"delta": {"reasoning_content": "hidden reasoning"}}]},
             {"choices": [{"delta": {}, "finish_reason": "length"}]},
-            {"choices": [], "usage": {"prompt_tokens": 100, "completion_tokens": 128,
+            {"choices": [], "timings": {"tokens_cached": 999, "predicted_ms": 0.001}, "usage": {"prompt_tokens": 100, "completion_tokens": 128,
                                        "completion_tokens_details": {"reasoning_tokens": 128}}},
         ]
         for event in events:
@@ -56,6 +56,8 @@ class ProtocolTests(unittest.TestCase):
         self.assertIsNone(sample["ttftMs"])
         self.assertEqual(sample["contentTimeline"], [])
         self.assertIsNone(sample["clientDecodeTps"])
+        self.assertIsNone(sample["serverDecodeTps"])
+        self.assertIsNone(sample["cachedPromptTokens"])
 
 
 if __name__ == "__main__":
