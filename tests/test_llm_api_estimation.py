@@ -36,6 +36,19 @@ class EstimationTests(unittest.TestCase):
         for block in (measured[:7], measured[7:14], measured[14:]):
             self.assertEqual(len({(case.phase, case.prompt_chars, case.output_limit) for case in block}), 7)
 
+    def test_every_request_including_warmups_has_an_independent_leading_nonce(self):
+        requests = [(case, make_prompt(case.prompt_chars)) for case in cases()]
+        nonces = [prompt.split("\n", 1)[0] for _, prompt in requests]
+        self.assertEqual(len(set(nonces)), len(requests))
+        for (case, prompt), nonce in zip(requests, nonces):
+            self.assertRegex(nonce, r"^[0-9a-f]{32}$")
+            self.assertEqual(len(prompt), case.prompt_chars)
+        # Repeat the workload, not the complete prompt; keep the task/content
+        # controlled while changing the user prefix before all instructions.
+        repeated = [prompt for case, prompt in requests if case.phase == "decode" and case.output_limit == 128]
+        self.assertEqual(len(repeated), 3)
+        self.assertEqual(len({prompt.split("\n", 1)[1] for prompt in repeated}), 1)
+
     def test_chunk_partition_and_fixed_overhead_do_not_change_rates(self):
         for chunk_size in (1, 10, 64, 10000):
             for overhead in (0, 250, 4000):

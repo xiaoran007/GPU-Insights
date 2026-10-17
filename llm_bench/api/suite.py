@@ -53,8 +53,10 @@ def description() -> dict:
 
 
 def make_prompt(char_count: int) -> str:
+    # Diversify the earliest user tokens on every request, including warmups.
+    # A suffix nonce would leave the preceding prompt reusable by prefix caches.
     prefix = (
-        f"Benchmark nonce: {uuid.uuid4().hex}.\n"
+        f"{uuid.uuid4().hex}\n"
         "Task: Write a catalog of 200 numbered fictional laboratory records. "
         "For each record give a name, material, purpose, and handling procedure. "
         "Use a separate full sentence for every field. Start with record 1. "

@@ -151,7 +151,7 @@ def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
     success = [s for s in measured if s["status"] == "ok"]
     decode_samples = [s for s in success if s["phase"] == "decode"]
     estimates = estimate(measured)
-    cache_counts = [s["cachedPromptTokens"] for s in decode_samples]
+    cache_counts = [s["cachedPromptTokens"] for s in success]
     if any(count is not None and count > 0 for count in cache_counts):
         cache_status = (
             "mixed" if any(count == 0 for count in cache_counts) else "cached"

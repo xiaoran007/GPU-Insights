@@ -18,7 +18,8 @@ class FakeProvider(BaseHTTPRequestHandler):
         pass
 
     def do_POST(self):
-        self.rfile.read(int(self.headers["Content-Length"]))
+        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        self.server.prompts.append(body["messages"][0]["content"])
         self.server.calls += 1
         if getattr(self.server, "reject", False):
             self.send_error(401)
@@ -49,6 +50,7 @@ class WorkbenchTests(unittest.TestCase):
         (assets / "workbench.html").write_text("<h1>Workbench</h1>")
         self.provider = ThreadingHTTPServer(("127.0.0.1", 0), FakeProvider)
         self.provider.calls = 0
+        self.provider.prompts = []
         self.provider.started = threading.Event()
         self.provider.release = threading.Event()
         self.provider.release.set()
@@ -99,6 +101,7 @@ class WorkbenchTests(unittest.TestCase):
         self.assertEqual(job["status"], "completed")
         self.assertEqual(job["completed"], 23)
         self.assertEqual(self.provider.calls, 23)
+        self.assertEqual(len({prompt.split("\n", 1)[0] for prompt in self.provider.prompts}), 23)
         history = self.call("/api/history")
         self.assertEqual(len(history), 1)
         result = self.call("/api/results/" + history[0]["file"])

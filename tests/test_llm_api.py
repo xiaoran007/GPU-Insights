@@ -3,7 +3,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from llm_bench.api.benchmark import run_benchmark
+from llm_bench.api.benchmark import run_benchmark, summarize
 from llm_bench.api.config import BenchmarkConfig
 from llm_bench.api.data import dashboard_entry
 
@@ -86,6 +86,15 @@ class ConfigurationTests(unittest.TestCase):
         for field in ("concurrency", "repetitions", "timeout", "prompt_chars"):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 BenchmarkConfig.from_dict({"model": "test", "base_url": "http://localhost/v1", field: 2})
+
+    def test_cache_summary_checks_prefill_and_preserves_unknown_reports(self):
+        def measured(phase, cached):
+            return sample(phase=phase, prompt_chars=1024, max_output_tokens=32) | {"cachedPromptTokens": cached}
+
+        for counts, expected in (((0, 100), "mixed"), ((0, None), "unknown"), ((0, 0), "uncached"), ((100, 100), "cached")):
+            with self.subTest(counts=counts):
+                summary = summarize([measured("decode", counts[0]), measured("prefill", counts[1])])
+                self.assertEqual(summary["cacheStatus"], expected)
 
 
 if __name__ == "__main__":
