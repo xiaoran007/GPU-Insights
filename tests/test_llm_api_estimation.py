@@ -86,15 +86,39 @@ class EstimationTests(unittest.TestCase):
         self.assertEqual(output["confidence"], "low")
         self.assertIn("limited range", output["reason"])
 
-    def test_missing_usage_or_known_cache_cannot_supply_a_fit(self):
-        for field, value in (("outputTokens", None), ("promptTokens", None), ("cachedPromptTokens", 100)):
+    def test_missing_usage_cannot_supply_a_token_rate(self):
+        for field, value in (("outputTokens", None), ("promptTokens", None)):
             samples = synthetic_samples()
             for sample in samples:
                 sample[field] = value
             with self.subTest(field=field):
                 self.assertIsNone(estimate(samples)["decode"]["value"])
 
-    def test_matched_input_is_required_for_decode(self):
+    def test_known_cache_keeps_observed_rates_with_low_confidence(self):
+        samples = synthetic_samples()
+        for sample in samples:
+            sample["cachedPromptTokens"] = 100
+        result = estimate(samples)
+        for name, reference in (("decode", 100), ("prefill", 2000)):
+            with self.subTest(metric=name):
+                self.assertEqual(result[name]["value"], reference)
+                self.assertEqual(result[name]["confidence"], "low")
+                self.assertIn("cached workload", result[name]["reason"])
+
+    def test_reported_zero_counts_are_measurements_not_missing_usage(self):
+        samples = synthetic_samples()
+        for sample in samples:
+            if sample["phase"] == "decode":
+                sample["promptTokens"] = 0
+                sample["totalMs"] = 250 + sample["outputTokens"] * 10
+            elif sample["phase"] == "prefill":
+                sample["outputTokens"] = 0
+                sample["totalMs"] = 250 + sample["promptTokens"] * 0.5
+        result = estimate(samples)
+        self.assertEqual(result["decode"]["value"], 100)
+        self.assertEqual(result["prefill"]["value"], 2000)
+
+    def test_mismatched_input_lowers_decode_confidence_without_suppressing_rate(self):
         samples = synthetic_samples()
         for sample in samples:
             if sample["phase"] == "decode":

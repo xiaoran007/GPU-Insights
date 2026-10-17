@@ -28,17 +28,22 @@ def _result(status: str, reason: str, **evidence: Any) -> dict[str, Any]:
     return {"value": None, "status": status, "confidence": "unavailable", "reason": reason, **evidence}
 
 
-def _positive(value: Any) -> bool:
-    return type(value) in (int, float) and math.isfinite(value) and value > 0
+def _warn(result: dict[str, Any], reason: str) -> None:
+    result["reason"] = "; ".join(filter(None, [result["reason"], reason]))
+    if result["value"] is not None:
+        result.update(status="unstable", confidence="low")
+
+
+def _nonnegative(value: Any) -> bool:
+    return type(value) in (int, float) and math.isfinite(value) and value >= 0
 
 
 def _eligible(sample: dict[str, Any]) -> bool:
     return (
         sample["status"] == "ok"
-        and _positive(sample.get("promptTokens"))
-        and _positive(sample.get("outputTokens"))
-        and _positive(sample.get("totalMs"))
-        and sample.get("cachedPromptTokens") in (None, 0)
+        and _nonnegative(sample.get("promptTokens"))
+        and _nonnegative(sample.get("outputTokens"))
+        and _nonnegative(sample.get("totalMs")) and sample["totalMs"] > 0
     )
 
 
@@ -97,9 +102,9 @@ def estimate(samples: list[dict[str, Any]]) -> dict[str, Any]:
     prompts = [s["promptTokens"] for s in decode]
     output = _fit([(s["outputLimit"], s["outputTokens"], s["totalMs"]) for s in decode], 3, 128)
     if prompts and max(prompts) - min(prompts) > max(16, statistics.median(prompts) * 0.05):
-        output["reason"] = "; ".join(filter(None, [output["reason"], "Decode requests did not have comparable input token counts"]))
-        if output["value"] is not None:
-            output.update(status="unstable", confidence="low")
+        _warn(output, "Decode requests did not have comparable input token counts")
+    if any((s.get("cachedPromptTokens") or 0) > 0 for s in decode):
+        _warn(output, "Known prompt-cache hits: rate describes the observed cached workload")
     inputs = [s for s in samples if s["phase"] == "prefill" and _eligible(s)]
     if inputs and len({s["outputTokens"] for s in inputs}) == 1:
         # A constant output cost is part of the intercept, so it requires no
@@ -112,9 +117,10 @@ def estimate(samples: list[dict[str, Any]]) -> dict[str, Any]:
             for s in inputs
         ], 4, 512)
         if output["confidence"] == "low" and prefill["value"] is not None:
-            prefill.update(status="unstable", confidence="low")
-            prefill["reason"] = "; ".join(filter(None, [prefill["reason"], "Output-cost adjustment uses a low-confidence decode estimate"]))
+            _warn(prefill, "Output-cost adjustment uses a low-confidence decode estimate")
     else:
         prefill = _result("insufficient", "Variable output counts require a calculable output-cost slope", samples=len(inputs))
+    if any((s.get("cachedPromptTokens") or 0) > 0 for s in inputs):
+        _warn(prefill, "Known prompt-cache hits: rate describes the observed cached workload")
     # Slopes are retained for auditability, never calibrated against a backend.
     return {"decode": output, "prefill": prefill}
