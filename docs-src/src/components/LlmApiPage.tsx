@@ -3,7 +3,8 @@ import {
 } from "chart.js";
 import { useMemo, useState } from "react";
 import { Bar } from "react-chartjs-2";
-import type { LlmApiData, LlmApiEntry, Percentiles } from "../types/llmApi";
+import type { EstimateEvidence, LlmApiData, LlmApiEntry, Percentiles } from "../types/llmApi";
+import { formatEstimateConfidence } from "../utils/format";
 
 ChartJS.register(BarElement, CategoryScale, Legend, LinearScale, Tooltip);
 
@@ -58,7 +59,7 @@ export default function LlmApiPage({ data }: { data: LlmApiData }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="m-0 font-[var(--font-display)] text-lg font-semibold">Results</h2>
-            <p className="m-0 mt-1 text-sm text-[var(--color-muted)]">Compare results from the same suite and similar client regions. Legacy results use a different measurement method.</p>
+            <p className="m-0 mt-1 text-sm text-[var(--color-muted)]">Compare results from the same suite and similar client regions, and check estimate confidence. Confidence labels describe evidence quality, not accuracy probabilities. Legacy results use a different measurement method.</p>
           </div>
           <label className="text-sm font-semibold text-[var(--color-muted)]">
             Suite
@@ -83,7 +84,7 @@ export default function LlmApiPage({ data }: { data: LlmApiData }) {
       <section className={`${cardClass} grid gap-4 md:grid-cols-3`}>
         <Method title="Measured" text="TTFT starts when the client sends a request and ends at the first visible text. Total latency ends when the response stream completes." />
         <Method title="Fixed suite" text="Two excluded warmups, four input lengths, and three output limits. Every length is repeated three times in interleaved blocks." />
-        <Method title="Estimated" text="Decode uses completion latency versus actual output tokens. Prefill uses input-length latency after accounting for output cost. Missing, short, known-cached, noisy, or nonlinear evidence does not produce a rate." />
+        <Method title="Estimated" text="Decode uses completion latency versus actual output tokens. Prefill uses input-length latency after accounting for output cost. Calculable rates are retained with confidence evidence, including noisy or partial measurements. Missing token counts or an unidentifiable positive slope leave the rate unavailable." />
       </section>
     </div>
   );
@@ -117,8 +118,8 @@ function ResultsTable({ entries }: { entries: LlmApiEntry[] }) {
           <td className="px-3 py-3 font-[var(--font-mono)]">{entry.concurrency}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{entry.summary.ttftMs ? `${number(entry.summary.ttftMs.p50)} / ${number(entry.summary.ttftMs.p95)} ms` : "—"}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{p50(entry.summary.totalMs, "ms")}</td>
-          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{decode(entry) == null ? "—" : `${number(decode(entry))} tok/s`}<span className="block text-xs text-[var(--color-muted)]">{entry.suiteId === "api-standard-v2" ? entry.summary.estimates?.decode.status === "ok" ? "length slope estimate" : entry.summary.estimates?.decode.status : "legacy p50"}</span></td>
-          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{prefill(entry) != null ? `${number(prefill(entry))} tok/s` : "—"}<span className="block text-xs text-[var(--color-muted)]">{entry.suiteId === "api-standard-v2" ? entry.summary.estimates?.prefill.status === "ok" ? `length slope · R² ${number(entry.summary.prefillFitR2, 2)}` : entry.summary.estimates?.prefill.status : "legacy method"}</span></td>
+          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{decode(entry) == null ? "—" : `${number(decode(entry))} tok/s`}{entry.suiteId === "api-standard-v2" ? <EstimateQuality evidence={entry.summary.estimates?.decode} /> : <span className="block text-xs text-[var(--color-muted)]">legacy p50</span>}</td>
+          <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{prefill(entry) != null ? `${number(prefill(entry))} tok/s` : "—"}{entry.suiteId === "api-standard-v2" ? <EstimateQuality evidence={entry.summary.estimates?.prefill} /> : <span className="block text-xs text-[var(--color-muted)]">legacy method</span>}</td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{number(entry.summary.requestThroughputRps)}</td>
           <td className="px-3 py-3">{entry.summary.successes} ok<span className="block text-xs text-[var(--color-muted)]">{entry.summary.failures} failed · cache {entry.summary.cacheStatus}</span></td>
           <td className="px-3 py-3 font-[var(--font-mono)] tabular-nums">{number(entry.summary.promptTokens?.p50, 0)} / {number(entry.summary.outputTokens?.p50, 0)}<span className="block text-xs text-[var(--color-muted)]">median tokens</span></td>
@@ -127,6 +128,15 @@ function ResultsTable({ entries }: { entries: LlmApiEntry[] }) {
       </tbody>
     </table>
   </div>;
+}
+
+function EstimateQuality({ evidence }: { evidence?: EstimateEvidence }) {
+  return <span className="block text-xs text-[var(--color-muted)]">
+    {formatEstimateConfidence(evidence)}
+    {evidence?.fitR2 != null && <span className="block">R² {number(evidence.fitR2, 3)}</span>}
+    {evidence?.relativeSlopeSpread != null && <span className="block">slope spread {number(evidence.relativeSlopeSpread * 100)}%</span>}
+    {evidence?.reason && <span className="block font-sans">{evidence.reason}</span>}
+  </span>;
 }
 
 function LatencyChart({ entries }: { entries: LlmApiEntry[] }) {

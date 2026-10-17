@@ -1,3 +1,10 @@
+import type { EstimateEvidence } from "../types/llmApi";
+
+export function formatEstimateConfidence(evidence: EstimateEvidence | undefined): string {
+  if (evidence?.value == null) return "Estimate unavailable";
+  return evidence.status === "ok" ? "High confidence" : "Low confidence";
+}
+
 export function formatScore(value: number | null): string {
   return typeof value === "number" ? value.toLocaleString() : "N/A";
 }

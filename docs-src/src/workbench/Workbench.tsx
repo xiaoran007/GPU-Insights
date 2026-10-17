@@ -140,7 +140,7 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
           {samples.length > 0 ? <div className="wb-sample-scroll"><table><thead><tr><th>Phase</th><th>Status</th><th>Input chars</th><th>TTFT</th><th>Total</th></tr></thead><tbody>{samples.map((sample, index) => <tr key={index}><td>{sample.phase}</td><td className={sample.status === "ok" ? "wb-ok" : "wb-failed"}>{sample.status}{sample.error && ` · ${sample.error}`}</td><td>{sample.promptChars.toLocaleString()}</td><td>{sample.ttftMs == null ? "—" : `${sample.ttftMs.toFixed(1)} ms`}</td><td>{sample.totalMs == null ? "—" : `${sample.totalMs.toFixed(1)} ms`}</td></tr>)}</tbody></table></div> : <p className="wb-muted">Warmup and per-request measurements appear here as they finish.</p>}
         </section>
         <ResultPanel key={result?.path ?? "empty"} result={result} />
-        <footer className="wb-footer">Measured locally · estimates require stable length/latency evidence · payloads contain no API keys, prompts, or response text</footer>
+        <footer className="wb-footer">Measured locally · estimates include confidence evidence · payloads contain no API keys, prompts, or response text</footer>
       </div>
     </div>
   </main>;

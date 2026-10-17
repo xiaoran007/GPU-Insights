@@ -6,12 +6,16 @@ export interface Percentiles {
 export interface EstimateEvidence {
   value: number | null;
   status: "ok" | "insufficient" | "unstable";
+  confidence?: "high" | "low" | "unavailable";
   reason: string;
   samples: number;
   groups?: number;
   tokenSpan?: number;
   fitR2?: number;
   relativeSlopeSpread?: number;
+  slopeMsPerToken?: number;
+  interceptMs?: number;
+  outputCostAdjustment?: string;
 }
 
 export interface LlmApiSummary {
