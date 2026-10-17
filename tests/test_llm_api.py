@@ -67,6 +67,16 @@ class ConfigurationTests(unittest.TestCase):
         changed["summary"]["decodeTps"] = 100
         with self.assertRaisesRegex(ValueError, "Inconsistent"):
             dashboard_entry(changed)
+        changed["summary"]["estimates"]["decode"].update(
+            value=100, status="unstable", confidence="low",
+            reason="Repeated measurements give dispersed slopes",
+        )
+        entry = dashboard_entry(changed)
+        self.assertEqual(entry["summary"]["decodeTps"], 100)
+        self.assertEqual(entry["summary"]["estimates"]["decode"]["confidence"], "low")
+        changed["summary"]["estimates"]["decode"]["confidence"] = "high"
+        with self.assertRaisesRegex(ValueError, "confidence"):
+            dashboard_entry(changed)
         legacy = copy.deepcopy(payload)
         legacy["schemaVersion"] = "1.0"
         legacy["config"].pop("suiteId")

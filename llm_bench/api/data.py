@@ -100,10 +100,15 @@ def dashboard_entry(payload: dict[str, Any]) -> dict[str, Any]:
             if not isinstance(evidence, dict) or evidence.get("status") not in {"ok", "insufficient", "unstable"}:
                 raise ValueError(f"Invalid {name} estimate evidence")
             value = summary.get(field)
-            if evidence.get("value") != value or (evidence["status"] == "ok") != (value is not None):
+            if evidence.get("value") != value or (evidence["status"] == "ok" and value is None):
                 raise ValueError(f"Inconsistent {name} estimate evidence")
             if value is not None and value <= 0:
                 raise ValueError(f"Invalid {name} estimate rate")
+            if "confidence" in evidence:
+                confidence = evidence["confidence"]
+                expected = "unavailable" if value is None else "high" if evidence["status"] == "ok" else "low"
+                if confidence != expected:
+                    raise ValueError(f"Inconsistent {name} estimate confidence")
     identity = {
         "createdAt": payload.get("createdAt"),
         "config": config,
