@@ -118,6 +118,7 @@ function Workbench({ bootstrap }: { bootstrap: Bootstrap }) {
             <span>{bootstrap.suite.warmups} excluded warmups · {bootstrap.suite.repetitions} repetitions at every length</span>
             <span>Input scan: {bootstrap.suite.inputSizes.join(" / ")} characters</span>
             <span>Output scan: {bootstrap.suite.outputLimits.join(" / ")} tokens</span>
+            <span>Fresh prefix per request to reduce prompt-cache reuse</span>
             <span>Fixed workload · no requests until you click Run · not a price estimate</span>
           </div>
           <div className="wb-actions wb-run-actions"><button className="wb-primary" type="submit" disabled={busy}>{running ? "Benchmark running…" : "Run standard suite"}</button></div>

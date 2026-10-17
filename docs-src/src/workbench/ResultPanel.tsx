@@ -20,6 +20,12 @@ export default function ResultPanel({ result }: { result: Result | null }) {
   const standard = payload.config.suiteId === "api-standard-v2";
   const prefill = standard ? summary.effectivePrefillTps : summary.serverPrefillTps?.p50 ?? summary.effectivePrefillTps;
   const decode = standard ? summary.decodeTps : (summary.serverDecodeTps ?? summary.clientDecodeTps)?.p50;
+  const cacheDescription = {
+    uncached: "No cache hits reported across measured requests.",
+    cached: "Cache hits reported; token rates include cached work.",
+    mixed: "Mixed cache hits and misses; token rates include cached work.",
+    unknown: "Cache reporting incomplete; zero hits cannot be confirmed.",
+  }[summary.cacheStatus];
 
   async function copy() {
     try {
@@ -46,6 +52,7 @@ export default function ResultPanel({ result }: { result: Result | null }) {
       <span className={`wb-badge ${payload.runStatus === "cancelled" ? "wb-amber" : ""}`}>{payload.runStatus === "cancelled" ? "Partial · stopped" : "Completed"}</span>
     </div>
     <p className="wb-muted">{payload.config.suiteId ?? "Legacy suite"} · {payload.config.provider} · {payload.config.endpointHost} · {new Date(payload.createdAt).toLocaleString()}</p>
+    <p className={summary.cacheStatus === "cached" || summary.cacheStatus === "mixed" ? "wb-notice" : "wb-muted"}>Prompt cache: {cacheDescription}</p>
     {payload.runStatus === "cancelled" && <p className="wb-notice">This run stopped early. Its payload preserves completed samples; run the full workload before collecting comparable results.</p>}
     <div className="wb-metrics">
       <div><span>TTFT · p50</span><strong>{metric(summary.ttftMs?.p50, "ms")}</strong></div>
