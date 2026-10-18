@@ -29,12 +29,26 @@ class ConfigurationTests(unittest.TestCase):
                        {"prompt_chars": [1, 1, 2]}, {"max_requests": 1},
                        {"base_url": "https://user:secret@example.org/v1"},
                        {"base_url": "https://example.org/?key=secret"},
+                       {"base_url": "http://localhost/接口"},
+                       {"base_url": "http://localhost/a b"},
+                       {"base_url": "http://local\nhost/v1"},
                        {"unexpected": "value"}):
             with self.subTest(values=values), self.assertRaises(ValueError):
                 BenchmarkConfig.from_dict({"model": "test", "base_url": "http://localhost:8000/v1", **values})
         config = BenchmarkConfig(provider="compatible", model="test", base_url="http://example.org/v1").validated()
         with self.assertRaises(ValueError):
             config.validate_key("secret")
+
+    def test_invalid_key_encoding_is_rejected_without_disclosing_the_key(self):
+        config = BenchmarkConfig(model="中文模型", base_url="http://localhost/v1").validated()
+        self.assertEqual(config.model, "中文模型")
+        for key in ("private-中文", "private-‘quote’", "private-key\n", "private key", "private-key\u00a0"):
+            with self.subTest(), self.assertRaisesRegex(ValueError, "API key contains unsupported") as caught:
+                config.validate_key(key)
+            self.assertNotIn(key, str(caught.exception))
+            self.assertNotIn("private", str(caught.exception))
+        config.validate_key(None)
+        config.validate_key("ascii-key_123-ABC")
 
     @patch("llm_bench.api.benchmark.measure_request", side_effect=sample)
     def test_cancel_preserves_completed_samples_and_payload_compatibility(self, measure):

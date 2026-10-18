@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from llm_bench.api.benchmark import measure_request
-from llm_bench.api.protocol import normalize_event
+from llm_bench.api.protocol import make_request, normalize_event
 
 
 class Response:
@@ -28,6 +28,24 @@ class Response:
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_unicode_model_and_prompt_use_utf8_json(self):
+        spec = make_request("compatible", "http://localhost/v1", "中文模型", "中文输入", 32, None, True)
+        body = json.loads(spec.body.decode("utf-8"))
+        self.assertEqual(body["model"], "中文模型")
+        self.assertEqual(body["messages"][0]["content"], "中文输入")
+
+    @patch("llm_bench.api.benchmark.request.build_opener")
+    def test_request_encoding_error_is_actionable_and_does_not_echo_credentials(self, opener):
+        key = "private-key-中文"
+        opener.return_value.open.side_effect = UnicodeEncodeError("latin-1", key, 12, 14, "unsupported")
+        sample = measure_request(
+            provider="compatible", base_url="http://localhost/v1", model="test", api_key=key,
+            prompt_chars=1024, max_output_tokens=128, phase="warmup", timeout=120, include_usage=True,
+        )
+        self.assertEqual(sample["status"], "failed")
+        self.assertIn("check Base URL and API key", sample["error"])
+        self.assertNotIn("private", str(sample))
+
     def test_output_cap_is_a_completed_response_with_usage(self):
         event = normalize_event("openai-responses", "", json.dumps({
             "type": "response.incomplete",

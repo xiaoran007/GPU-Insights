@@ -37,6 +37,10 @@ class BenchmarkConfig:
         if type(self.include_usage) is not bool or type(self.allow_insecure_http) is not bool:
             raise ValueError("Usage and insecure HTTP options must be booleans")
         base_url = self.base_url.strip() or DEFAULT_URLS.get(self.provider, "")
+        if not base_url.isascii():
+            raise ValueError("Base URL contains non-ASCII characters; use the server's ASCII or URL-encoded address")
+        if any(ord(char) <= 32 or ord(char) == 127 for char in base_url):
+            raise ValueError("Base URL cannot contain spaces or control characters")
         parsed = urlsplit(base_url)
         if parsed.scheme not in {"http", "https"} or not parsed.hostname:
             raise ValueError("Base URL must start with http:// or https://")
@@ -50,6 +54,8 @@ class BenchmarkConfig:
         return plan()
 
     def validate_key(self, api_key: str | None) -> None:
+        if api_key and any(not 33 <= ord(char) <= 126 for char in api_key):
+            raise ValueError("API key contains unsupported characters; check for spaces, line breaks, non-ASCII characters, or smart quotes")
         if self.provider not in {"compatible", "vllm", "llama-cpp"} and not api_key:
             raise ValueError(f"Missing key: configure {KEY_VARIABLES[self.provider]} or enter a session key")
         parsed = urlsplit(self.base_url)

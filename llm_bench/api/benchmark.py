@@ -101,6 +101,8 @@ def measure_request(
     except error.HTTPError as exc:
         sample["status"], sample["error"] = "failed", f"HTTP {exc.code}"
         exc.close()
+    except UnicodeEncodeError:
+        sample["status"], sample["error"] = "failed", "Cannot encode request URL or authentication headers; check Base URL and API key"
     except (OSError, ValueError, UnicodeError) as exc:
         sample["status"], sample["error"] = "failed", type(exc).__name__
     finally:
